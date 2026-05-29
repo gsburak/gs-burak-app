@@ -1,0 +1,4557 @@
+{
+  "schemaVersion": 2,
+  "clientes": [
+    {
+      "observaciones": "",
+      "nombre": "LUCIA ARELLANO",
+      "telefono": "5564819365",
+      "correo": "",
+      "direccion": "KALATOX # 51 PARQUE NATURA, MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "7wpvapfn"
+    },
+    {
+      "observaciones": "",
+      "nombre": "CARMEN PUERTO",
+      "telefono": "9997387848",
+      "correo": "",
+      "direccion": "CALLE 14 NUM 43X 5 Y 3 SAN ANTONIA CINTA CP 97139",
+      "tipo": "Residencial",
+      "id": "yad5bvck"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE KARIN ENRIQUE CORTES ROJANO",
+      "nombre": "RESTAURANTE TROPICO 56",
+      "telefono": " 5523005611 - 9992501122",
+      "correo": "",
+      "direccion": "CALLE 56 NUM 480 COLONIA CENTRO MERIDA, YUC.",
+      "tipo": "Comercial",
+      "id": "p7qjui17"
+    },
+    {
+      "observaciones": "TIENE VARIOS DOMICILIOS ELLA ES (HIJA)",
+      "nombre": "LEONOR SEGUI",
+      "telefono": "999 292 4177",
+      "correo": "",
+      "direccion": "CALLE 8 ENTRE 9 Y 11 SANTA RITA CHOLUL CP 97130",
+      "tipo": "Residencial",
+      "id": "rhqkj4rb"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ANELL CELIS",
+      "telefono": "9991441529",
+      "correo": "",
+      "direccion": "PRIVADA TRINUM CASA 42 SANTA GERTRUDIS COPÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ",
+      "tipo": "Residencial",
+      "id": "tu0o2rap"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE: FITSY REAL MONTEJO",
+      "nombre": "CLUB DEPORTIVO GRAND  REAL MONTEJO",
+      "telefono": "3316043369",
+      "correo": "CONTACTO JAIME RODRIGUEZ",
+      "direccion": "ZONA REAL MONTEJO CALLE 78 A ENTRE AVENIDA 51 Y CALLE 51 B COLONIA REAL MONTEJO 97302 MÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°RIDA YUC.",
+      "tipo": "Comercial",
+      "id": "ooce8rxd"
+    },
+    {
+      "observaciones": "",
+      "nombre": "RAFAEL DE LA PARRA",
+      "telefono": "5554190589 // 9382376102",
+      "correo": "",
+      "direccion": "CALLE 45 NUM 151 COLONIA BENITO JUAREZ MERIDA, YUC",
+      "tipo": "Residencial",
+      "id": "7ind8tmf"
+    },
+    {
+      "observaciones": "",
+      "nombre": "JESSICA CINTA",
+      "telefono": "999 351 2038",
+      "correo": "",
+      "direccion": "CALLE 23 A # 321 DZODZIL NTE",
+      "tipo": "Residencial",
+      "id": "ibpsxwy1"
+    },
+    {
+      "observaciones": "",
+      "nombre": "SANDRA RIVER",
+      "telefono": "55 2272 2872",
+      "correo": "",
+      "direccion": "PRIVADA EL ORIGEN CASA 9Q CONKAL",
+      "tipo": "Residencial",
+      "id": "bmcupsh6"
+    },
+    {
+      "observaciones": "",
+      "nombre": "CHRISTIAN GANTOUS",
+      "telefono": "55 2980 6247",
+      "correo": "",
+      "direccion": "CALLE PALMAS 2 Y PALMAS 3. LA CEIBA, MERIDA",
+      "tipo": "Residencial",
+      "id": "9s5pr0mo"
+    },
+    {
+      "observaciones": "",
+      "nombre": "VERONICA VEGA",
+      "telefono": "998 577 1541",
+      "correo": "",
+      "direccion": "CHUBURNA PUERTO",
+      "tipo": "Residencial",
+      "id": "u85ht83r"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE : CENTRO COMERCAL ALTABRISA MERIDA ",
+      "nombre": "CENTRO COMERCIAL ALTABRISA",
+      "telefono": "9141210314",
+      "correo": "ING EDWIN",
+      "direccion": "C. 7 452, Col. Altabrisa, 97133 MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rida, Yuc.",
+      "tipo": "Comercial",
+      "id": "93pn5v27"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE RACING KARTS PENINSULA.",
+      "nombre": "GOKART MANIA ALTABRISA ",
+      "telefono": "999 784 0923",
+      "correo": "ARIATNE",
+      "direccion": "C. 7 452, Col. Altabrisa, 97133 MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rida, Yuc.",
+      "tipo": "Comercial",
+      "id": "174eicdy"
+    },
+    {
+      "observaciones": "",
+      "nombre": "CONDOMINIO GLORIA ABED",
+      "telefono": "55 2855 8746",
+      "correo": "GLORIA ABED",
+      "direccion": "calle 79 No 159 Montes de Ame",
+      "tipo": "Residencial",
+      "id": "gyhzna22"
+    },
+    {
+      "observaciones": "",
+      "nombre": "CARLOS SOLIS",
+      "telefono": "9991297581",
+      "correo": "",
+      "direccion": "PRIVADA RESIDENCIAL COCOYOLES CASA 158 SANTA GERTRUDIS COPO",
+      "tipo": "Residencial",
+      "id": "q2gh4jnb"
+    },
+    {
+      "observaciones": "",
+      "nombre": "HOTEL VILLA ORQUIDEA",
+      "telefono": "9381022376",
+      "correo": "GRISELDA CABRERA",
+      "direccion": "CALLE 52 X 55 Y 53 ",
+      "tipo": "Comercial",
+      "id": "f923lo4l"
+    },
+    {
+      "observaciones": "",
+      "nombre": "EDUARDO SALIM",
+      "telefono": "5530389588",
+      "correo": "",
+      "direccion": "CIRUELA 23 LA CEIBA MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "9bo4ci5y"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE : INMUEBLES SANTAMARIA DE GUADALUPE",
+      "nombre": "TERESA LOBO ",
+      "telefono": "5530864847",
+      "correo": "OMAR BUSTANI",
+      "direccion": "JAJALPA, ESTADO DE MEXICO",
+      "tipo": "Comercial",
+      "id": "g2p1w1o3"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ERIKA RUDI",
+      "telefono": "34 654814136",
+      "correo": "",
+      "direccion": "PRIVADA NORTE MERIDA, LOTE 27",
+      "tipo": "Residencial",
+      "id": "nspw4ae1"
+    },
+    {
+      "observaciones": "",
+      "nombre": "SAMIRA RESTREPO",
+      "telefono": "5520659277",
+      "correo": "",
+      "direccion": "RESIDENCIAL PARQUE NATURA CALLE CIRUELA 189",
+      "tipo": "Residencial",
+      "id": "kooczrd1"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE: OPERADORA GANSO S. de R.L de C.V. \n ",
+      "nombre": "OPERADORA GANSO ",
+      "telefono": "9991788794",
+      "correo": "CONTACTO OSCAR PEREZ",
+      "direccion": "CALLE 60 DIAGONAL NUM 485 FRACCIONAMIENTO DEL PARQUE INDUSTRIAL 97302 MERIDA YUC",
+      "tipo": "Industrial",
+      "id": "iftjdt94"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE; COMERCIALIZADORA DYSH\n",
+      "nombre": "ZOMA TEA MIYANA",
+      "telefono": "5610181697",
+      "correo": "ULISES",
+      "direccion": "EJERCITO NACIONAL NUM 769 MIGUEL HIDALGO CUIDAD DE MEXICO",
+      "tipo": "Comercial",
+      "id": "13uzg3e3"
+    },
+    {
+      "observaciones": "FACTURAR A NOMBRE DE: HUSH N SLUSH\n",
+      "nombre": "HUSH N' SLUSH",
+      "telefono": "5543414176",
+      "correo": "CONTACTO: SAID ELNEJEM",
+      "direccion": "CALLE 19 NUM 195 ITZIMNA 97100 MERIDA YUC",
+      "tipo": "Comercial",
+      "id": "v96gdex2"
+    },
+    {
+      "observaciones": "",
+      "nombre": "PAOLA FERRER",
+      "telefono": "9993681818",
+      "correo": "",
+      "direccion": "CALLE 8 NUM 183 MONTECRISTO MERIDA",
+      "tipo": "Residencial",
+      "id": "du59z33x"
+    },
+    {
+      "observaciones": "",
+      "nombre": "JORGE CORRO",
+      "telefono": "5527286361",
+      "correo": "",
+      "direccion": "LEONES 147 LAS AGUILAS CDMX",
+      "tipo": "Residencial",
+      "id": "u7iggo31"
+    },
+    {
+      "observaciones": "SE FACTURA A : RESIDENCIA EMBAJADA DE EGIPTO",
+      "nombre": "RESIDENCIA EMBAJADA DE EGIPTO CDMX",
+      "telefono": "5540386411",
+      "correo": "JESUS NUÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“EZ",
+      "direccion": "BOSQUE DE AMATES NUM 129 BOSQUES DE LAS LOMAS, CDMX",
+      "tipo": "Residencial",
+      "id": "1kml8pv5"
+    },
+    {
+      "observaciones": "",
+      "nombre": "EMBAJADA DE EGIPTO CDMX",
+      "telefono": "5540386411",
+      "correo": "JESUS NUÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Z",
+      "direccion": "ALEJANDRO DUMAS NUM 131 POLANCO 11550 CDMX",
+      "tipo": "Residencial",
+      "id": "1wmqj6v5"
+    },
+    {
+      "observaciones": "",
+      "nombre": "DANIEL VILLANUEVA",
+      "telefono": "9381248922",
+      "correo": "",
+      "direccion": "PRIVADA TRINUM CASA NUM 29 MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "lkv1ralb"
+    },
+    {
+      "observaciones": "",
+      "nombre": "RICARDO ORTIZ",
+      "telefono": "5532254910",
+      "correo": "",
+      "direccion": "PRIVADO PORTO ALEGRE CASA 7 SANTA GERTRUDIS COPO MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "ac0jiyvl"
+    },
+    {
+      "observaciones": "FACTURAR A :PLASTICOS BEDA S.A DE C.V",
+      "nombre": "PLASTICOS BEDA ",
+      "telefono": "9995461113",
+      "correo": "YURIDIA CAN",
+      "direccion": "CALLE 96 NUM 771 / C INTERIOR 2 COLONIA OBRERA 97260 MERIDA YUC",
+      "tipo": "Industrial",
+      "id": "0pm3sw2g"
+    },
+    {
+      "observaciones": "FACTUAR A: CONDOMINIOS DE LUXXE PEDREGAL",
+      "nombre": "CONDOMINIO LUXXE PEDREGAL",
+      "telefono": "5611443308",
+      "correo": "CAROLINA HERNANDEZ",
+      "direccion": "RIO DE LA MAGDALENA 124 TIZAPAN SAN ANGEL ALVARO OBREGON CDMX",
+      "tipo": "Residencial",
+      "id": "wnmhlrlp"
+    },
+    {
+      "observaciones": "",
+      "nombre": "DOCTOR JESUS CARRANZA",
+      "telefono": "5518274030",
+      "correo": "",
+      "direccion": "PRIVADA SOLUNA, ATRIA, CIRCUITO DEIMOS NUM 15",
+      "tipo": "Residencial",
+      "id": "hoxiqjg9"
+    },
+    {
+      "observaciones": "FACTURAR :PRODUCCIONES ABISS",
+      "nombre": "AUDITORIO COCACOLA",
+      "telefono": "9991771186",
+      "correo": "ADRIAN PEREZ",
+      "direccion": "CENTRO COMERCIAL LA ISLA MERIDA, CABO NORTE",
+      "tipo": "Comercial",
+      "id": "3gtzrpr3"
+    },
+    {
+      "observaciones": "FACTURAR A :BLACKGUS PRO",
+      "nombre": "ALEJANDRA VISOSO ",
+      "telefono": "9997696170",
+      "correo": "",
+      "direccion": "PRIVADA TAMARA, LOTE 22, ZONA COUNTRY MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "t1m1o019"
+    },
+    {
+      "observaciones": "",
+      "nombre": "KINDER MISS LIZZY",
+      "telefono": "5532237077",
+      "correo": "FERNANDO DE DIOS",
+      "direccion": "BOSQUE DE REAL DEL MONTE NUM 30 LA HERRADURA 52784 NAUCALPAN ESTADO DE MEXICO",
+      "tipo": "Comercial",
+      "id": "8swpclxw"
+    },
+    {
+      "observaciones": "FACTURAR A: B HERMANOS UNIFORMES S de R.L. de C.V.",
+      "nombre": "BLAUER ",
+      "telefono": "9992365136",
+      "correo": "LUIS MORENO",
+      "direccion": "CALLE 9 NUM 110 SAN ANTONIO CINTA MERIDA YUC",
+      "tipo": "Industrial",
+      "id": "edujyn06"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ISABEL ",
+      "telefono": "9991277352",
+      "correo": "",
+      "direccion": "PRIVADA RESIDENCIALCOCOYOLES CASA 119",
+      "tipo": "Residencial",
+      "id": "uym3eu5b"
+    },
+    {
+      "observaciones": "",
+      "nombre": "GINA LOPEZ",
+      "telefono": "9992351359",
+      "correo": "",
+      "direccion": "CHAKA #99  RESIDENCIAL PARQUE NATURA",
+      "tipo": "Residencial",
+      "id": "ccaq0t16"
+    },
+    {
+      "observaciones": "",
+      "nombre": "KARLA",
+      "telefono": "8111069528",
+      "correo": "",
+      "direccion": "RESIDENCIAL SAN GERONIMO CASA 33 CONKAL MERIDA",
+      "tipo": "Residencial",
+      "id": "maznsew2"
+    },
+    {
+      "observaciones": "FACTURAR A: GRUPO CASA COMIDA CACERISIMO",
+      "nombre": "CACERISIMO",
+      "telefono": "5551037724",
+      "correo": "MALENA GOSAIN",
+      "direccion": "CALLE 17 # 23 LOCAL 1 LA FLORIDA MERIDA YUCATAN",
+      "tipo": "Comercial",
+      "id": "9dobvrhs"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ALMA LILIA SANTIAGO",
+      "telefono": "5543693039",
+      "correo": "",
+      "direccion": "ENRIQUE REBSAMEN 411 A COLONIA NARVARTE CDMX",
+      "tipo": "Residencial",
+      "id": "x9mtlcjd"
+    },
+    {
+      "observaciones": "FACTURAR A:IM7 S.A. DE C.V. ",
+      "nombre": "GUARDABOX  PROGRESO",
+      "telefono": "9999504050",
+      "correo": "JESUS OCHOA ",
+      "direccion": "CARRETERA MERIDA PROGRESO KM 24 PARAISO C.P. 97320",
+      "tipo": "Comercial",
+      "id": "77eqa1ly"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MARY WALLS",
+      "telefono": "9993912798",
+      "correo": "",
+      "direccion": "PRIVADA VIVENZA CALLE 7B X 12 Y 12 A LOTE 17 SANTA GERTRUDIS COPO",
+      "tipo": "Residencial",
+      "id": "dcvawn0g"
+    },
+    {
+      "observaciones": "FACTURAR A:PRIVADA RESIDENCIAL COCOYOLES",
+      "nombre": "PRIVAD RESIDENCIAL COCOYOLES",
+      "telefono": "9992363575",
+      "correo": "ALEJANDRA ADMINISTRACION",
+      "direccion": "PRIVADA RESIDENCIAL COCOYOLES",
+      "tipo": "Residencial",
+      "id": "1bnqfckn"
+    },
+    {
+      "observaciones": "",
+      "nombre": "LORI SANDRES",
+      "telefono": "7175792926",
+      "correo": "",
+      "direccion": "PRIVADA YAAXLUM CONKAL CASA 334",
+      "tipo": "Residencial",
+      "id": "iiizk9sw"
+    },
+    {
+      "observaciones": "",
+      "nombre": "SONIA VIZCAINO",
+      "telefono": "9987351240",
+      "correo": "",
+      "direccion": "RESIDENCIAL LA REJOYADA LOTE 237",
+      "tipo": "Residencial",
+      "id": "a3z2gq80"
+    },
+    {
+      "observaciones": "",
+      "nombre": "SALUA ARAMONI",
+      "telefono": "5521386952",
+      "correo": "",
+      "direccion": "CAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ADA DE LOMBARDIA #101 INT B OLIVAR DE LOS PADRES CP01780",
+      "tipo": "Residencial",
+      "id": "kgxm0uxu"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MARIANA VILLAGRAN",
+      "telefono": "9993682494",
+      "correo": "",
+      "direccion": "CALLE 33 # 165 X 24 Y 26 MONTES DE AME",
+      "tipo": "Residencial",
+      "id": "kdnz9ga0"
+    },
+    {
+      "observaciones": "",
+      "nombre": "DEBORAH HERNANDEZ",
+      "telefono": "9981559250",
+      "correo": "",
+      "direccion": "CALLE 28 # 228 CERCA DE MACRO PLAZA",
+      "tipo": "Residencial",
+      "id": "8orz1lzp"
+    },
+    {
+      "observaciones": "",
+      "nombre": "LILIANA",
+      "telefono": "5515109019",
+      "correo": "",
+      "direccion": "RIO NAZAS 205 DEPTO. 302",
+      "tipo": "Residencial",
+      "id": "ztea347c"
+    },
+    {
+      "observaciones": "",
+      "nombre": " SANDRA SALOMON",
+      "telefono": "5541835077",
+      "correo": "",
+      "direccion": "CALLE 37 A #331X 24 Y 26 MONTEALBAN",
+      "tipo": "Residencial",
+      "id": "xuvwfxym"
+    },
+    {
+      "observaciones": "",
+      "nombre": "DAVID ZAPATA",
+      "telefono": "5521371458",
+      "correo": "",
+      "direccion": "COCOYOLES CASA 87",
+      "tipo": "Residencial",
+      "id": "u0dzgg7e"
+    },
+    {
+      "observaciones": "FACTURAR A: EDIFICIO ALPES",
+      "nombre": "EDIFICIO ALPES",
+      "telefono": "5555079315",
+      "correo": "PAULINA ALCAZAR",
+      "direccion": "CDMX",
+      "tipo": "Residencial",
+      "id": "avpiud3u"
+    },
+    {
+      "observaciones": "",
+      "nombre": " VERONICA MARTINEZ",
+      "telefono": "9992176470",
+      "correo": "CASA MAMA",
+      "direccion": "CALLE 44 # 513",
+      "tipo": "Residencial",
+      "id": "1srwdjzf"
+    },
+    {
+      "observaciones": "",
+      "nombre": "IGNACIO SALOMON",
+      "telefono": "9995766876",
+      "correo": "",
+      "direccion": "CALLE 24 # 249 X 69 Y 71 MONTES DE AME",
+      "tipo": "Residencial",
+      "id": "enav963h"
+    },
+    {
+      "observaciones": "",
+      "nombre": "LILIANA",
+      "telefono": "5540527196",
+      "correo": "",
+      "direccion": "CALLE 24 A #506 COL MAYA DEPTO. 4",
+      "tipo": "Residencial",
+      "id": "znowqcve"
+    },
+    {
+      "observaciones": "",
+      "nombre": " ALEJANDRA RUIZ",
+      "telefono": "5528997972",
+      "correo": "",
+      "direccion": "TZALAM # 27  PRIVADA PARQUE NATURA",
+      "tipo": "Residencial",
+      "id": "ye0qrxg9"
+    },
+    {
+      "observaciones": "",
+      "nombre": "VERONICA MORALES",
+      "telefono": "9994457401",
+      "correo": "",
+      "direccion": "TERRENO TEMOZON",
+      "tipo": "Residencial",
+      "id": "2krysi2f"
+    },
+    {
+      "observaciones": "",
+      "nombre": " MARIA MEDINA",
+      "telefono": "4446650270",
+      "correo": "",
+      "direccion": "PRIVADA PORTO ALEGRE CASA 21 SANTA GERTUDRIS COPO",
+      "tipo": "Residencial",
+      "id": "q91f7qxz"
+    },
+    {
+      "observaciones": "",
+      "nombre": " LUPITA CASIS",
+      "telefono": "5554164291",
+      "correo": "",
+      "direccion": "PASEO DEL ANAHUAC #125 PASEO DE LAS PALMAS CDMX",
+      "tipo": "Residencial",
+      "id": "1iojjnck"
+    },
+    {
+      "observaciones": "",
+      "nombre": " ORLY COHEN",
+      "telefono": "5519545014",
+      "correo": "",
+      "direccion": "CALLE 32 A # 324 SAN RAMON NORTE CP 97117 MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "q9f88jk3"
+    },
+    {
+      "observaciones": "",
+      "nombre": "PATRICIA BOLAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“OS",
+      "telefono": "5534650201",
+      "correo": "",
+      "direccion": "CALLE 49 E # 482 FRANCISCO DE MONTEJO  MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "vzi38hne"
+    },
+    {
+      "observaciones": "",
+      "nombre": "YAZMIN IZA",
+      "telefono": "5537674923",
+      "correo": "",
+      "direccion": " AV EL RIEGO # 14 RESIDENCIAL COAPA SUPER 8 TLALPAN 14390  CDMX",
+      "tipo": "Residencial",
+      "id": "qx9q4l7p"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MARIANA IBARRA",
+      "telefono": "5514736384",
+      "correo": "",
+      "direccion": "CDMX CAUCE 69 PARQUE DEL PEDREGAL TLALPAN  CP 14010",
+      "tipo": "Residencial",
+      "id": "bj0qjzd6"
+    },
+    {
+      "observaciones": "",
+      "nombre": " RODRIGO BARROSO",
+      "telefono": "5534446014",
+      "correo": "",
+      "direccion": "CALLE KALATOX # 49 PARQUE NATURA MERIDA",
+      "tipo": "Residencial",
+      "id": "kbi8v28c"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ANDREA BARROSO",
+      "telefono": "5534446014",
+      "correo": "",
+      "direccion": " CDMX CALLE LLUVIA # 460 JARDINES DEL PEDREGAL",
+      "tipo": "Residencial",
+      "id": "7xcxq0ll"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ELIZABETH PADILLA",
+      "telefono": "7711052037",
+      "correo": "",
+      "direccion": "CALLE 5 X 32 PENSIONES MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "2lkkltnk"
+    },
+    {
+      "observaciones": "",
+      "nombre": "KAREN FERRERO",
+      "telefono": "9983196142",
+      "correo": "",
+      "direccion": "AVENIDA DEL JAGUAR #249 YUCATAN COUNTRY CLUB MERIDA",
+      "tipo": "Residencial",
+      "id": "bmtkwrgw"
+    },
+    {
+      "observaciones": "",
+      "nombre": "JUAN CARLOS/ALEIDA BAUTISTA",
+      "telefono": "5524984552",
+      "correo": "",
+      "direccion": "PROVINCIA GOLF CLUB 331",
+      "tipo": "Residencial",
+      "id": "4kkr6w1g"
+    },
+    {
+      "observaciones": "",
+      "nombre": "SONIA URIBE",
+      "telefono": "5539936274",
+      "correo": "",
+      "direccion": "SOLUNA CERRADA ORION CALLE GLIESE #12",
+      "tipo": "Residencial",
+      "id": "adw9dyel"
+    },
+    {
+      "observaciones": "",
+      "nombre": "RICARDO ORTIZ",
+      "telefono": "5532254910",
+      "correo": "",
+      "direccion": "PORTO ALEGRE CASA 7",
+      "tipo": "Residencial",
+      "id": "i1ieq4df"
+    },
+    {
+      "observaciones": "",
+      "nombre": "JESUS SANCHEZ",
+      "telefono": "3183011530",
+      "correo": "",
+      "direccion": "PRIVADA COCOYOLES CASA 132",
+      "tipo": "Residencial",
+      "id": "ojsrdn39"
+    },
+    {
+      "observaciones": "",
+      "nombre": "JOSE LUIS LOW",
+      "telefono": "9999494429",
+      "correo": "",
+      "direccion": "PRIVADA TRINUM CASA 4 SANTA GERTRUDIS COPO MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "czahf4d4"
+    },
+    {
+      "observaciones": "",
+      "nombre": " DUARTE",
+      "telefono": "9993628273",
+      "correo": "",
+      "direccion": "PRIVADA EL TRIUNFO CASA 20 MERIDA YUCATAN PERIFERICO LIC MANUEL BERZUNZA",
+      "tipo": "Residencial",
+      "id": "dz3mjijv"
+    },
+    {
+      "observaciones": "",
+      "nombre": "FERNANDO DE DIOS",
+      "telefono": "5532237077",
+      "correo": "",
+      "direccion": "PARQUE DE TOLEDO #15 CDMX",
+      "tipo": "Residencial",
+      "id": "4yphnm9r"
+    },
+    {
+      "observaciones": "",
+      "nombre": " ADRIANA",
+      "telefono": "5533353835",
+      "correo": "",
+      "direccion": "PRIVADA XPOKIN  75 YUCATAN COUNTRY CLUB",
+      "tipo": "Residencial",
+      "id": "onfp7ash"
+    },
+    {
+      "observaciones": "",
+      "nombre": " MAURICIO ZARATE",
+      "telefono": "5578109701",
+      "correo": "",
+      "direccion": "COCOYOLES  CASA 21",
+      "tipo": "Residencial",
+      "id": "x332v8xh"
+    },
+    {
+      "observaciones": "",
+      "nombre": "CAROLINA AVILA",
+      "telefono": "999 122 4468",
+      "correo": "",
+      "direccion": "CALLE 49 E FRANCISCO DE MONTEJO",
+      "tipo": "Residencial",
+      "id": "9hb7p4dl"
+    },
+    {
+      "observaciones": "",
+      "nombre": "VERO ZAVALA",
+      "telefono": "999 245 5839",
+      "correo": "",
+      "direccion": "CALLE 18 #189 MEXICO ORIENTE MERDA YUC",
+      "tipo": "Residencial",
+      "id": "b1tdajf3"
+    },
+    {
+      "observaciones": "",
+      "nombre": "GABRIELA  CANO",
+      "telefono": "5545443333",
+      "correo": "",
+      "direccion": "CALLE 13 # 304 A X 8 Y 6 SANTA RITA CHOLUL ",
+      "tipo": "Residencial",
+      "id": "u3w2aoqi"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MARIAN ROVIRA",
+      "telefono": "8112775447",
+      "correo": "",
+      "direccion": "PRIVADA TRINUM CASA 73",
+      "tipo": "Residencial",
+      "id": "1r4kkfo0"
+    },
+    {
+      "observaciones": "",
+      "nombre": "LOURDES BROWN RASCON",
+      "telefono": "999 739 9776",
+      "correo": "",
+      "direccion": "PRIVADA ALLEGRA MADEIRA CASA E 1 TEMOZON MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "glbj9pu3"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MALENA GOSAIN",
+      "telefono": "5551037724",
+      "correo": "",
+      "direccion": "CHACA 96 PARQUE NATURA MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "bcex0hdg"
+    },
+    {
+      "observaciones": "",
+      "nombre": "LEONOR SEGUI MAMA",
+      "telefono": "9999003320",
+      "correo": "",
+      "direccion": "UAYMITUN",
+      "tipo": "Residencial",
+      "id": "cat4zkm7"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MARTHA REYES",
+      "telefono": "9997385818",
+      "correo": "",
+      "direccion": "Calle 20 no 132 x 15 y 7 Col. Montecristo",
+      "tipo": "Residencial",
+      "id": "tejvw82x"
+    },
+    {
+      "observaciones": "SE FACTURA A : CONDOMINIO ALMEA HOMES",
+      "nombre": "CONDOMINIO ALMEA HOMES",
+      "telefono": "9971405888",
+      "correo": "FERNANDA AGUILAR",
+      "direccion": "CALLE 6 ORIENTE CHCHI SUAREZ MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "j06ulype"
+    },
+    {
+      "observaciones": "FACTURAR A: TIZARA CAPITAL",
+      "nombre": "PLAZA TIZARA",
+      "telefono": "5610414869",
+      "correo": "LIC LIZBETH PIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ONES",
+      "direccion": "BOULEVARD TIZAYUCA, 43815 HACIENDAS TIZAYUCA HIDALGO.",
+      "tipo": "Comercial",
+      "id": "ea7mdhwf"
+    },
+    {
+      "observaciones": "FACTURAR A: ADVENTURE PRODUCT COMPANY",
+      "nombre": "TIENDA ALETA AZUL",
+      "telefono": "5551037724",
+      "correo": "MALENA GOSAIN",
+      "direccion": "Av. AndrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s GarcÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­a LavÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­n 250-dpto. F, fraccionamiento Antonio, San Antonio Cucul, 97116 MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rida, Yuc.",
+      "tipo": "Comercial",
+      "id": "grrp0mwk"
+    },
+    {
+      "observaciones": "FACTURAR A : MEGA BOMBEO MEXICO",
+      "nombre": "MEGA BOMBEO MEXICO",
+      "telefono": "9991212598",
+      "correo": "ANA RUEDA",
+      "direccion": "CALLE 1 G # 104 E RESIDENCIAL MONTECRISTO MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "3lhzh31f"
+    },
+    {
+      "observaciones": "",
+      "nombre": "CARLOS OLIVA",
+      "telefono": "55 3537 8911",
+      "correo": "",
+      "direccion": "PRIVADA UNICA LIVING CASA 67 MERIDA YUCATAN",
+      "tipo": "Residencial",
+      "id": "o0z1zito"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MAY ZACARIAS",
+      "telefono": "5555067169",
+      "correo": "",
+      "direccion": "CDMX",
+      "tipo": "Residencial",
+      "id": "kvobxwv0"
+    },
+    {
+      "observaciones": "",
+      "nombre": "BELEN ANTON",
+      "telefono": "5538236931",
+      "correo": "",
+      "direccion": "CDMX RCDA LAPACOYA FLOR  DE MARIA 25, ALCALDIA ALVARO OBREGON 01760 CDMX",
+      "tipo": "Residencial",
+      "id": "a4zp6scy"
+    },
+    {
+      "observaciones": "",
+      "nombre": "FRANCISCO LOPEZ MARINELLI",
+      "telefono": "5530306637",
+      "correo": "",
+      "direccion": "PRIVADA COCOYOLES # 142 SANTA GERTRUDIS COPO , MERIDA YUCTATAN",
+      "tipo": "Residencial",
+      "id": "7okfd3uf"
+    },
+    {
+      "observaciones": "",
+      "nombre": "KARLA LOPEZ",
+      "telefono": "5543520841",
+      "correo": "",
+      "direccion": "CDMX TORRE MONTECARLO DEPTO. 101 PEDREGAL 2 MAGDALENA CONTRERAS CDMX",
+      "tipo": "Residencial",
+      "id": "rm6t00mw"
+    },
+    {
+      "observaciones": "",
+      "nombre": "SUEGRO ELIZABETH PADILLA",
+      "telefono": "7711052037",
+      "correo": " ELIZABETH PADILLA",
+      "direccion": "Calle 18 # 110A entre 23 y 25 CHUBURNA.",
+      "tipo": "Residencial",
+      "id": "gh9kton8"
+    },
+    {
+      "observaciones": "FACTURAR A : SISTEMAS PROYECTOS Y VIVIENDA SA DE C.V. ",
+      "nombre": "SISPROVISA",
+      "telefono": "9993227867",
+      "correo": "ALEJANDRA GONZALEZ",
+      "direccion": "CALLE  20 # 151 X 15 Y 19 COL ALTABRISA",
+      "tipo": "Comercial",
+      "id": "paoszcae"
+    },
+    {
+      "observaciones": " FACTURAR A :PRODUCTOS MARCOPOLO SA DE CV",
+      "nombre": "MARCOPOLO ",
+      "telefono": "3312820439",
+      "correo": "LUIS SANDOVAL",
+      "direccion": "AZAFRAN",
+      "tipo": "Comercial",
+      "id": "7wkkkc7l"
+    },
+    {
+      "observaciones": "FACTURAR A .: PRODUCTOS PRACTICOS E IMPRESOS",
+      "nombre": "PRODUCTOS PRACTICOS E IMPRESOS",
+      "telefono": "5560140101",
+      "correo": "ADELA ",
+      "direccion": "CDMX CALLE INDEPENDENCIA # 8 COLONIA SAN ANDRES TETEPILCO IZTAPALAPA 09440 CDMX",
+      "tipo": "Industrial",
+      "id": "6wnsft7x"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ENNA ARANA",
+      "telefono": "999 947 5410",
+      "correo": "",
+      "direccion": "PRIVADA COCOYOLES CASA 31, SANTAN GERTRUDIS COPO, MERIDA YUC",
+      "tipo": "Residencial",
+      "id": "4cpggx4x"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE JOSE CARLOS BALDERAS SALAZAR",
+      "nombre": "WILLIAM SHAKES SUC. MANACAR",
+      "telefono": "5635450008",
+      "correo": "JOSE CARLOS BALDERAS SALAZAR",
+      "direccion": "Av. Insurgentes Sur 1457, Mixcoac, Benito Juárez, 03920 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "xl2wno7w"
+    },
+    {
+      "observaciones": "SE FACTURA A NOMBRE DE JOSE CARLOS BALDERAS SALAZAR",
+      "nombre": "WILLIAM SHAKES VIA 515",
+      "telefono": "",
+      "correo": "JOSE CARLOS BALDERAS SALAZAR",
+      "direccion": "Viad. Río de la Piedad 515-Segundo Piso, Granjas México, Iztacalco, 08400 Ciudad de México, CDMX",
+      "tipo": "Residencial",
+      "id": "9kd6ynol"
+    },
+    {
+      "observaciones": "",
+      "nombre": "WILLIAM SHAKES COAPA",
+      "telefono": "5635569583",
+      "correo": "JOSE CARLOS BALDERAS SALAZAR",
+      "direccion": "Calz Acoxpa 610, Coapa, Equipamiento Plaza Coapa, Tlalpan, 14390 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "aaaiuv80"
+    },
+    {
+      "observaciones": "",
+      "nombre": "WILLIAM SHAKES TEPEYAC",
+      "telefono": "5635450008",
+      "correo": "JOSE CARLOS BALDERAS SALAZAR",
+      "direccion": "Av. Ing. Eduardo Molina 6730, Granjas Modernas, Gustavo A. Madero, 07460 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "lgkbe68u"
+    },
+    {
+      "observaciones": "",
+      "nombre": "WILLIAM SHAKES CONDESA",
+      "telefono": "5635450008",
+      "correo": "JOSE CARLOS BALDERAS SALAZAR",
+      "direccion": "Dentro de las instalaciones del Sport World, Av Sonora 180-C, segundo piso, Colonia Condesa, Cuauhtémoc, 06100 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "uefgp9qm"
+    },
+    {
+      "observaciones": "ESTA SUCURSAL SE REALIZA DOS VECES AL MES.\nSE FACTURA A : CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH OASIS",
+      "telefono": "+525556587883",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Av. Miguel Ángel de Quevedo, Oxtopulco, Coyoacán, 03330 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "nawod2fn"
+    },
+    {
+      "observaciones": "SE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV\nSERVICIO MENSUAL",
+      "nombre": "IZLAH SATELITE",
+      "telefono": "",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Cto Centro Comercial 2251, Cd. Satélite, 53100 Satélite, Méx.",
+      "tipo": "Comercial",
+      "id": "7495w8pz"
+    },
+    {
+      "observaciones": "SE REALIZA BIMESTRAL O MENSUAL SEGUN LO REQUIERAN",
+      "nombre": "IZLAH MITIKAH",
+      "telefono": "",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Av. Río Churubusco 601, Xoco, Benito Juárez, 03330 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "rbvnthc5"
+    },
+    {
+      "observaciones": "SE REALIZA BIMESTRAL O MENSUAL SEGUN LO REQUIERAN\nSE FACTURA A : CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH CARSO",
+      "telefono": "5549760434",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "C. Lago Zurich 245-LOCAL A-17, P.B, Amp Granada, Miguel Hidalgo, 11529 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "lk5dprai"
+    },
+    {
+      "observaciones": "SE REALIZA SERVICIO BIMESTRAL O MENSUAL SEGUN LO REQUIERAN\nSE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH ANTARA",
+      "telefono": "",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Av. Ejercito Nacional #Army, National#843-B Int AC-4, Granada, Miguel Hidalgo, 11520 CDMX",
+      "tipo": "Comercial",
+      "id": "j8ttlasr"
+    },
+    {
+      "observaciones": "SE REALIZA BIMESTRAL O MENSUAL SEGUN LO REQUIERAN\nSE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH MAZARYK",
+      "telefono": "",
+      "correo": "",
+      "direccion": "Av. Pdte. Masaryk 360-Local 11A, Polanco, Polanco III Secc, Miguel Hidalgo, 11540 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "sebbezuy"
+    },
+    {
+      "observaciones": "SE REALIZA BIMESTRAL O MENSUAL SEGUN LO REQUIERAN\nSE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH CENTRAL INTERLOMAS ",
+      "telefono": "",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Boulevard Palmas Hills Lote I, PB local k-24, Valle de las Palmas, 52763 Méx.",
+      "tipo": "Comercial",
+      "id": "0gw1n26p"
+    },
+    {
+      "observaciones": "SE REALIZA BIMESTRAL O MENSUAL SEGUN LO REQUIERAN\nSE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH WTC MONTECITO",
+      "telefono": "",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Montecito 28-Local 14, Nápoles, Benito Juárez, 03810 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "fna1ikql"
+    },
+    {
+      "observaciones": "SE REALIZA BIMESTRAL O MENSUAL SEGUN LO REQUIEREN\nSE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH ARCOS BOSQUES",
+      "telefono": "5591350022",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "Paseo De Los Tamarindos 90, Local 1a Pb, Bosques de las Lomas, Cuajimalpa de Morelos, 05110 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "78xyq7xh"
+    },
+    {
+      "observaciones": "SE REALIZA SERVICIO MENSUAL O BIMESTRAL SEGUN REQUIERAN\nSE FACTURA A CASA INTERNACIONAL DEL TE SA DE CV",
+      "nombre": "IZLAH DURAZNOS",
+      "telefono": "15552450658",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "BOSQUES DE DURAZNOS NO. 39 LOCAL C-03 ESQ, Bosque de los Ciruelos, Bosques de las Lomas, Miguel Hidalgo, 11700 Ciudad de México, CDMX",
+      "tipo": "Comercial",
+      "id": "i5gestoe"
+    },
+    {
+      "observaciones": "",
+      "nombre": "FABIOLA",
+      "telefono": "",
+      "correo": "KARLA",
+      "direccion": "PRIVADA COCOYOLES CASA 34 SANTA GERTRUDIS COPO",
+      "tipo": "Residencial",
+      "id": "d2b64jby"
+    },
+    {
+      "observaciones": "SE REALIZA MENSUAL O BIMESTRAL, SEGUN LO REQUIERAN\nSE FACTURA A: CASA INTERNACIONAL DEL TE SA DE CV.",
+      "nombre": "IZLAH PASEO INTERLOMAS",
+      "telefono": "",
+      "correo": "MAURICIO VAZQUEZ",
+      "direccion": "PLAZA PASEO INTERLOMAS",
+      "tipo": "Residencial",
+      "id": "k2kza99b"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ZONA TEA PRADO NORTE",
+      "telefono": "5610181697",
+      "correo": "",
+      "direccion": "PRADO NORTE",
+      "tipo": "Comercial",
+      "id": "i3wkixtt"
+    },
+    {
+      "observaciones": "",
+      "nombre": "GONGCHA SONORA",
+      "telefono": "3310809463",
+      "correo": "ABEL ALVAREZ",
+      "direccion": "CDMX",
+      "tipo": "Comercial",
+      "id": "he45vsur"
+    },
+    {
+      "observaciones": "",
+      "nombre": "GONGCHA REFORMA",
+      "telefono": "3310809463",
+      "correo": "ABEL ALVAREZ",
+      "direccion": "PASEO DE LA REFORMA # 250 LOCAL 1G CUAUTEMOC CDMX",
+      "tipo": "Comercial",
+      "id": "nbhiqtrt"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ELIZABETH LIBIEN",
+      "telefono": "7222014568",
+      "correo": "",
+      "direccion": "PASEO DE LA REFORMA #2595 MIGUEL HIDALGO CDMX",
+      "tipo": "Residencial",
+      "id": "2d2rd20m"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MANOLO KOBEH",
+      "telefono": "5512175013",
+      "correo": "",
+      "direccion": "PROL MOCTEZUMA ORIENTE #72 COYOACAN CDMX",
+      "tipo": "Residencial",
+      "id": "mkc18svl"
+    },
+    {
+      "observaciones": "",
+      "nombre": "ZAPATERIA ZONAZERO AZCAPOTZALCO",
+      "telefono": "5539683906",
+      "correo": "DIANA ZAAVEDRA",
+      "direccion": "AV AZCAPOTZALCO #654-B CENTRO AZCAPOTZALCO",
+      "tipo": "Comercial",
+      "id": "myrpcgt5"
+    },
+    {
+      "observaciones": "",
+      "nombre": "MAURICIO NACIF",
+      "telefono": "5510531067",
+      "correo": "",
+      "direccion": "PASEO DE LOS LAURELES #268 CASA 25 BOSQUES DE LAS LOMAS CDMX",
+      "tipo": "Residencial",
+      "id": "xz9fhme1"
+    },
+    {
+      "observaciones": "",
+      "nombre": "IZLAH BODEGA NAUCALPAN",
+      "telefono": "",
+      "correo": "",
+      "direccion": "",
+      "tipo": "Comercial",
+      "id": "y4dybkwk"
+    },
+    {
+      "observaciones": "",
+      "nombre": "GUARDA BOX PERIFERICO",
+      "telefono": "9999504050",
+      "correo": "JESUS OCHOA ",
+      "direccion": "PERIFERICO NORTE #19712 MONTECARLO MERIDA",
+      "tipo": "Comercial",
+      "id": "95arw1br"
+    },
+    {
+      "observaciones": "SE FACTURA A :IM7 S.A. DE C.V.",
+      "nombre": "GUARDABOX PONIENTE",
+      "telefono": "9999504050",
+      "correo": "JESUS OCHOA ",
+      "direccion": "PERIFERICO PONIENTE TAB CAT 18966 FRACC DIAMANTE MERIDA YUCATAN",
+      "tipo": "Comercial",
+      "id": "wpanvow7"
+    }
+  ],
+  "productos": [
+    {
+      "producto": "TRAMPA TRAPPER MAX",
+      "unidadCompra": "pieza",
+      "unidadUso": "pieza",
+      "factor": 1,
+      "costo": 6.98,
+      "id": "mh5s204t"
+    },
+    {
+      "producto": "X-TERMIN 1 KG",
+      "unidadCompra": "kilo",
+      "unidadUso": "gr",
+      "factor": 1000,
+      "costo": 98,
+      "id": "89701vw5"
+    },
+    {
+      "producto": "OPTIGARD ANT GEL",
+      "unidadCompra": "pieza",
+      "unidadUso": "gr",
+      "factor": 30,
+      "costo": 206.49,
+      "id": "v1qo369t"
+    },
+    {
+      "producto": "AQUA RESTLIN",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 531.3333,
+      "id": "2jk2cehb"
+    },
+    {
+      "producto": "ASTRUM EW",
+      "unidadCompra": "pieza",
+      "unidadUso": "ml",
+      "factor": 400,
+      "costo": 259,
+      "id": "7ofmv0q6"
+    },
+    {
+      "producto": "PYBUTHRIN 33",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 428.36,
+      "id": "vtak98i0"
+    },
+    {
+      "producto": "BIOTHRIN FLOW",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 1003.77,
+      "id": "0osm4yx4"
+    },
+    {
+      "producto": "ELEGY S200",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 599,
+      "id": "kg96pxcz"
+    },
+    {
+      "producto": "RODILON BLOQUE",
+      "unidadCompra": "kilo",
+      "unidadUso": "gr",
+      "factor": 1000,
+      "costo": 363.8,
+      "id": "ax3jy9f7"
+    },
+    {
+      "producto": "BIOTHRIN S25",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 467.53,
+      "id": "s1bz5xl5"
+    },
+    {
+      "producto": "CIRANO PLUS",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 475,
+      "id": "nr95ta95"
+    },
+    {
+      "producto": "CEBADERA SENTINEL PLASTICO",
+      "unidadCompra": "pieza",
+      "unidadUso": "pieza",
+      "factor": 1,
+      "costo": 68,
+      "id": "gi0o52ny"
+    },
+    {
+      "producto": "TRAMPA SENTINEL PRO",
+      "unidadCompra": "pieza",
+      "unidadUso": "pieza",
+      "factor": 1,
+      "costo": 5.4,
+      "id": "nn2lwpcn"
+    },
+    {
+      "producto": "COMEJEN FIPRONIL",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 417.33,
+      "id": "6e2pwtvy"
+    },
+    {
+      "producto": "OPTIGARD CUCARACHA",
+      "unidadCompra": "pieza",
+      "unidadUso": "gr",
+      "factor": 30,
+      "costo": 139,
+      "id": "ikr5c9wo"
+    },
+    {
+      "producto": "X-TERMIN FLOW",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 935.7,
+      "id": "lenyuwjl"
+    },
+    {
+      "producto": "JAEGUER URBAN 50 SC",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 664,
+      "id": "u6yohchc"
+    },
+    {
+      "producto": "DIFARAT ",
+      "unidadCompra": "kilo",
+      "unidadUso": "gr",
+      "factor": 1000,
+      "costo": 204.47,
+      "id": "zapqztf4"
+    },
+    {
+      "producto": "FENDONA",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 699,
+      "id": "i9dj1144"
+    },
+    {
+      "producto": "TERMIDOR CE",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 685,
+      "id": "alz7rx8o"
+    },
+    {
+      "producto": "TERMIDOR DUO",
+      "unidadCompra": "envase",
+      "unidadUso": "ml",
+      "factor": 250,
+      "costo": 928.1,
+      "id": "3wispk4v"
+    },
+    {
+      "producto": "SILICON BLANCO ",
+      "unidadCompra": "pieza",
+      "unidadUso": "ml",
+      "factor": 280,
+      "costo": 66.15,
+      "id": "ms8u62zb"
+    },
+    {
+      "producto": "X-TERMIN CE",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 559,
+      "id": "rupy5w43"
+    },
+    {
+      "producto": "KONOX 60 FW ALFACIPERMETRINA",
+      "unidadCompra": "litro",
+      "unidadUso": "ml",
+      "factor": 1000,
+      "costo": 580,
+      "id": "6dr14dwp"
+    },
+    {
+      "producto": "VAMPIRICIDA",
+      "unidadCompra": "envase",
+      "unidadUso": "pieza",
+      "factor": 100,
+      "costo": 79,
+      "id": "3j3y2evn"
+    }
+  ],
+  "tiposServicio": [
+    {
+      "id": "phnvyzui",
+      "nombre": "Fumigacion General",
+      "precio": 0
+    },
+    {
+      "id": "p05bxzfv",
+      "nombre": "Desratizacion",
+      "precio": 0
+    },
+    {
+      "id": "170bzeh6",
+      "nombre": "Control de Cucarachas",
+      "precio": 0
+    },
+    {
+      "id": "tolbp07e",
+      "nombre": "Control de Hormigas",
+      "precio": 0
+    },
+    {
+      "id": "p2l10kg8",
+      "nombre": "Control de Termitas",
+      "precio": 0
+    },
+    {
+      "id": "k59vahgu",
+      "nombre": "Control de Mosquitos",
+      "precio": 0
+    },
+    {
+      "id": "xyh211ig",
+      "nombre": "Desinfeccion",
+      "precio": 0
+    },
+    {
+      "id": "r85afjlf",
+      "nombre": "Nebulizacion",
+      "precio": 0
+    },
+    {
+      "id": "u5r7h0f1",
+      "nombre": "Inspeccion",
+      "precio": 0
+    },
+    {
+      "id": "oui5nvgy",
+      "nombre": "Control de Roedores",
+      "precio": 0
+    },
+    {
+      "id": "tgu1uyes",
+      "nombre": "Otro",
+      "precio": 0
+    }
+  ],
+  "servicios": [
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-15",
+      "clienteId": "7wpvapfn",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CATALOX NUM 51 FRACCIONAMIENTO PARQUE NATURA, MÃ‰RIDA YUC.",
+      "subtotal": 409.48,
+      "cobrado": 409.48,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 100
+        }
+      ],
+      "id": "bx59qk1q"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-14",
+      "clienteId": "yad5bvck",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 14 NUM 43X 5 Y 3 SAN ANTONIA CINTA CP 97139",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "Control de Termitas",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 200
+        }
+      ],
+      "id": "7kghcuxm"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "p7qjui17",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 56 NUM 480 COLONIA CENTRO MERIDA, YUC.",
+      "subtotal": 1190,
+      "cobrado": 1190,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "nr95ta95",
+          "cantidad": 200
+        }
+      ],
+      "id": "ao2f2ke4"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "7wpvapfn",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CATALOX NUM 51 FRACCIONAMIENTO PARQUE NATURA, MÃ‰RIDA YUC.",
+      "subtotal": 409.48,
+      "cobrado": 409.48,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General se realiza el interior de la casa",
+      "productos": [
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 150
+        }
+      ],
+      "id": "yd303l9d"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "rhqkj4rb",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TILA CASA 1 / LEONOR SEGUI",
+      "subtotal": 517.24,
+      "cobrado": 517.24,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 100
+        }
+      ],
+      "id": "nzwoeguf"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "rhqkj4rb",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TILA CASA 2",
+      "subtotal": 517.24,
+      "cobrado": 517.24,
+      "formaPago": "Transferencia",
+      "observaciones": "FUMIGACION GENERAL",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 100
+        }
+      ],
+      "id": "hob62jt4"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "rhqkj4rb",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TILA CASA 7",
+      "subtotal": 517.24,
+      "cobrado": 517.24,
+      "formaPago": "Transferencia",
+      "observaciones": "FUMIGACION GENERAL",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 100
+        }
+      ],
+      "id": "o39nc9tv"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "rhqkj4rb",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TILA CASA 8",
+      "subtotal": 517.24,
+      "cobrado": 517.24,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 100
+        }
+      ],
+      "id": "ir99x9xs"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "rhqkj4rb",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TILA / AREAS COMUNES",
+      "subtotal": 258.62,
+      "cobrado": 258.62,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 100
+        }
+      ],
+      "id": "bje4j8sy"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "tu0o2rap",
+      "tipo": "Control de Termitas",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TRINUM CASA 42 SANTA GERTRUDIS COPÃ“",
+      "subtotal": 1206.9,
+      "cobrado": 1206.9,
+      "formaPago": "Transferencia",
+      "observaciones": "CONTROL DE TERMITAS",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 200
+        }
+      ],
+      "id": "nmng8vvx"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-16",
+      "clienteId": "ooce8rxd",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "ZONA REAL MONTEJO CALLE 78 A ENTRE AVENIDA 51 Y CALLE 51 B COLONIA REAL MONTEJO 97302 MÃ‰RIDA YUC.",
+      "subtotal": 4830,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "nr95ta95",
+          "cantidad": 200
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 400
+        }
+      ],
+      "id": "5u9da0j3"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-17",
+      "clienteId": "7ind8tmf",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 45 NUM 151 COLONIA BENITO JUAREZ MERIDA, YUC",
+      "subtotal": 1670,
+      "cobrado": 1670,
+      "formaPago": "Transferencia",
+      "observaciones": "FumigaciÃ³n General",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 160
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "tlntqrck"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-17",
+      "clienteId": "ibpsxwy1",
+      "tipo": "Control de Termitas",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 23 A # 321 DZODZIL NTE",
+      "subtotal": 1293.1,
+      "cobrado": 1293.1,
+      "formaPago": "Transferencia",
+      "observaciones": "CONTROL DE TERMITAS",
+      "productos": [
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 200
+        }
+      ],
+      "id": "43etykw4"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-17",
+      "clienteId": "bmcupsh6",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA EL ORIGEN CASA 9Q CONKAL",
+      "subtotal": 474.14,
+      "cobrado": 474.14,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 150
+        }
+      ],
+      "id": "3fem8e6w"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-18",
+      "clienteId": "9s5pr0mo",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE PALMAS 2 Y PALMAS 3. LA CEIBA, MERIDA",
+      "subtotal": 1724.14,
+      "cobrado": 1724.14,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 250
+        }
+      ],
+      "id": "6wuohscl"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-18",
+      "clienteId": "u85ht83r",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CHUBURNA PUERTO",
+      "subtotal": 1465.52,
+      "cobrado": 1465.52,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 150
+        },
+        {
+          "productoId": "nr95ta95",
+          "cantidad": 150
+        },
+        {
+          "productoId": "gi0o52ny",
+          "cantidad": 2
+        },
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 60
+        }
+      ],
+      "id": "sqv4npcb"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-20",
+      "clienteId": "93pn5v27",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "C. 7 452, Col. Altabrisa, 97133 MÃ©rida, Yuc.",
+      "subtotal": 23290,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 320
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "s15p4rfj"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-20",
+      "clienteId": "174eicdy",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "C. 7 452, Col. Altabrisa, 97133 MÃ©rida, Yuc.",
+      "subtotal": 2150,
+      "cobrado": 2150,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        },
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 160
+        }
+      ],
+      "id": "wq6lu355"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-20",
+      "clienteId": "gyhzna22",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "calle 79 No 159 Montes de Ame",
+      "subtotal": 1163.79,
+      "cobrado": 1163.79,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "pj3e3whr"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-21",
+      "clienteId": "q2gh4jnb",
+      "tipo": "Control de Termitas",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA RESIDENCIAL COCOYOLES CASA 158 SANTA GERTRUDIS COPO",
+      "subtotal": 1293.1,
+      "cobrado": 1293.1,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 200
+        },
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 100
+        }
+      ],
+      "id": "wb1xtvx1"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-21",
+      "clienteId": "f923lo4l",
+      "tipo": "Control de Roedores",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 52 X 55 Y 53 ",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "gi0o52ny",
+          "cantidad": 2
+        },
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 60
+        }
+      ],
+      "id": "eget8tjb"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-21",
+      "clienteId": "9bo4ci5y",
+      "tipo": "Control de Termitas",
+      "tecnico": "SANTOS",
+      "zona": "CIRUELA 23 LA CEIBA MERIDA YUC",
+      "subtotal": 862.07,
+      "cobrado": 862.07,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 160
+        }
+      ],
+      "id": "aly6b7y7"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-22",
+      "clienteId": "nspw4ae1",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA NORTE MERIDA, LOTE 27",
+      "subtotal": 948.28,
+      "cobrado": 948.28,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 80
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "8cr0zgx8"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-23",
+      "clienteId": "kooczrd1",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "RESIDENCIAL PARQUE NATURA CALLE CIRUELA 189",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 150
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 150
+        }
+      ],
+      "id": "scdyqvvt"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-23",
+      "clienteId": "iftjdt94",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 60 DIAGONAL NUM 485 FRACCIONAMIENTO DEL PARQUE INDUSTRIAL 97302 MERIDA YUC",
+      "subtotal": 4000,
+      "cobrado": 4000,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 500
+        },
+        {
+          "productoId": "gi0o52ny",
+          "cantidad": 3
+        }
+      ],
+      "id": "3064gw1a"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-24",
+      "clienteId": "v96gdex2",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 19 NUM 195 ITZIMNA 97100 MERIDA YUC",
+      "subtotal": 603.45,
+      "cobrado": 603.45,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 150
+        }
+      ],
+      "id": "nh9r0zka"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-24",
+      "clienteId": "iftjdt94",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 60 DIAGONAL NUM 485 FRACCIONAMIENTO DEL PARQUE INDUSTRIAL 97302 MERIDA YUC",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "nr95ta95",
+          "cantidad": 160
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        },
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        }
+      ],
+      "id": "5kbssqhh"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-24",
+      "clienteId": "3gtzrpr3",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CENTRO COMERCIAL LA ISLA MERIDA, CABO NORTE",
+      "subtotal": 5087,
+      "cobrado": 5087,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 160
+        },
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        }
+      ],
+      "id": "lqsx4iqo"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-24",
+      "clienteId": "du59z33x",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 8 NUM 183 MONTECRISTO MERIDA",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "057vrn1b"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-25",
+      "clienteId": "lkv1ralb",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TRINUM CASA NUM 29 MERIDA YUC",
+      "subtotal": 775.86,
+      "cobrado": 775.86,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 160
+        }
+      ],
+      "id": "g74vkllp"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-25",
+      "clienteId": "ac0jiyvl",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADO PORTO ALEGRE CASA 7 SANTA GERTRUDIS COPO MERIDA YUC",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 160
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 90
+        }
+      ],
+      "id": "9jun30te"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-25",
+      "clienteId": "0pm3sw2g",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 96 NUM 771 / C INTERIOR 2 COLONIA OBRERA 97260 MERIDA YUC",
+      "subtotal": 2504.31,
+      "cobrado": 2504.31,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "lenyuwjl",
+          "cantidad": 320
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 300
+        }
+      ],
+      "id": "u2hw4hcr"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-27",
+      "clienteId": "hoxiqjg9",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA SOLUNA, ATRIA, CIRCUITO DEIMOS NUM 15",
+      "subtotal": 844.83,
+      "cobrado": 844.83,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "e3gdl0u9"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-27",
+      "clienteId": "t1m1o019",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TAMARA, LOTE 22, ZONA COUNTRY MERIDA YUC",
+      "subtotal": 850,
+      "cobrado": 850,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 120
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 1600
+        }
+      ],
+      "id": "u3gwakqe"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-27",
+      "clienteId": "edujyn06",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 9 NUM 110 SAN ANTONIO CINTA MERIDA YUC",
+      "subtotal": 450,
+      "cobrado": 450,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 120
+        }
+      ],
+      "id": "5j2o8gmp"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-28",
+      "clienteId": "4cpggx4x",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA COCOYOLES CASA 31, SANTAN GERTRUDIS COPO, MERIDA YUC",
+      "subtotal": 603.44,
+      "cobrado": 603.44,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 160
+        }
+      ],
+      "id": "jd8gixx0"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-29",
+      "clienteId": "uym3eu5b",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": " COCOYOLES CASA 129",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 160
+        }
+      ],
+      "id": "myyj8fbl"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-29",
+      "clienteId": "ccaq0t16",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CHAKA #99  RESIDENCIAL PARQUE NATURA",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 150
+        },
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 150
+        }
+      ],
+      "id": "3gflvxkv"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-29",
+      "clienteId": "maznsew2",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "RESIDENCIAL SAN GERONIMO CASA 33 CONKAL MERIDA",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 150
+        }
+      ],
+      "id": "mzo1015a"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-30",
+      "clienteId": "d2b64jby",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "RESIDENCIAL SAN GERONIMO CASA 34 SANTAGERTRUDIS COPO",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "nr95ta95",
+          "cantidad": 150
+        }
+      ],
+      "id": "ewp04p2f"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-04-29",
+      "clienteId": "edujyn06",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 25 #496 E COL JESUS CARRRANZA MERIDA YUCATAN",
+      "subtotal": 2340,
+      "cobrado": 2340,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 120
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 50
+        },
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 160
+        }
+      ],
+      "id": "kcksxdhl"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "xl2wno7w",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 712,
+      "cobrado": 712,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "btorg5o1"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "9kd6ynol",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 712,
+      "cobrado": 712,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "d6nqrvhe"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "aaaiuv80",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 712,
+      "cobrado": 712,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "8exikf1x"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "lgkbe68u",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 712,
+      "cobrado": 712,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "wrpq3vcl"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "uefgp9qm",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 712,
+      "cobrado": 712,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "w5vzv2jn"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "k2kza99b",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "fsqcp6eh"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "0gw1n26p",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "wjop94o0"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "nawod2fn",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "oqson98z"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "7495w8pz",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "re9p9ga4"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "rbvnthc5",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "7c04h6ed"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "lk5dprai",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "o794gynh"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "j8ttlasr",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "z7qy0axw"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "sebbezuy",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "wd92lqf7"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "fna1ikql",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "b820zqbc"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "i5gestoe",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "089j8jfe"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "78xyq7xh",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "kci5y770"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-22",
+      "clienteId": "i3wkixtt",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "PRADO NORTE",
+      "subtotal": 1100,
+      "cobrado": 1100,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        }
+      ],
+      "id": "8b8uvccy"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-28",
+      "clienteId": "13uzg3e3",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 1100,
+      "cobrado": 1100,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        }
+      ],
+      "id": "isimtwt1"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-27",
+      "clienteId": "8swpclxw",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "BOSQUE DE REAL DEL MONTE NUM 30 LA HERRADURA 52784 NAUCALPAN ESTADO DE MEXICO",
+      "subtotal": 1508.62,
+      "cobrado": 1508.62,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 240
+        }
+      ],
+      "id": "m7msd8ji"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-21",
+      "clienteId": "g2p1w1o3",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "JAJALPA, ESTADO DE MEXICO",
+      "subtotal": 2500,
+      "cobrado": 2500,
+      "formaPago": "Transferencia",
+      "observaciones": "SE FACTURA A INMUEBLES SANTA MARIA DE GUADALUPE",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 360
+        },
+        {
+          "productoId": "kg96pxcz",
+          "cantidad": 120
+        }
+      ],
+      "id": "zzsfmhdt"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-24",
+      "clienteId": "u7iggo31",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "LEONES 147 LAS AGUILAS CDMX",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        }
+      ],
+      "id": "7rumwmgx"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-20",
+      "clienteId": "he45vsur",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 0,
+      "cobrado": 711,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "yxgcszi8"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-24",
+      "clienteId": "nbhiqtrt",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 711,
+      "cobrado": 711,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "4uojgnme"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-21",
+      "clienteId": "2d2rd20m",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "PASEO DE LA REFORMA #2595 MIGUEL HIDALGO CDMX",
+      "subtotal": 1163.7931,
+      "cobrado": 1163.7931,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 112
+        }
+      ],
+      "id": "tc1odcn6"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-17",
+      "clienteId": "mkc18svl",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": " PROL MOCTEZUMA ORIENTE #72 COYOACAN CDMX",
+      "subtotal": 950,
+      "cobrado": 950,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 90
+        }
+      ],
+      "id": "gyp2ac18"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-30",
+      "clienteId": "y4dybkwk",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 790,
+      "cobrado": 0,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 180
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 56
+        }
+      ],
+      "id": "p6grk6hk"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-22",
+      "clienteId": "myrpcgt5",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "AV AZCAPOTZALCO #654-B CENTRO AZCAPOTZALCO",
+      "subtotal": 986,
+      "cobrado": 0,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 140
+        },
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "h3l16594"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-13",
+      "clienteId": "xz9fhme1",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "PASEO DE LOS LAURELES #268 CASA 25 BOSQUES DE LAS LOMAS CDMX",
+      "subtotal": 1379.3103,
+      "cobrado": 1379.3103,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 180
+        }
+      ],
+      "id": "57ljqns8"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-02",
+      "clienteId": "wnmhlrlp",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "RIO DE LA MAGDALENA 124 TIZAPAN SAN ANGEL ALVARO OBREGON CDMX",
+      "subtotal": 1980,
+      "cobrado": 1980,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 200
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 168
+        }
+      ],
+      "id": "zshlcfgr"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-04-15",
+      "clienteId": "nawod2fn",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "",
+      "subtotal": 562,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "et6sv5ac"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-02",
+      "clienteId": "9dobvrhs",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 17 # 23 LOCAL 1 LA FLORIDA MERIDA YUCATAN",
+      "subtotal": 431.03,
+      "cobrado": 431.03,
+      "formaPago": "Efectivo",
+      "observaciones": "SE FACTURA A :GRUPO CASA COMIDA CACERISIMO",
+      "productos": [
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 50
+        }
+      ],
+      "id": "z26rvson"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-02",
+      "clienteId": "x9mtlcjd",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "ENRIQUE REBSAMEN 411 A COLONIA NARVARTE CDMX",
+      "subtotal": 775.86,
+      "cobrado": 775.86,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        }
+      ],
+      "id": "co0mr621"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-04",
+      "clienteId": "77eqa1ly",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CARRETERA MERIDA PROGRESO KM 24 PARAISO C.P. 97320",
+      "subtotal": 1590,
+      "cobrado": 1590,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 200
+        },
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 100
+        }
+      ],
+      "id": "4xy3edxv"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-05",
+      "clienteId": "95arw1br",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PERIFERICO NORTE #19712 MONTECARLO MERIDA",
+      "subtotal": 1590,
+      "cobrado": 1590,
+      "formaPago": "Transferencia",
+      "observaciones": "SE FACTURA A: IM7 S.A. DE C.V.",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 200
+        },
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 100
+        }
+      ],
+      "id": "xevgpnug"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-05",
+      "clienteId": "dcvawn0g",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA VIVENZA CALLE 7B X 12 Y 12 A LOTE 17 SANTA GERTRUDIS COPO",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 120
+        },
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 80
+        }
+      ],
+      "id": "ut3254hw"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-05",
+      "clienteId": "wpanvow7",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PERIFERICO PONIENTE TAB CAT 18966 FRACC DIAMANTE MERIDA YUCATAN",
+      "subtotal": 1590,
+      "cobrado": 1590,
+      "formaPago": "Transferencia",
+      "observaciones": "SE FACTURA A :IM7 S.A. DE C.V.",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 200
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 100
+        }
+      ],
+      "id": "nhfctq9c"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-05",
+      "clienteId": "93pn5v27",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 7 #451 X 20 Y 22  FRACC. ALTABRISA MERIDA YUCATAN C.P. 97130",
+      "subtotal": 23290,
+      "cobrado": 0,
+      "formaPago": "Por cobrar",
+      "observaciones": "SE FACTURA A: CENTRO COMERCIAL ALTABRISA MERIDA",
+      "productos": [
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 200
+        },
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 300
+        }
+      ],
+      "id": "g59clxhw"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-06",
+      "clienteId": "1bnqfckn",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA RESIDENCIAL COCOYOLES",
+      "subtotal": 4460,
+      "cobrado": 4460,
+      "formaPago": "Transferencia",
+      "observaciones": "SE FACTURA A : PRIVADA RESIDENCIAL COCOYOLES",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 320
+        },
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 220
+        },
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 120
+        }
+      ],
+      "id": "vwptq2ry"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-06",
+      "clienteId": "iiizk9sw",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA YAAXLUM CONKAL CASA 334",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 80
+        },
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 120
+        }
+      ],
+      "id": "1t1gstky"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-06",
+      "clienteId": "a3z2gq80",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "RESIDENCIAL LA REJOYADA LOTE 237",
+      "subtotal": 1508.62,
+      "cobrado": 1508.62,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 240
+        },
+        {
+          "productoId": "gi0o52ny",
+          "cantidad": 3
+        },
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 90
+        },
+        {
+          "productoId": "nn2lwpcn",
+          "cantidad": 5
+        }
+      ],
+      "id": "36f1uful"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-06",
+      "clienteId": "kgxm0uxu",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "CAÑADA DE LOMBARDIA #101 INT B OLIVAR DE LOS PADRES CP01780",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 90
+        }
+      ],
+      "id": "8z484stm"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-07",
+      "clienteId": "kdnz9ga0",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 33 # 165 X 24 Y 26 MONTES DE AME",
+      "subtotal": 844.83,
+      "cobrado": 844.83,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 160
+        }
+      ],
+      "id": "oueoh40e"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-07",
+      "clienteId": "8orz1lzp",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 28 # 228 CERCA DE MACRO PLAZA",
+      "subtotal": 1853.45,
+      "cobrado": 1853.45,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 120
+        },
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 120
+        }
+      ],
+      "id": "0tov0cn3"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-07",
+      "clienteId": "ztea347c",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "RIO NAZAS 205 DEPTO. 302",
+      "subtotal": 603.45,
+      "cobrado": 603.45,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 60
+        }
+      ],
+      "id": "7639okh7"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-07",
+      "clienteId": "xuvwfxym",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 37 A #331X 24 Y 26 MONTEALBAN",
+      "subtotal": 775.86,
+      "cobrado": 775.86,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 120
+        }
+      ],
+      "id": "7twvamyl"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-07",
+      "clienteId": "u0dzgg7e",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "COCOYOLES CASA 87",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 60
+        },
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 80
+        }
+      ],
+      "id": "1lf2ix7m"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-08",
+      "clienteId": "avpiud3u",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "CDMX",
+      "subtotal": 1250,
+      "cobrado": 1250,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 200
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 168
+        }
+      ],
+      "id": "c32bg0qg"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-08",
+      "clienteId": "1srwdjzf",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 44 # 513",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "89701vw5",
+          "cantidad": 30
+        },
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 160
+        },
+        {
+          "productoId": "v1qo369t",
+          "cantidad": 100
+        }
+      ],
+      "id": "wnvxsuhc"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-08",
+      "clienteId": "enav963h",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 24 # 249 X 69 Y 71 MONTES DE AME",
+      "subtotal": 435.34,
+      "cobrado": 435.34,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 160
+        }
+      ],
+      "id": "5xjwh3g1"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-08",
+      "clienteId": "ztea347c",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 24 A #506 COL MAYA DEPTO. 4",
+      "subtotal": 646.55,
+      "cobrado": 646.55,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 100
+        }
+      ],
+      "id": "u2mqtup4"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-08",
+      "clienteId": "ye0qrxg9",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "TZALAM # 27  PRIVADA PARQUE NATURA",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 160
+        },
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 40
+        }
+      ],
+      "id": "2tqh6ae7"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-09",
+      "clienteId": "2krysi2f",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "TERRENO TEMOZON",
+      "subtotal": 689.66,
+      "cobrado": 689.66,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 200
+        }
+      ],
+      "id": "h4g8jdtn"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-11",
+      "clienteId": "1iojjnck",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "PASEO DEL ANAHUAC #125 PASEO DE LAS PALMAS CDMX",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        }
+      ],
+      "id": "t2lw3yy3"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-11",
+      "clienteId": "1iojjnck",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "FUENTES DE ACUEDUCTO #21 A",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 120
+        }
+      ],
+      "id": "v80j92hj"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-12",
+      "clienteId": "kbi8v28c",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE KALATOX # 49 PARQUE NATURA MERIDA",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "nn2lwpcn",
+          "cantidad": 5
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 120
+        }
+      ],
+      "id": "1qezn1wk"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-13",
+      "clienteId": "7xcxq0ll",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": " CDMX CALLE LLUVIA # 460 JARDINES DEL PEDREGAL",
+      "subtotal": 862.07,
+      "cobrado": 862.07,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 240
+        }
+      ],
+      "id": "jcp098gv"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-13",
+      "clienteId": "2lkkltnk",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 5 X 32 PENSIONES MERIDA YUCATAN",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 120
+        }
+      ],
+      "id": "mx9lo5qy"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-13",
+      "clienteId": "bmtkwrgw",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "AVENIDA DEL JAGUAR #249 YUCATAN COUNTRY CLUB MERIDA",
+      "subtotal": 1120.69,
+      "cobrado": 1120.69,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 240
+        }
+      ],
+      "id": "whbb03ds"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-13",
+      "clienteId": "4kkr6w1g",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PROVINCIA GOLF CLUB 331",
+      "subtotal": 1034.48,
+      "cobrado": 1034.48,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 120
+        },
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 160
+        }
+      ],
+      "id": "t91hkaa6"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-13",
+      "clienteId": "adw9dyel",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "SOLUNA CERRADA ORION CALLE GLIESE #12",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 160
+        }
+      ],
+      "id": "mqeexnlv"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-13",
+      "clienteId": "ac0jiyvl",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PORTO ALEGRE CASA 7",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 160
+        },
+        {
+          "productoId": "zapqztf4",
+          "cantidad": 120
+        }
+      ],
+      "id": "kkpsvhew"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-14",
+      "clienteId": "ojsrdn39",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA COCOYOLES CASA 132",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 160
+        }
+      ],
+      "id": "rwzs1ceb"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-14",
+      "clienteId": "czahf4d4",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TRINUM CASA 4 SANTA GERTRUDIS COPO MERIDA YUC",
+      "subtotal": 732.76,
+      "cobrado": 732.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        }
+      ],
+      "id": "m4bpq9gr"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-14",
+      "clienteId": "dz3mjijv",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA EL TRIUNFO CASA 20 MERIDA YUCATAN PERIFERICO LIC MANUEL BERZUNZA",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "0osm4yx4",
+          "cantidad": 160
+        }
+      ],
+      "id": "zn4m0jgk"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-15",
+      "clienteId": "4yphnm9r",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "PARQUE DE TOLEDO #15 CDMX",
+      "subtotal": 1206.9,
+      "cobrado": 1206.9,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 200
+        }
+      ],
+      "id": "t6ln0cdj"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-15",
+      "clienteId": "onfp7ash",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA XPOKIN  75 YUCATAN COUNTRY CLUB",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "i9dj1144",
+          "cantidad": 160
+        }
+      ],
+      "id": "y0vonzmt"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-16",
+      "clienteId": "iftjdt94",
+      "tipo": "Otro",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 60 DIAG 3485, PARQUE INDUSTRIAL CP 97302 MERIDA YUCATAN",
+      "subtotal": 950,
+      "cobrado": 950,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "3j3y2evn",
+          "cantidad": 1
+        }
+      ],
+      "id": "gfwwxeal"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-16",
+      "clienteId": "x332v8xh",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "COCOYOLES  CASA 21",
+      "subtotal": 603.45,
+      "cobrado": 603.45,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 160
+        }
+      ],
+      "id": "pgmztk36"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-16",
+      "clienteId": "9hb7p4dl",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 49 E FRANCISCO DE MONTEJO",
+      "subtotal": 3900,
+      "cobrado": 3900,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 300
+        },
+        {
+          "productoId": "alz7rx8o",
+          "cantidad": 200
+        }
+      ],
+      "id": "moevo755"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-16",
+      "clienteId": "u3w2aoqi",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 13 # 304 A X 8 Y 6 SANTA RITA CHOLUL ",
+      "subtotal": 818.97,
+      "cobrado": 818.97,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "s1bz5xl5",
+          "cantidad": 160
+        }
+      ],
+      "id": "m0s36iw2"
+    },
+    {
+      "ciudad": "CDMX",
+      "fecha": "2026-05-18",
+      "clienteId": "1kml8pv5",
+      "tipo": "Fumigacion General",
+      "tecnico": "FREDDY",
+      "zona": "BOSQUE DE AMATES NUM 129 BOSQUES DE LAS LOMAS, CDMX",
+      "subtotal": 1982.76,
+      "cobrado": 1982.76,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "6dr14dwp",
+          "cantidad": 180
+        }
+      ],
+      "id": "1vh09bvl"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-18",
+      "clienteId": "1srwdjzf",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 44 # 513",
+      "subtotal": 0,
+      "cobrado": 0,
+      "formaPago": "Cortesia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "nr95ta95",
+          "cantidad": 120
+        },
+        {
+          "productoId": "89701vw5",
+          "cantidad": 100
+        }
+      ],
+      "id": "1phz0a0e"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-18",
+      "clienteId": "1r4kkfo0",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA TRINUM CASA 73",
+      "subtotal": 3017.24,
+      "cobrado": 3017.24,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 160
+        },
+        {
+          "productoId": "6e2pwtvy",
+          "cantidad": 160
+        }
+      ],
+      "id": "03wom07x"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-19",
+      "clienteId": "p7qjui17",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CALLE 56 A #425 A PASEO DE MONTEJO MERIDA YUCATAN CP 97000",
+      "subtotal": 1190,
+      "cobrado": 1190,
+      "formaPago": "Transferencia",
+      "observaciones": "SE FACTURA A; KARIN ENRIQUE CORTES RIOJAN",
+      "productos": [
+        {
+          "productoId": "89701vw5",
+          "cantidad": 160
+        }
+      ],
+      "id": "v7rv9sh7"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-19",
+      "clienteId": "glbj9pu3",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "PRIVADA ALLEGRA MADEIRA CASA E 1 TEMOZON MERIDA YUCATAN",
+      "subtotal": 1120.69,
+      "cobrado": 1120.69,
+      "formaPago": "Efectivo",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "3wispk4v",
+          "cantidad": 160
+        },
+        {
+          "productoId": "ax3jy9f7",
+          "cantidad": 300
+        }
+      ],
+      "id": "r5995moa"
+    },
+    {
+      "ciudad": "Yucatan",
+      "fecha": "2026-05-19",
+      "clienteId": "bcex0hdg",
+      "tipo": "Fumigacion General",
+      "tecnico": "SANTOS",
+      "zona": "CHACA 96 PARQUE NATURA MERIDA YUCATAN",
+      "subtotal": 1250,
+      "cobrado": 1250,
+      "formaPago": "Transferencia",
+      "observaciones": "",
+      "productos": [
+        {
+          "productoId": "89701vw5",
+          "cantidad": 160
+        },
+        {
+          "productoId": "u6yohchc",
+          "cantidad": 160
+        }
+      ],
+      "id": "wdur5p0p"
+    }
+  ],
+  "compras": [
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-14",
+      "productoId": "i9dj1144",
+      "cantidad": 2,
+      "costoUnitario": 699,
+      "proveedor": "URBANIA",
+      "factura": "A19588",
+      "notas": "",
+      "id": "8e1ksmzz"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-14",
+      "productoId": "alz7rx8o",
+      "cantidad": 2,
+      "costoUnitario": 685,
+      "proveedor": "URBANIA",
+      "factura": "A19588",
+      "notas": "",
+      "id": "ycc72r7a"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-14",
+      "productoId": "3wispk4v",
+      "cantidad": 2,
+      "costoUnitario": 928.1,
+      "proveedor": "URBANIA",
+      "factura": "A19588",
+      "notas": "",
+      "id": "fn9kdoxb"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "mh5s204t",
+      "cantidad": 72,
+      "costoUnitario": 6.98,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "d0prup1f"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "89701vw5",
+      "cantidad": 5,
+      "costoUnitario": 98,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "80pfqscv"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "v1qo369t",
+      "cantidad": 5,
+      "costoUnitario": 206.49,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "aktn48f3"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "2jk2cehb",
+      "cantidad": 15,
+      "costoUnitario": 531.3333,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "jvbg0z9e"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "7ofmv0q6",
+      "cantidad": 1,
+      "costoUnitario": 259,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "885rwfmk"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "vtak98i0",
+      "cantidad": 2,
+      "costoUnitario": 428.33,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "xwytz51o"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "0osm4yx4",
+      "cantidad": 2,
+      "costoUnitario": 1003.77,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "rvsm35ki"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "kg96pxcz",
+      "cantidad": 3,
+      "costoUnitario": 599,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "bg1y7a06"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "ax3jy9f7",
+      "cantidad": 3,
+      "costoUnitario": 363.8,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "59yfpuzx"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "s1bz5xl5",
+      "cantidad": 2,
+      "costoUnitario": 467.53,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "llsmd7h4"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "nr95ta95",
+      "cantidad": 1,
+      "costoUnitario": 475,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "9srx4j3h"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "gi0o52ny",
+      "cantidad": 25,
+      "costoUnitario": 68,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "brnm5fuj"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "nn2lwpcn",
+      "cantidad": 72,
+      "costoUnitario": 5.4,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "nzwxa256"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "6e2pwtvy",
+      "cantidad": 2,
+      "costoUnitario": 417.33,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "3oc0vjwc"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "ikr5c9wo",
+      "cantidad": 5,
+      "costoUnitario": 139,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "u88uae32"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "lenyuwjl",
+      "cantidad": 1,
+      "costoUnitario": 935.7,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "jfklck2f"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "u6yohchc",
+      "cantidad": 2,
+      "costoUnitario": 664,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "5bw1lx8q"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-04-15",
+      "productoId": "zapqztf4",
+      "cantidad": 3,
+      "costoUnitario": 204.47,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68192",
+      "notas": "",
+      "id": "xxx174gq"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-05-21",
+      "productoId": "6e2pwtvy",
+      "cantidad": 1,
+      "costoUnitario": 407.9,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68605",
+      "notas": "",
+      "id": "vhwbki00"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-05-21",
+      "productoId": "kg96pxcz",
+      "cantidad": 1,
+      "costoUnitario": 599,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68605",
+      "notas": "",
+      "id": "3q3ieg8k"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-05-21",
+      "productoId": "rupy5w43",
+      "cantidad": 1,
+      "costoUnitario": 559,
+      "proveedor": "ECOSISTEMAS",
+      "factura": "68605",
+      "notas": "",
+      "id": "4tnoj78n"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-04-15",
+      "productoId": "6dr14dwp",
+      "cantidad": 2,
+      "costoUnitario": 580,
+      "proveedor": "URBANIA",
+      "factura": "NOTA",
+      "notas": "COMPRO FREDDY EN CDMX",
+      "id": "i77s6y9o"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "fecha": "2026-05-29",
+      "productoId": "mh5s204t",
+      "cantidad": 0,
+      "costoUnitario": 0,
+      "proveedor": "",
+      "factura": "",
+      "notas": "",
+      "id": "t681f6t2"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-05-29",
+      "productoId": "6dr14dwp",
+      "cantidad": 4,
+      "costoUnitario": 580,
+      "proveedor": "URBANIA",
+      "factura": "NOTA REMISION",
+      "notas": "LA COMPRA LA HIZO FREDDY",
+      "id": "es6ll4vl"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-05-29",
+      "productoId": "zapqztf4",
+      "cantidad": 2,
+      "costoUnitario": 204.47,
+      "proveedor": "URBANIA",
+      "factura": "NOTA REMISION",
+      "notas": "COMPRA REALIZADA POR FREDDY EN CDMX",
+      "id": "1lem4876"
+    },
+    {
+      "pagadoPor": "VICTOR",
+      "fecha": "2026-05-11",
+      "productoId": "3j3y2evn",
+      "cantidad": 1,
+      "costoUnitario": 79,
+      "proveedor": "URBANIA",
+      "factura": "00000",
+      "notas": "",
+      "id": "l6xe6tj5"
+    }
+  ],
+  "gastos": [
+    {
+      "id": "cp630eiu",
+      "fecha": "2026-04-15",
+      "categoria": "Gasolina / Combustible",
+      "descripcion": "Carga  gasolina",
+      "monto": 850,
+      "comprobante": "Ticket",
+      "pagadoPor": "VICTOR"
+    },
+    {
+      "fecha": "2026-05-28",
+      "categoria": "Otros Gastos",
+      "monto": 386.84,
+      "comprobante": "CODEX",
+      "pagadoPor": "VICTOR",
+      "descripcion": "PAGO POR PLATAFORMA NUEVA CODEX PARA APLICACION ADMINISTRATIVA",
+      "id": "ip1qpd8g"
+    },
+    {
+      "fecha": "2026-04-21",
+      "categoria": "Gasolina / Combustible",
+      "monto": 750,
+      "comprobante": "Ticket",
+      "pagadoPor": "VICTOR",
+      "descripcion": "CARGA GASOLINA COCHE VICTOR",
+      "id": "mwel829q"
+    }
+  ],
+  "equipos": [
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "TERMONEBULIZADOR TERMOBARRET",
+      "unidad": "1",
+      "costo": 10650,
+      "fecha": "2026-04-16",
+      "vida": 5,
+      "residual": 0,
+      "id": "enkq950h"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ASPERSORA ELECTRICA HUSKY",
+      "unidad": "1",
+      "costo": 1522,
+      "fecha": "2026-04-16",
+      "vida": 1,
+      "residual": 0,
+      "id": "qi61lhho"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ASPERSORA PACTO 8",
+      "unidad": "1",
+      "costo": 870,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "77aolhyz"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ASPERSORA PACTO 5",
+      "unidad": "1",
+      "costo": 699,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "53i7yi2x"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "RESPIRADOR 3N MEDIA CARA",
+      "unidad": "1",
+      "costo": 189.72,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "wbwkh7b6"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "RESPIRADOR 3N MEDIA CARA",
+      "unidad": "1",
+      "costo": 189.72,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "9n4i3rxz"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CARTUCHO VAPORES ORGANICOS",
+      "unidad": "1",
+      "costo": 128.88,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "zze0a483"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CARTUCHO VAPORES ORGANICOS",
+      "unidad": "1",
+      "costo": 128.88,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "keffd8zl"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CARTUCHO VAPORES ORGANICOS",
+      "unidad": "1",
+      "costo": 128.88,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "22mtlf8l"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CARTUCHO VAPORES ORGANICOS",
+      "unidad": "1",
+      "costo": 128.88,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "tgjacl9o"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "GOGGLE ANTIEMPAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ANTE LAMIDA 4012",
+      "unidad": "1",
+      "costo": 25,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "641g0qfa"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "GOGGLE ANTIEMPAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ANTE LAMIDA 4012",
+      "unidad": "1",
+      "costo": 25,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "iu6bzrhq"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CABEZAL LAMIDA AMARILLO 4472",
+      "unidad": "1",
+      "costo": 103.45,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "g0uz6kin"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CABEZAL LAMIDA AMARILLO 4472",
+      "unidad": "1",
+      "costo": 103.45,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "a7afge6e"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "MICA POLICARBONATO PROTECTOR FACIAL",
+      "unidad": "1",
+      "costo": 34.48,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "f8n230r6"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "MICA POLICARBONATO PROTECTOR FACIAL",
+      "unidad": "1",
+      "costo": 34.48,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "dnhdo8ci"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "BOTA CON CASQUILLO BORCEGUI ARMADA",
+      "unidad": "1",
+      "costo": 703,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "545qlqd7"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "LAMPARA REFLECTORA 900LM",
+      "unidad": "1",
+      "costo": 607.75,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "a1bunltq"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "DESARMADOR MULTIPUNTA 33 PUNTAS",
+      "unidad": "1",
+      "costo": 112.93,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "jo1uhelr"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "PINZA PUNTA Y CORTE # 8",
+      "unidad": "1",
+      "costo": 158.9,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "r7han4gq"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CINTA METRICA 20 M PLASTICA",
+      "unidad": "1",
+      "costo": 181.89,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "o6m3eqcr"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "MARTILLO UÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“A RECTA 16 OZ",
+      "unidad": "1",
+      "costo": 85.92,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "yvoi94nn"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "PISTOLA CALAFATEADORA REFORZADA ",
+      "unidad": "1",
+      "costo": 139.36,
+      "fecha": "2026-04-15",
+      "vida": 3,
+      "residual": 0,
+      "id": "i6dsoc71"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ESPATULA DE 4PULGADAS FLEXIBLE PRETUL",
+      "unidad": "1",
+      "costo": 20.68,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "jtgr5h73"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ESPATULA 4 PULGADAS FLEXIBLE PRETUL",
+      "unidad": "1",
+      "costo": 20.68,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "wcwtdqt8"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ESPATULA 4 PULGADAS FLEXIBLE PRETUL",
+      "unidad": "1",
+      "costo": 20.68,
+      "fecha": "2026-04-15",
+      "vida": 2,
+      "residual": 0,
+      "id": "4z40o4kp"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "TOALLA MICROFIBRA 40 X 40",
+      "unidad": "1",
+      "costo": 22.13,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "f64pq816"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "TOALLA MICROFIBRA 40 X 40",
+      "unidad": "1",
+      "costo": 22.13,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "91c8yqtx"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "TOALLA MICROFIBRA 40 X 40",
+      "unidad": "1",
+      "costo": 22.13,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "208o91cf"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "TOALLA MICROFIBRA 40 X 40",
+      "unidad": "1",
+      "costo": 22.13,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "ekpri0wq"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "TOALLA MICROFIBRA 40 X 40",
+      "unidad": "1",
+      "costo": 22.13,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "ywpchjje"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ROTOMARTILLO 1/2 5 JOULES",
+      "unidad": "1",
+      "costo": 2252.87,
+      "fecha": "2026-04-15",
+      "vida": 5,
+      "residual": 0,
+      "id": "bzyoyzrb"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ASPERSORA PULVERIZADOR B&G ACERO INOXIDABLE",
+      "unidad": "1",
+      "costo": 7387,
+      "fecha": "2026-04-15",
+      "vida": 5,
+      "residual": 0,
+      "id": "hd51svxi"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "ASPERSORA FUMIGADORA ELECTRICA HUSKY 20 LT",
+      "unidad": "1",
+      "costo": 1060,
+      "fecha": "2026-04-15",
+      "vida": 1,
+      "residual": 0,
+      "id": "fe0i6alk"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "CAJA TRANSPORTADORA DE QUIMICOS HUSKY",
+      "unidad": "1",
+      "costo": 1215,
+      "fecha": "2026-04-15",
+      "vida": 5,
+      "residual": 0,
+      "id": "egzxtsg9"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "",
+      "unidad": "1",
+      "costo": 0,
+      "fecha": "2026-05-28",
+      "vida": 0,
+      "residual": 0,
+      "id": "e4p2qll2"
+    },
+    {
+      "pagadoPor": "SISPROVISA",
+      "equipo": "",
+      "unidad": "1",
+      "costo": 0,
+      "fecha": "2026-05-29",
+      "vida": 0,
+      "residual": 0,
+      "id": "kxfs38qw"
+    }
+  ]
+}
