@@ -57,7 +57,7 @@ def supabase_request(method, path, payload=None):
     data = None
     if payload is not None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers["Prefer"] = "return=representation"
+        headers["Prefer"] = "resolution=merge-duplicates,return=representation"
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
     with urllib.request.urlopen(request, timeout=20) as response:
         body = response.read().decode("utf-8")

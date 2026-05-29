@@ -130,11 +130,85 @@ async function loadInitialState() {
     const response = await fetch("/api/state", { cache: "no-store" });
     const data = await response.json();
     const hasData = data && Object.keys(data).length > 0;
-    return migrateState(hasData ? data : structuredClone(seed));
+    const remoteState = migrateState(hasData ? data : structuredClone(seed));
+    const localRecovery = bestLocalRecoveryState(remoteState);
+    if (localRecovery) {
+      await saveRemoteState(localRecovery);
+      alert("Se recupero informacion guardada en este navegador y se subio a la nube. Revise los ultimos registros.");
+      return migrateState(localRecovery);
+    }
+    return remoteState;
   } catch (error) {
     alert("No se pudo cargar la base compartida. Se usara modo local de este navegador.");
     return loadState();
   }
+}
+
+function bestLocalRecoveryState(remoteState) {
+  const candidates = [];
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) candidates.push(JSON.parse(saved));
+  } catch (error) {
+    console.warn("No se pudo leer respaldo local principal", error);
+  }
+  try {
+    const backups = JSON.parse(localStorage.getItem(BACKUP_KEY) || "[]");
+    backups.forEach((backup) => {
+      if (backup?.data) candidates.push(backup.data);
+    });
+  } catch (error) {
+    console.warn("No se pudieron leer respaldos locales", error);
+  }
+
+  const best = candidates
+    .map((candidate) => {
+      try {
+        return migrateState(structuredClone(candidate));
+      } catch (error) {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => totalRecords(b) - totalRecords(a))[0];
+
+  if (!best || !hasMoreRecords(best, remoteState)) return null;
+  return mergeStatesById(remoteState, best);
+}
+
+function totalRecords(data) {
+  return ["clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos"]
+    .reduce((sum, key) => sum + (Array.isArray(data[key]) ? data[key].length : 0), 0);
+}
+
+function hasMoreRecords(candidate, remoteState) {
+  return ["clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos"]
+    .some((key) => (candidate[key] || []).length > (remoteState[key] || []).length);
+}
+
+function mergeStatesById(remoteState, localState) {
+  const merged = structuredClone(remoteState);
+  ["clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos"].forEach((key) => {
+    const rows = [...(remoteState[key] || [])];
+    const seen = new Set(rows.map((row) => row.id || row.nombre).filter(Boolean));
+    (localState[key] || []).forEach((row) => {
+      const rowId = row.id || row.nombre;
+      if (!rowId || seen.has(rowId)) return;
+      rows.push(row);
+      seen.add(rowId);
+    });
+    merged[key] = rows;
+  });
+  return merged;
+}
+
+async function saveRemoteState(nextState) {
+  if (!SERVER_MODE) return;
+  await fetch("/api/state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(nextState),
+  });
 }
 
 function migrateState(data) {
@@ -261,11 +335,7 @@ function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     return;
   }
-  fetch("/api/state", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(state),
-  }).catch(() => {
+  saveRemoteState(state).catch(() => {
     alert("No se pudo guardar en la base compartida. Revise que el servidor siga abierto.");
   });
 }
