@@ -10,6 +10,7 @@ const users = [
 const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
+  { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
   { id: "productos", label: "Productos", icon: "Stock", roles: ["admin"] },
@@ -44,6 +45,7 @@ const seed = {
     { id: uid(), nombre: "Otro", precio: 0 },
   ],
   servicios: [],
+  programaciones: [],
   compras: [],
   gastos: [
     { id: uid(), fecha: today(-6), categoria: "Gasolina / Combustible", descripcion: "Carga semanal", monto: 850, comprobante: "Ticket", pagadoPor: "VICTOR" },
@@ -178,18 +180,18 @@ function bestLocalRecoveryState(remoteState) {
 }
 
 function totalRecords(data) {
-  return ["clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos"]
+  return ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"]
     .reduce((sum, key) => sum + (Array.isArray(data[key]) ? data[key].length : 0), 0);
 }
 
 function hasMoreRecords(candidate, remoteState) {
-  return ["clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos"]
+  return ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"]
     .some((key) => (candidate[key] || []).length > (remoteState[key] || []).length);
 }
 
 function mergeStatesById(remoteState, localState) {
   const merged = structuredClone(remoteState);
-  ["clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos"].forEach((key) => {
+  ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"].forEach((key) => {
     const rows = [...(remoteState[key] || [])];
     const seen = new Set(rows.map((row) => row.id || row.nombre).filter(Boolean));
     (localState[key] || []).forEach((row) => {
@@ -281,6 +283,17 @@ function migrateState(data) {
     ...servicio,
     ciudad: servicio.ciudad || "Yucatan",
     tecnico: servicio.tecnico === "SISPROVISA" ? "SANTOS" : servicio.tecnico,
+  }));
+  data.programaciones = (data.programaciones || []).map((programacion) => ({
+    fecha: today(),
+    hora: "09:00",
+    ciudad: "Yucatan",
+    tecnico: "SANTOS",
+    estatus: "Programado",
+    ...programacion,
+    ciudad: programacion.ciudad || programacion.operacion || "Yucatan",
+    tecnico: programacion.tecnico === "SISPROVISA" ? "SANTOS" : programacion.tecnico || "SANTOS",
+    estatus: programacion.estatus || "Programado",
   }));
   data.schemaVersion = 2;
   return data;
@@ -657,6 +670,10 @@ function equiposFiltradosOperacion() {
   return state.equipos.filter((equipo) => matchesOperacion(equipo));
 }
 
+function programacionesFiltradasOperacion() {
+  return state.programaciones.filter((programacion) => matchesOperacion(programacion, "Yucatan"));
+}
+
 function operationFilterControl() {
   const options = ["Todas", "Yucatan", "CDMX", "Sin clasificar"];
   return `
@@ -818,6 +835,7 @@ function renderModule() {
   const map = {
     dashboard: renderDashboard,
     clientes: renderClientes,
+    programacion: renderProgramacion,
     servicios: renderServicios,
     tiposServicio: renderTiposServicio,
     productos: renderProductos,
@@ -1154,6 +1172,36 @@ function renderClientes() {
   `;
 }
 
+function renderProgramacion() {
+  const rows = [...programacionesFiltradasOperacion()].sort((a, b) => {
+    const dateCompare = String(a.fecha || "").localeCompare(String(b.fecha || ""));
+    if (dateCompare !== 0) return dateCompare;
+    const timeCompare = String(a.hora || "").localeCompare(String(b.hora || ""));
+    if (timeCompare !== 0) return timeCompare;
+    return String(a.id || "").localeCompare(String(b.id || ""));
+  });
+  return `
+    ${topbar("Programacion", "Agenda interna de servicios por fecha, tecnico y operacion.", `${operationFilterControl()}<button class="primary" data-open="programacion">Nuevo programado</button>`)}
+    <section class="panel">
+      <h2>Servicios programados</h2>
+      <div class="table-card service-list">
+        <table>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th></th></tr></thead>
+          <tbody>
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-convert-programacion="${p.id}">Crear servicio</button><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="8">Aun no hay servicios programados para este filtro.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function programacionPill(estatus) {
+  const value = estatus || "Programado";
+  const className = value === "Realizado" ? "good" : value === "Cancelado" ? "pending" : "";
+  return `<span class="pill ${className}">${value}</span>`;
+}
+
 function renderServiciosAnterior() {
   return `
     ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `<button class="primary" data-open="servicio">Nuevo servicio</button>`)}
@@ -1411,7 +1459,7 @@ function rowActions(type, id) {
 
 function renderModal() {
   const { type, id } = modal;
-  const data = id ? state[typeToCollection(type)].find((x) => x.id === id || x.nombre === id) : {};
+  const data = modal.data || (id ? state[typeToCollection(type)].find((x) => x.id === id || x.nombre === id) : {});
   return `
     <div class="modal-backdrop">
       <div class="modal">
@@ -1434,11 +1482,11 @@ function renderModal() {
 }
 
 function modalTitle(type) {
-  return { cliente: "cliente", servicio: "servicio", tipoServicio: "tipo de servicio", producto: "producto", compra: "compra", gasto: "gasto", equipo: "equipo" }[type];
+  return { cliente: "cliente", programacion: "programado", servicio: "servicio", tipoServicio: "tipo de servicio", producto: "producto", compra: "compra", gasto: "gasto", equipo: "equipo" }[type];
 }
 
 function typeToCollection(type) {
-  return { cliente: "clientes", servicio: "servicios", tipoServicio: "tiposServicio", producto: "productos", compra: "compras", gasto: "gastos", equipo: "equipos" }[type];
+  return { cliente: "clientes", programacion: "programaciones", servicio: "servicios", tipoServicio: "tiposServicio", producto: "productos", compra: "compras", gasto: "gastos", equipo: "equipos" }[type];
 }
 
 function input(name, label, value = "", type = "text", extra = "") {
@@ -1463,6 +1511,13 @@ function formFor(type, data) {
   }
   if (type === "tipoServicio") {
     return `<div class="form-grid">${input("nombre", "Tipo de servicio", data.nombre, "text", "wide")}</div>`;
+  }
+  if (type === "programacion") {
+    const clienteOptions = [...state.clientes]
+      .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
+      .map((c) => ({ value: c.id, label: c.nombre }));
+    const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
+    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico", data.tecnico || "SANTOS", ["SANTOS", "VICTOR", "FREDDY"].map((x) => ({ value: x, label: x })))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${input("direccion", "Direccion / referencia", data.direccion, "text", "wide")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
   }
   if (type === "compra") {
     return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("productoId", "Producto", data.productoId, state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadCompra || "unidad"})` })), "wide")}${input("cantidad", "Cantidad comprada", data.cantidad, "number")}${input("costoUnitario", "Costo por unidad comprada", data.costoUnitario, "number")}${input("proveedor", "Proveedor", data.proveedor)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${input("factura", "Factura / ref.", data.factura)}${text("notas", "Notas", data.notas, "full")}</div>`;
@@ -1517,6 +1572,28 @@ function bindApp() {
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
       modal = { type: button.dataset.edit, id: button.dataset.id };
+      render();
+    });
+  });
+  document.querySelectorAll("[data-convert-programacion]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const programacion = state.programaciones.find((item) => item.id === button.dataset.convertProgramacion);
+      if (!programacion) return;
+      modal = {
+        type: "servicio",
+        data: {
+          fecha: programacion.fecha,
+          clienteId: programacion.clienteId,
+          ciudad: programacion.ciudad,
+          tipo: programacion.tipo,
+          tecnico: programacion.tecnico,
+          zona: programacion.direccion,
+          observaciones: programacion.notas,
+          formaPago: "Por cobrar",
+          subtotal: 0,
+          cobrado: 0,
+        },
+      };
       render();
     });
   });
