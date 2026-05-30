@@ -1449,9 +1449,12 @@ function formServicio(data) {
     return `${select(`productoId${index}`, `Producto ${index + 1}`, item.productoId, [{ value: "", label: "Sin producto" }, ...state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadUso || ""})` }))])}${input(`cantidad${index}`, "Cantidad usada en ml, gramos o piezas", item.cantidad, "number")}`;
   }).join("");
   const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
+  const clienteOptions = [...state.clientes]
+    .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
+    .map((c) => ({ value: c.id, label: c.nombre }));
   return `<div class="form-grid">
     ${input("fecha", "Fecha", data.fecha || today(), "date")}
-    ${select("clienteId", "Cliente", data.clienteId, state.clientes.map((c) => ({ value: c.id, label: c.nombre })), "wide")}
+    ${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}
     ${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}
     ${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}
     ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY"].map((x) => ({ value: x, label: x })))}
