@@ -434,9 +434,9 @@ function serviciosOrdenados() {
   });
 }
 
-function comprasOrdenadas(productoId) {
+function comprasOrdenadas(productoId, operacion = null) {
   return state.compras
-    .filter((compra) => compra.productoId === productoId)
+    .filter((compra) => compra.productoId === productoId && (!operacion || operacionRegistro(compra) === operacion))
     .map((compra) => {
       const product = state.productos.find((p) => p.id === productoId);
       return {
@@ -453,10 +453,11 @@ function comprasOrdenadas(productoId) {
     });
 }
 
-function lotesRestantesProducto(productoId) {
-  const lots = comprasOrdenadas(productoId);
+function lotesRestantesProducto(productoId, operacion = null) {
+  const lots = comprasOrdenadas(productoId, operacion);
 
   for (const servicio of serviciosOrdenados()) {
+    if (operacion && operacionRegistro(servicio, "Yucatan") !== operacion) continue;
     for (const item of servicio.productos || []) {
       if (item.productoId !== productoId) continue;
       let remainingUse = Number(item.cantidad || 0);
@@ -473,8 +474,8 @@ function lotesRestantesProducto(productoId) {
   return lots.filter((lot) => lot.remaining > 0);
 }
 
-function costoProximoLoteUso(productoId) {
-  const lots = lotesRestantesProducto(productoId);
+function costoProximoLoteUso(productoId, operacion = null) {
+  const lots = lotesRestantesProducto(productoId, operacion);
   return lots.length ? lots[0].costPerUse : costoProducto(productoId);
 }
 
@@ -1299,9 +1300,16 @@ function renderProductos() {
 
 function renderCompras() {
   const comprasRows = comprasFiltradasOperacion();
-  const productosConMovimiento = state.productos
-    .filter((p) => comprasRows.some((c) => c.productoId === p.id) || cantidadConsumidaUso(p.id) > 0)
-    .sort((a, b) => String(a.producto || "").localeCompare(String(b.producto || "")));
+  const stockOperacion = operacionFilter === "Todas" ? null : operacionFilter;
+  const stockRows = state.productos
+    .map((p) => {
+      const comprado = stockOperacion ? cantidadCompradaUsoOperacion(p.id, stockOperacion) : cantidadCompradaUso(p.id);
+      const consumido = stockOperacion ? cantidadConsumidaUsoOperacion(p.id, stockOperacion) : cantidadConsumidaUso(p.id);
+      const lotes = lotesRestantesProducto(p.id, stockOperacion);
+      return { producto: p, comprado, consumido, stock: comprado - consumido, lotes };
+    })
+    .filter((row) => row.comprado > 0 || row.consumido > 0 || row.lotes.length > 0)
+    .sort((a, b) => String(a.producto.producto || "").localeCompare(String(b.producto.producto || "")));
   const comprasMensuales = comprasPorMes();
   const maxCompraMensual = Math.max(...comprasMensuales.map((row) => row.total), 1);
   return `
@@ -1318,18 +1326,15 @@ function renderCompras() {
     </section>
     ${renderComprasPagadorResumen()}
     <section class="panel" style="margin-top:14px">
-      <h2>Stock por producto</h2>
+      <h2>Stock por producto ${stockOperacion ? `- ${stockOperacion}` : "- global"}</h2>
       <div class="table-card service-list">
         <table>
           <thead><tr><th>Producto</th><th>Comprado</th><th>Usado</th><th>Stock disponible</th><th>Lotes abiertos</th><th>Proximo costo</th></tr></thead>
           <tbody>
-            ${productosConMovimiento.length ? productosConMovimiento.map((p) => {
-              const comprado = cantidadCompradaUso(p.id);
-              const consumido = cantidadConsumidaUso(p.id);
-              const stock = comprado - consumido;
-              const lotes = lotesRestantesProducto(p.id);
-              return `<tr><td data-label="Producto"><strong>${p.producto}</strong></td><td data-label="Comprado">${number(comprado)} ${p.unidadUso || ""}</td><td data-label="Usado">${number(consumido)} ${p.unidadUso || ""}</td><td data-label="Stock disponible"><strong>${number(stock)} ${p.unidadUso || ""}</strong></td><td data-label="Lotes abiertos">${number(lotes.length)}</td><td data-label="Proximo costo">${money(costoProximoLoteUso(p.id))} / ${p.unidadUso || "uso"}</td></tr>`;
-            }).join("") : `<tr><td colspan="6">Aun no hay compras registradas.</td></tr>`}
+            ${stockRows.length ? stockRows.map((row) => {
+              const p = row.producto;
+              return `<tr><td data-label="Producto"><strong>${p.producto}</strong></td><td data-label="Comprado">${number(row.comprado)} ${p.unidadUso || ""}</td><td data-label="Usado">${number(row.consumido)} ${p.unidadUso || ""}</td><td data-label="Stock disponible"><strong>${number(row.stock)} ${p.unidadUso || ""}</strong></td><td data-label="Lotes abiertos">${number(row.lotes.length)}</td><td data-label="Proximo costo">${money(costoProximoLoteUso(p.id, stockOperacion))} / ${p.unidadUso || "uso"}</td></tr>`;
+            }).join("") : `<tr><td colspan="6">Aun no hay compras registradas para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
