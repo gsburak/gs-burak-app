@@ -1044,10 +1044,18 @@ function renderServiciosAnterior() {
 
 function renderServicios() {
   const term = servicioSearch.trim().toLowerCase();
-  const servicios = state.servicios.filter((s) => {
-    if (!term) return true;
-    return nombreCliente(s.clienteId).toLowerCase().includes(term);
-  });
+  const servicios = state.servicios
+    .filter((s) => {
+      if (!term) return true;
+      return nombreCliente(s.clienteId).toLowerCase().includes(term);
+    })
+    .sort((a, b) => {
+      const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
+      if (dateCompare !== 0) return dateCompare;
+      const clientCompare = nombreCliente(a.clienteId).localeCompare(nombreCliente(b.clienteId));
+      if (clientCompare !== 0) return clientCompare;
+      return String(a.id || "").localeCompare(String(b.id || ""));
+    });
   const totalFiltrado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
   const rows = servicios.map((s) => {
     const costo = currentUser.role === "admin" ? money(costoServicio(s)) : "Restringido";
