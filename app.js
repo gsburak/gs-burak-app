@@ -395,8 +395,24 @@ function cantidadCompradaUso(productoId) {
   return state.compras.filter((c) => c.productoId === product?.id).reduce((sum, c) => sum + Number(c.cantidad || 0) * factor, 0);
 }
 
+function cantidadCompradaUsoOperacion(productoId, operacion) {
+  const product = state.productos.find((p) => p.id === productoId);
+  const factor = Number(product?.factor || 1);
+  return state.compras
+    .filter((c) => c.productoId === product?.id && operacionRegistro(c) === operacion)
+    .reduce((sum, c) => sum + Number(c.cantidad || 0) * factor, 0);
+}
+
 function cantidadConsumidaUso(productoId) {
   return state.servicios
+    .flatMap((s) => s.productos || [])
+    .filter((item) => item.productoId === productoId)
+    .reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
+}
+
+function cantidadConsumidaUsoOperacion(productoId, operacion) {
+  return state.servicios
+    .filter((servicio) => operacionRegistro(servicio, "Yucatan") === operacion)
     .flatMap((s) => s.productos || [])
     .filter((item) => item.productoId === productoId)
     .reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
@@ -1181,6 +1197,21 @@ function renderTiposServicio() {
 
 function renderProductos() {
   const productosConCompras = state.productos.filter((p) => state.compras.some((c) => c.productoId === p.id));
+  const stockOperacionRows = state.productos.map((p) => {
+    const yucatanComprado = cantidadCompradaUsoOperacion(p.id, "Yucatan");
+    const yucatanConsumido = cantidadConsumidaUsoOperacion(p.id, "Yucatan");
+    const cdmxComprado = cantidadCompradaUsoOperacion(p.id, "CDMX");
+    const cdmxConsumido = cantidadConsumidaUsoOperacion(p.id, "CDMX");
+    const sinClasificarComprado = cantidadCompradaUsoOperacion(p.id, "Sin clasificar");
+    const sinClasificarConsumido = cantidadConsumidaUsoOperacion(p.id, "Sin clasificar");
+    return {
+      producto: p,
+      yucatan: yucatanComprado - yucatanConsumido,
+      cdmx: cdmxComprado - cdmxConsumido,
+      sinClasificar: sinClasificarComprado - sinClasificarConsumido,
+      total: cantidadCompradaUso(p.id) - cantidadConsumidaUso(p.id),
+    };
+  });
   const lotesHtml = productosConCompras.map((p) => {
     const lotes = lotesRestantesProducto(p.id);
     const allLots = comprasOrdenadas(p.id);
@@ -1218,6 +1249,18 @@ function renderProductos() {
         </tbody>
       </table>
     </div>
+    <section class="panel" style="margin-top:14px">
+      <h2>Stock por operacion</h2>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Producto</th><th>Yucatan</th><th>CDMX</th><th>Sin clasificar</th><th>Total global</th></tr></thead>
+          <tbody>
+            ${stockOperacionRows.map((row) => `<tr><td data-label="Producto"><strong>${row.producto.producto}</strong><br><span class="readonly">${row.producto.unidadUso || ""}</span></td><td data-label="Yucatan">${number(row.yucatan)} ${row.producto.unidadUso || ""}</td><td data-label="CDMX">${number(row.cdmx)} ${row.producto.unidadUso || ""}</td><td data-label="Sin clasificar">${number(row.sinClasificar)} ${row.producto.unidadUso || ""}</td><td data-label="Total global"><strong>${number(row.total)} ${row.producto.unidadUso || ""}</strong></td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+      <p class="readonly">Vista informativa: el costo FIFO y los lotes siguen calculandose de forma global hasta clasificar las compras existentes.</p>
+    </section>
     <section class="panel lotes-panel">
       <h2>Lotes por producto</h2>
       ${lotesHtml || `<p class="readonly">Aun no hay compras registradas.</p>`}
