@@ -100,6 +100,7 @@ let modal = null;
 let clienteSearch = "";
 let clienteTipoFilter = "";
 let servicioSearch = "";
+let operacionFilter = "Todas";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -257,21 +258,28 @@ function migrateState(data) {
   }
   data.compras = (data.compras || []).map((compra) => ({
     pagadoPor: "SISPROVISA",
+    operacion: "Sin clasificar",
     ...compra,
     pagadoPor: compra.pagadoPor === "SANTOS" ? "SISPROVISA" : compra.pagadoPor || "SISPROVISA",
+    operacion: compra.operacion || "Sin clasificar",
   }));
   data.gastos = (data.gastos || []).map((gasto) => ({
+    operacion: "Sin clasificar",
     ...gasto,
     pagadoPor: gasto.pagadoPor === "SANTOS" ? "SISPROVISA" : gasto.pagadoPor,
+    operacion: gasto.operacion || "Sin clasificar",
   }));
   data.equipos = (data.equipos || []).map((equipo) => ({
     pagadoPor: "SISPROVISA",
+    operacion: "Sin clasificar",
     ...equipo,
     pagadoPor: equipo.pagadoPor === "SANTOS" ? "SISPROVISA" : equipo.pagadoPor || "SISPROVISA",
+    operacion: equipo.operacion || "Sin clasificar",
   }));
   data.servicios = (data.servicios || []).map((servicio) => ({
     ciudad: "Yucatan",
     ...servicio,
+    ciudad: servicio.ciudad || "Yucatan",
     tecnico: servicio.tecnico === "SISPROVISA" ? "SANTOS" : servicio.tecnico,
   }));
   data.schemaVersion = 2;
@@ -521,7 +529,7 @@ function clientesPorTipo() {
 }
 
 function gastosPorPagador() {
-  return state.gastos.reduce((rows, gasto) => {
+  return gastosFiltradosOperacion().reduce((rows, gasto) => {
     const pagador = gasto.pagadoPor || "Sin dato";
     rows[pagador] = (rows[pagador] || 0) + Number(gasto.monto || 0);
     return rows;
@@ -529,7 +537,7 @@ function gastosPorPagador() {
 }
 
 function comprasPorPagador() {
-  return state.compras.reduce((rows, compra) => {
+  return comprasFiltradasOperacion().reduce((rows, compra) => {
     const pagador = compra.pagadoPor || "Sin dato";
     const total = Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
     rows[pagador] = (rows[pagador] || 0) + total;
@@ -538,11 +546,11 @@ function comprasPorPagador() {
 }
 
 function totalComprasProductos() {
-  return state.compras.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0);
+  return comprasFiltradasOperacion().reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0);
 }
 
 function equiposPorPagador() {
-  return state.equipos.reduce((rows, equipo) => {
+  return equiposFiltradosOperacion().reduce((rows, equipo) => {
     const pagador = equipo.pagadoPor || "Sin dato";
     rows[pagador] = (rows[pagador] || 0) + costoTotalEquipo(equipo);
     return rows;
@@ -556,35 +564,35 @@ function totalInversionYGastoPorPagador() {
     rows[key] = (rows[key] || 0) + Number(value || 0);
   };
 
-  state.gastos.forEach((gasto) => add(gasto.pagadoPor, gasto.monto));
-  state.compras.forEach((compra) => add(compra.pagadoPor, Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0)));
-  state.equipos.forEach((equipo) => add(equipo.pagadoPor, costoTotalEquipo(equipo)));
+  gastosFiltradosOperacion().forEach((gasto) => add(gasto.pagadoPor, gasto.monto));
+  comprasFiltradasOperacion().forEach((compra) => add(compra.pagadoPor, Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0)));
+  equiposFiltradosOperacion().forEach((equipo) => add(equipo.pagadoPor, costoTotalEquipo(equipo)));
 
   return rows;
 }
 
 function ventasPorCiudad() {
-  return state.servicios.reduce((rows, servicio) => {
+  return serviciosFiltradosOperacion().reduce((rows, servicio) => {
     const ciudad = servicio.ciudad || "Yucatan";
     rows[ciudad] = (rows[ciudad] || 0) + totalServicio(servicio);
     return rows;
   }, {});
 }
 
-function gastoDepreciacionMensual() {
-  return state.equipos.reduce((sum, item) => {
+function gastoDepreciacionMensual(rows = state.equipos) {
+  return rows.reduce((sum, item) => {
     const base = costoTotalEquipo(item) - Number(item.residual || 0);
     const vida = Number(item.vida || 0);
     return sum + (vida > 0 ? base / vida / 12 : 0);
   }, 0);
 }
 
-function inversionEquipos() {
-  return state.equipos.reduce((sum, item) => sum + costoTotalEquipo(item), 0);
+function inversionEquipos(rows = state.equipos) {
+  return rows.reduce((sum, item) => sum + costoTotalEquipo(item), 0);
 }
 
-function depreciacionAcumuladaEquipos() {
-  return state.equipos.reduce((sum, item) => sum + depreciacionAcumulada(item), 0);
+function depreciacionAcumuladaEquipos(rows = state.equipos) {
+  return rows.reduce((sum, item) => sum + depreciacionAcumulada(item), 0);
 }
 
 function depreciacionAcumulada(item) {
@@ -600,16 +608,56 @@ function costoTotalEquipo(item) {
   return cantidad * Number(item.costo || 0);
 }
 
+function operacionRegistro(registro, fallback = "Sin clasificar") {
+  return registro.operacion || registro.ciudad || fallback;
+}
+
+function matchesOperacion(registro, fallback = "Sin clasificar") {
+  return operacionFilter === "Todas" || operacionRegistro(registro, fallback) === operacionFilter;
+}
+
+function serviciosFiltradosOperacion() {
+  return state.servicios.filter((servicio) => matchesOperacion(servicio, "Yucatan"));
+}
+
+function comprasFiltradasOperacion() {
+  return state.compras.filter((compra) => matchesOperacion(compra));
+}
+
+function gastosFiltradosOperacion() {
+  return state.gastos.filter((gasto) => matchesOperacion(gasto));
+}
+
+function equiposFiltradosOperacion() {
+  return state.equipos.filter((equipo) => matchesOperacion(equipo));
+}
+
+function operationFilterControl() {
+  const options = ["Todas", "Yucatan", "CDMX", "Sin clasificar"];
+  return `
+    <div class="field compact-filter">
+      <label>Operacion</label>
+      <select id="operacionFilter">
+        ${options.map((option) => `<option value="${option}" ${option === operacionFilter ? "selected" : ""}>${option}</option>`).join("")}
+      </select>
+    </div>
+  `;
+}
+
 function metrics() {
-  const cobrado = state.servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
-  const facturado = state.servicios.reduce((sum, s) => sum + totalServicio(s), 0);
-  const porCobrar = state.servicios.reduce((sum, s) => sum + pendienteServicio(s), 0);
-  const costoProductos = state.servicios.reduce((sum, s) => sum + costoServicio(s), 0);
-  const gastos = state.gastos.reduce((sum, g) => sum + Number(g.monto || 0), 0);
-  const comprasProductos = totalComprasProductos();
-  const depreciacion = gastoDepreciacionMensual();
-  const inversionEquipo = inversionEquipos();
-  const depreciacionEquipoAcumulada = depreciacionAcumuladaEquipos();
+  const servicios = serviciosFiltradosOperacion();
+  const gastosRows = gastosFiltradosOperacion();
+  const comprasRows = comprasFiltradasOperacion();
+  const equiposRows = equiposFiltradosOperacion();
+  const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
+  const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
+  const porCobrar = servicios.reduce((sum, s) => sum + pendienteServicio(s), 0);
+  const costoProductos = servicios.reduce((sum, s) => sum + costoServicio(s), 0);
+  const gastos = gastosRows.reduce((sum, g) => sum + Number(g.monto || 0), 0);
+  const comprasProductos = comprasRows.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0);
+  const depreciacion = gastoDepreciacionMensual(equiposRows);
+  const inversionEquipo = inversionEquipos(equiposRows);
+  const depreciacionEquipoAcumulada = depreciacionAcumuladaEquipos(equiposRows);
   const totalClientes = state.clientes.length;
   const utilidad = cobrado - costoProductos - gastos - depreciacion;
   const margen = cobrado > 0 ? utilidad / cobrado : 0;
@@ -626,7 +674,7 @@ function metrics() {
     valorNetoEquipo: Math.max(0, inversionEquipo - depreciacionEquipoAcumulada),
     utilidad,
     margen,
-    servicios: state.servicios.length,
+    servicios: servicios.length,
     totalClientes,
     ticket: state.servicios.length ? facturado / state.servicios.length : 0,
   };
@@ -760,7 +808,7 @@ function renderDashboard() {
   const showMoney = currentUser.role === "admin";
   const monthly = groupByMonth();
   return `
-    ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.")}
+    ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.", operationFilterControl())}
     ${currentUser.role !== "admin" ? `<div class="notice">Tu usuario puede capturar clientes y servicios. Las metricas financieras completas quedan reservadas para administrador.</div>` : ""}
     <section class="grid kpis">
       <div class="kpi"><span>Ventas totales</span><strong>${showMoney ? money(m.facturado) : "Restringido"}</strong><small>Todos los servicios</small></div>
@@ -816,7 +864,7 @@ function renderBar(label, value, max, showMoney, format = "money") {
 function groupByMonth() {
   const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const rows = labels.map((month) => ({ month, facturado: 0, cobrado: 0, servicios: 0 }));
-  state.servicios.forEach((s) => {
+  serviciosFiltradosOperacion().forEach((s) => {
     const idx = new Date(s.fecha + "T00:00:00").getMonth();
     rows[idx].facturado += totalServicio(s);
     rows[idx].cobrado += Number(s.cobrado || 0);
@@ -828,7 +876,7 @@ function groupByMonth() {
 function comprasPorMes() {
   const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const rows = labels.map((month) => ({ month, total: 0, compras: 0 }));
-  state.compras.forEach((compra) => {
+  comprasFiltradasOperacion().forEach((compra) => {
     if (!compra.fecha) return;
     const idx = new Date(compra.fecha + "T00:00:00").getMonth();
     if (Number.isNaN(idx)) return;
@@ -841,7 +889,7 @@ function comprasPorMes() {
 function gastosPorMes() {
   const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const rows = labels.map((month) => ({ month, total: 0, gastos: 0 }));
-  state.gastos.forEach((gasto) => {
+  gastosFiltradosOperacion().forEach((gasto) => {
     if (!gasto.fecha) return;
     const idx = new Date(gasto.fecha + "T00:00:00").getMonth();
     if (Number.isNaN(idx)) return;
@@ -1076,7 +1124,7 @@ function renderServiciosAnterior() {
 
 function renderServicios() {
   const term = servicioSearch.trim().toLowerCase();
-  const servicios = state.servicios
+  const servicios = serviciosFiltradosOperacion()
     .filter((s) => {
       if (!term) return true;
       return nombreCliente(s.clienteId).toLowerCase().includes(term);
@@ -1095,14 +1143,14 @@ function renderServicios() {
     return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
   }).join("");
   return `
-    ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `<button class="primary" data-open="servicio">Nuevo servicio</button>`)}
+    ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}<button class="primary" data-open="servicio">Nuevo servicio</button>`)}
     <section class="panel filters">
       <div class="field">
         <label>Buscar servicios por cliente</label>
         <input id="servicioSearch" type="search" placeholder="Escribe el nombre del cliente" value="${servicioSearch}" />
       </div>
       <div class="filter-count">
-        ${number(servicios.length)} de ${number(state.servicios.length)} servicios
+        ${number(servicios.length)} de ${number(serviciosFiltradosOperacion().length)} servicios en ${operacionFilter}
         ${term ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
       </div>
     </section>
@@ -1178,13 +1226,14 @@ function renderProductos() {
 }
 
 function renderCompras() {
+  const comprasRows = comprasFiltradasOperacion();
   const productosConMovimiento = state.productos
-    .filter((p) => state.compras.some((c) => c.productoId === p.id) || cantidadConsumidaUso(p.id) > 0)
+    .filter((p) => comprasRows.some((c) => c.productoId === p.id) || cantidadConsumidaUso(p.id) > 0)
     .sort((a, b) => String(a.producto || "").localeCompare(String(b.producto || "")));
   const comprasMensuales = comprasPorMes();
   const maxCompraMensual = Math.max(...comprasMensuales.map((row) => row.total), 1);
   return `
-    ${topbar("Compras", "Entradas de producto para alimentar inventario.", `<button class="primary" data-open="compra">Nueva compra</button>`)}
+    ${topbar("Compras", "Entradas de producto para alimentar inventario.", `${operationFilterControl()}<button class="primary" data-open="compra">Nueva compra</button>`)}
     <section class="panel">
       <h2>Compras por mes</h2>
       <div class="bars">
@@ -1218,23 +1267,24 @@ function renderCompras() {
     </section>
     <div class="table-card">
       <table>
-        <thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad comprada</th><th>Costo unidad compra</th><th>Total</th><th>Proveedor</th><th>Pagado por</th><th></th></tr></thead>
-        <tbody>${state.compras.map((c) => `<tr><td data-label="Fecha">${c.fecha}</td><td data-label="Producto">${nombreProducto(c.productoId)}</td><td data-label="Cantidad">${number(c.cantidad)} ${unidadCompraProducto(c.productoId)}</td><td data-label="Costo unidad">${money(c.costoUnitario)}</td><td data-label="Total">${money(Number(c.cantidad || 0) * Number(c.costoUnitario || 0))}</td><td data-label="Proveedor">${c.proveedor || ""}</td><td data-label="Pagado por">${c.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("compra", c.id)}</td></tr>`).join("")}</tbody>
+        <thead><tr><th>Fecha</th><th>Operacion</th><th>Producto</th><th>Cantidad comprada</th><th>Costo unidad compra</th><th>Total</th><th>Proveedor</th><th>Pagado por</th><th></th></tr></thead>
+        <tbody>${comprasRows.map((c) => `<tr><td data-label="Fecha">${c.fecha}</td><td data-label="Operacion">${operacionRegistro(c)}</td><td data-label="Producto">${nombreProducto(c.productoId)}</td><td data-label="Cantidad">${number(c.cantidad)} ${unidadCompraProducto(c.productoId)}</td><td data-label="Costo unidad">${money(c.costoUnitario)}</td><td data-label="Total">${money(Number(c.cantidad || 0) * Number(c.costoUnitario || 0))}</td><td data-label="Proveedor">${c.proveedor || ""}</td><td data-label="Pagado por">${c.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("compra", c.id)}</td></tr>`).join("")}</tbody>
       </table>
     </div>
   `;
 }
 
 function renderGastos() {
+  const gastosRows = gastosFiltradosOperacion();
   const gastosMensuales = gastosPorMes();
   const maxGastoMensual = Math.max(...gastosMensuales.map((row) => row.total), 1);
-  const gastosOrdenados = [...state.gastos].sort((a, b) => {
+  const gastosOrdenados = [...gastosRows].sort((a, b) => {
     const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
     if (dateCompare !== 0) return dateCompare;
     return String(b.id || "").localeCompare(String(a.id || ""));
   });
   return `
-    ${topbar("Gastos", "Gastos operativos por categoria, comprobante y responsable.", `<button class="primary" data-open="gasto">Nuevo gasto</button>`)}
+    ${topbar("Gastos", "Gastos operativos por categoria, comprobante y responsable.", `${operationFilterControl()}<button class="primary" data-open="gasto">Nuevo gasto</button>`)}
     <section class="panel">
       <h2>Gastos por mes</h2>
       <div class="bars">
@@ -1251,26 +1301,27 @@ function renderGastos() {
     </section>
     <div class="table-card">
       <table>
-        <thead><tr><th>Fecha</th><th>Categoria</th><th>Descripcion</th><th>Monto</th><th>Pagado por</th><th></th></tr></thead>
-        <tbody>${gastosOrdenados.map((g) => `<tr><td data-label="Fecha">${g.fecha}</td><td data-label="Categoria">${g.categoria}</td><td data-label="Descripcion">${g.descripcion || ""}<br><span class="readonly">${g.comprobante || ""}</span></td><td data-label="Monto">${money(g.monto)}</td><td data-label="Pagado por">${g.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("gasto", g.id)}</td></tr>`).join("")}</tbody>
+        <thead><tr><th>Fecha</th><th>Operacion</th><th>Categoria</th><th>Descripcion</th><th>Monto</th><th>Pagado por</th><th></th></tr></thead>
+        <tbody>${gastosOrdenados.map((g) => `<tr><td data-label="Fecha">${g.fecha}</td><td data-label="Operacion">${operacionRegistro(g)}</td><td data-label="Categoria">${g.categoria}</td><td data-label="Descripcion">${g.descripcion || ""}<br><span class="readonly">${g.comprobante || ""}</span></td><td data-label="Monto">${money(g.monto)}</td><td data-label="Pagado por">${g.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("gasto", g.id)}</td></tr>`).join("")}</tbody>
       </table>
     </div>
   `;
 }
 
 function renderEquipos() {
+  const equiposRows = equiposFiltradosOperacion();
   return `
-    ${topbar("Equipos", "Activos, vida util, depreciacion mensual y acumulada.", `<button class="primary" data-open="equipo">Nuevo equipo</button>`)}
+    ${topbar("Equipos", "Activos, vida util, depreciacion mensual y acumulada.", `${operationFilterControl()}<button class="primary" data-open="equipo">Nuevo equipo</button>`)}
     ${renderEquiposPagadorResumen()}
     <section class="panel" style="margin-top:14px">
       <h2>Historial de equipos</h2>
     </section>
     <div class="table-card">
       <table>
-        <thead><tr><th>Equipo</th><th>Cantidad</th><th>Costo unitario</th><th>Costo total</th><th>Compra</th><th>Vida util</th><th>Pagado por</th><th>Deprec. mensual</th><th>Deprec. acum.</th><th></th></tr></thead>
-        <tbody>${state.equipos.map((e) => {
+        <thead><tr><th>Equipo</th><th>Operacion</th><th>Cantidad</th><th>Costo unitario</th><th>Costo total</th><th>Compra</th><th>Vida util</th><th>Pagado por</th><th>Deprec. mensual</th><th>Deprec. acum.</th><th></th></tr></thead>
+        <tbody>${equiposRows.map((e) => {
           const monthly = Number(e.vida || 0) > 0 ? (costoTotalEquipo(e) - Number(e.residual || 0)) / Number(e.vida) / 12 : 0;
-          return `<tr><td data-label="Equipo">${e.equipo}</td><td data-label="Cantidad">${e.unidad || 1}</td><td data-label="Costo unitario">${money(e.costo)}</td><td data-label="Costo total">${money(costoTotalEquipo(e))}</td><td data-label="Compra">${e.fecha || ""}</td><td data-label="Vida util">${e.vida || 0} anos</td><td data-label="Pagado por">${e.pagadoPor || ""}</td><td data-label="Deprec. mensual">${money(monthly)}</td><td data-label="Deprec. acum.">${money(depreciacionAcumulada(e))}</td><td data-label="Acciones">${rowActions("equipo", e.id)}</td></tr>`;
+          return `<tr><td data-label="Equipo">${e.equipo}</td><td data-label="Operacion">${operacionRegistro(e)}</td><td data-label="Cantidad">${e.unidad || 1}</td><td data-label="Costo unitario">${money(e.costo)}</td><td data-label="Costo total">${money(costoTotalEquipo(e))}</td><td data-label="Compra">${e.fecha || ""}</td><td data-label="Vida util">${e.vida || 0} anos</td><td data-label="Pagado por">${e.pagadoPor || ""}</td><td data-label="Deprec. mensual">${money(monthly)}</td><td data-label="Deprec. acum.">${money(depreciacionAcumulada(e))}</td><td data-label="Acciones">${rowActions("equipo", e.id)}</td></tr>`;
         }).join("")}</tbody>
       </table>
     </div>
@@ -1337,14 +1388,14 @@ function formFor(type, data) {
     return `<div class="form-grid">${input("nombre", "Tipo de servicio", data.nombre, "text", "wide")}</div>`;
   }
   if (type === "compra") {
-    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("productoId", "Producto", data.productoId, state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadCompra || "unidad"})` })), "wide")}${input("cantidad", "Cantidad comprada", data.cantidad, "number")}${input("costoUnitario", "Costo por unidad comprada", data.costoUnitario, "number")}${input("proveedor", "Proveedor", data.proveedor)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${input("factura", "Factura / ref.", data.factura)}${text("notas", "Notas", data.notas, "full")}</div>`;
+    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("productoId", "Producto", data.productoId, state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadCompra || "unidad"})` })), "wide")}${input("cantidad", "Cantidad comprada", data.cantidad, "number")}${input("costoUnitario", "Costo por unidad comprada", data.costoUnitario, "number")}${input("proveedor", "Proveedor", data.proveedor)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${input("factura", "Factura / ref.", data.factura)}${text("notas", "Notas", data.notas, "full")}</div>`;
   }
   if (type === "gasto") {
     const categorias = ["Nomina", "Gasolina / Combustible", "IMSS", "INFONAVIT", "Impuestos / ISR", "Telefonia Celular", "Internet", "Renta / Local", "Papeleria / Oficina", "Equipo / Herramientas", "Publicidad / Marketing", "Mantenimiento Vehiculo", "Uniforme / EPP", "Capacitacion", "Otros Gastos"];
-    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("categoria", "Categoria", data.categoria, categorias.map((x) => ({ value: x, label: x })), "wide")}${input("monto", "Monto", data.monto, "number")}${input("comprobante", "Comprobante / ref.", data.comprobante)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${text("descripcion", "Descripcion", data.descripcion, "full")}</div>`;
+    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("categoria", "Categoria", data.categoria, categorias.map((x) => ({ value: x, label: x })), "wide")}${input("monto", "Monto", data.monto, "number")}${input("comprobante", "Comprobante / ref.", data.comprobante)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${text("descripcion", "Descripcion", data.descripcion, "full")}</div>`;
   }
   if (type === "equipo") {
-    return `<div class="form-grid">${input("equipo", "Equipo / descripcion", data.equipo, "text", "wide")}${input("unidad", "Cantidad", data.unidad || 1, "number")}${input("costo", "Costo unitario", data.costo, "number")}${input("fecha", "Fecha compra", data.fecha || today(), "date")}${input("vida", "Vida util anos", data.vida, "number")}${input("residual", "Valor residual total", data.residual, "number")}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}</div>`;
+    return `<div class="form-grid">${input("equipo", "Equipo / descripcion", data.equipo, "text", "wide")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${input("unidad", "Cantidad", data.unidad || 1, "number")}${input("costo", "Costo unitario", data.costo, "number")}${input("fecha", "Fecha compra", data.fecha || today(), "date")}${input("vida", "Vida util anos", data.vida, "number")}${input("residual", "Valor residual total", data.residual, "number")}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}</div>`;
   }
   return formServicio(data);
 }
@@ -1445,6 +1496,13 @@ function bindApp() {
         nextInput.focus();
         nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
       }
+    });
+  }
+  const operacionSelect = document.querySelector("#operacionFilter");
+  if (operacionSelect) {
+    operacionSelect.addEventListener("change", (event) => {
+      operacionFilter = event.target.value;
+      render();
     });
   }
   const form = document.querySelector("#entityForm");
