@@ -860,18 +860,18 @@ function renderMiniServices() {
 }
 
 function renderPendientesResumen() {
-  const rows = serviciosPendientes();
-  const total = rows.reduce((sum, servicio) => sum + pendienteServicio(servicio), 0);
+  const rows = clientesPendientesResumen();
+  const total = rows.reduce((sum, row) => sum + row.pendiente, 0);
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Clientes con saldo pendiente (${money(total)})</h2>
       <div class="table-card">
         <table>
-          <thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th>Total</th><th>Cobrado</th><th>Pendiente</th></tr></thead>
+          <thead><tr><th>Cliente</th><th>Servicios pendientes</th><th>Ultimo servicio</th><th>Total</th><th>Cobrado</th><th>Pendiente</th></tr></thead>
           <tbody>
             ${
               rows.length
-                ? rows.map((s) => `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Servicio">${s.tipo}</td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente"><strong>${money(pendienteServicio(s))}</strong></td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Cliente"><strong>${row.cliente}</strong></td><td data-label="Servicios pendientes">${number(row.servicios)} servicio${row.servicios === 1 ? "" : "s"}</td><td data-label="Ultimo servicio">${row.ultimaFecha || ""}<br><span class="readonly">${row.ultimoTipo || ""}</span></td><td data-label="Total">${money(row.total)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Pendiente"><strong>${money(row.pendiente)}</strong></td></tr>`).join("")
                 : `<tr><td colspan="6">No hay saldos pendientes.</td></tr>`
             }
           </tbody>
@@ -879,6 +879,38 @@ function renderPendientesResumen() {
       </div>
     </section>
   `;
+}
+
+function clientesPendientesResumen() {
+  const grouped = {};
+  serviciosPendientes().forEach((servicio) => {
+    const clienteId = servicio.clienteId || "sin-cliente";
+    if (!grouped[clienteId]) {
+      grouped[clienteId] = {
+        cliente: nombreCliente(clienteId),
+        servicios: 0,
+        total: 0,
+        cobrado: 0,
+        pendiente: 0,
+        ultimaFecha: "",
+        ultimoTipo: "",
+      };
+    }
+    const row = grouped[clienteId];
+    row.servicios += 1;
+    row.total += totalServicio(servicio);
+    row.cobrado += Number(servicio.cobrado || 0);
+    row.pendiente += pendienteServicio(servicio);
+    if (String(servicio.fecha || "") >= String(row.ultimaFecha || "")) {
+      row.ultimaFecha = servicio.fecha || "";
+      row.ultimoTipo = servicio.tipo || "";
+    }
+  });
+  return Object.values(grouped).sort((a, b) => {
+    const pendingCompare = b.pendiente - a.pendiente;
+    if (pendingCompare !== 0) return pendingCompare;
+    return a.cliente.localeCompare(b.cliente);
+  });
 }
 
 function renderClientesTipoResumen() {
