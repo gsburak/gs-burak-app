@@ -595,6 +595,14 @@ function ventasPorCiudad() {
   }, {});
 }
 
+function serviciosPorTecnico() {
+  return serviciosFiltradosOperacion().reduce((rows, servicio) => {
+    const tecnico = servicio.tecnico || "Sin tecnico";
+    rows[tecnico] = (rows[tecnico] || 0) + 1;
+    return rows;
+  }, {});
+}
+
 function gastoDepreciacionMensual(rows = state.equipos) {
   return rows.reduce((sum, item) => {
     const base = costoTotalEquipo(item) - Number(item.residual || 0);
@@ -856,6 +864,7 @@ function renderDashboard() {
       </div>
     </section>
     ${renderClientesTipoResumen()}
+    ${renderServiciosTecnicoResumen()}
     ${showMoney ? renderGastosPagadorResumen() : ""}
     ${showMoney ? renderComprasPagadorResumen() : ""}
     ${showMoney ? renderEquiposPagadorResumen() : ""}
@@ -867,7 +876,11 @@ function renderDashboard() {
 
 function renderBar(label, value, max, showMoney, format = "money") {
   const width = Math.round((value / max) * 100);
-  const display = format === "clientes" ? `${number(value)} clientes` : showMoney ? money(value) : number(width) + "%";
+  const display = format === "clientes"
+    ? `${number(value)} clientes`
+    : format === "servicios"
+      ? `${number(value)} servicios`
+      : showMoney ? money(value) : number(width) + "%";
   return `
     <div class="bar-row">
       <span>${label}</span>
@@ -987,6 +1000,22 @@ function renderClientesTipoResumen() {
           rows.length
             ? rows.map(([tipo, total]) => renderBar(tipo, total, Math.max(...rows.map((row) => row[1]), 1), true, "clientes")).join("")
             : `<p class="readonly">Aun no hay clientes registrados.</p>`
+        }
+      </div>
+    </section>
+  `;
+}
+
+function renderServiciosTecnicoResumen() {
+  const rows = Object.entries(serviciosPorTecnico()).sort((a, b) => b[1] - a[1]);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Servicios por tecnico</h2>
+      <div class="bars">
+        ${
+          rows.length
+            ? rows.map(([tecnico, total]) => renderBar(tecnico, total, Math.max(...rows.map((row) => row[1]), 1), true, "servicios")).join("")
+            : `<p class="readonly">Aun no hay servicios registrados.</p>`
         }
       </div>
     </section>
