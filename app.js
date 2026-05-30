@@ -1551,6 +1551,7 @@ function formServicio(data) {
     ${input("subtotal", "Importe del servicio", data.subtotal, "number")}
     ${input("cobrado", "Cobrado", data.cobrado, "number")}
     ${select("formaPago", "Forma de pago", data.formaPago, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesia"].map((x) => ({ value: x, label: x })))}
+    ${data.programacionId ? `<input type="hidden" name="programacionId" value="${data.programacionId}" />` : ""}
     <div class="full panel"><h2>Productos usados</h2><div class="form-grid">${productRows}</div></div>
     ${text("observaciones", "Observaciones", data.observaciones, "full")}
   </div>`;
@@ -1592,6 +1593,7 @@ function bindApp() {
           formaPago: "Por cobrar",
           subtotal: 0,
           cobrado: 0,
+          programacionId: programacion.id,
         },
       };
       render();
@@ -1678,6 +1680,11 @@ function saveEntity(event) {
     state[collection] = state[collection].map((x) => (x.id === id || x.nombre === id ? { ...x, ...entity, id: x.id || id } : x));
   } else {
     state[collection].push({ ...entity, id: uid() });
+  }
+  if (type === "servicio" && entity.programacionId) {
+    state.programaciones = state.programaciones.map((programacion) =>
+      programacion.id === entity.programacionId ? { ...programacion, estatus: "Realizado" } : programacion
+    );
   }
   saveState();
   modal = null;
