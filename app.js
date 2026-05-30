@@ -855,13 +855,13 @@ function renderDashboard() {
         ${renderMiniServices()}
       </div>
     </section>
-    ${showMoney ? renderPendientesResumen() : ""}
     ${renderClientesTipoResumen()}
     ${showMoney ? renderGastosPagadorResumen() : ""}
     ${showMoney ? renderComprasPagadorResumen() : ""}
     ${showMoney ? renderEquiposPagadorResumen() : ""}
     ${showMoney ? renderTotalPagadorResumen() : ""}
     ${showMoney ? renderVentasCiudadResumen() : ""}
+    ${showMoney ? renderPendientesResumen() : ""}
   `;
 }
 
