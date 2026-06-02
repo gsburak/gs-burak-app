@@ -103,6 +103,7 @@ let clienteSearch = "";
 let clienteTipoFilter = "";
 let servicioSearch = "";
 let operacionFilter = "Todas";
+let remoteSaveQueue = Promise.resolve();
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -356,7 +357,11 @@ function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     return;
   }
-  saveRemoteState(state).catch(() => {
+  const snapshot = structuredClone(state);
+  remoteSaveQueue = remoteSaveQueue
+    .catch(() => {})
+    .then(() => saveRemoteState(snapshot));
+  remoteSaveQueue.catch(() => {
     alert("No se pudo guardar en la base compartida. Revise que el servidor siga abierto.");
   });
 }
