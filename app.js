@@ -1218,7 +1218,7 @@ function renderProgramacion() {
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-convert-programacion="${p.id}">Crear servicio</button><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="8">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="8">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1610,6 +1610,7 @@ function bindApp() {
     button.addEventListener("click", () => {
       const programacion = state.programaciones.find((item) => item.id === button.dataset.convertProgramacion);
       if (!programacion) return;
+      if (!confirm("Esto abrira el formulario para crear una venta/servicio real. No es para cambiar fecha u hora. Deseas continuar?")) return;
       modal = {
         type: "servicio",
         data: {
