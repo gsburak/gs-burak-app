@@ -103,6 +103,7 @@ let clienteSearch = "";
 let clienteTipoFilter = "";
 let servicioSearch = "";
 let operacionFilter = "Todas";
+let programacionStatusFilter = "Activos";
 let remoteSaveQueue = Promise.resolve();
 
 function uid() {
@@ -716,6 +717,18 @@ function operationFilterControl() {
   `;
 }
 
+function programacionStatusFilterControl() {
+  const options = ["Activos", "Todos", "Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"];
+  return `
+    <div class="field compact-filter">
+      <label>Estatus</label>
+      <select id="programacionStatusFilter">
+        ${options.map((option) => `<option value="${option}" ${option === programacionStatusFilter ? "selected" : ""}>${option}</option>`).join("")}
+      </select>
+    </div>
+  `;
+}
+
 function metrics() {
   const servicios = serviciosFiltradosOperacion();
   const gastosRows = gastosFiltradosOperacion();
@@ -1203,7 +1216,14 @@ function renderClientes() {
 }
 
 function renderProgramacion() {
-  const rows = [...programacionesFiltradasOperacion()].sort((a, b) => {
+  const rows = [...programacionesFiltradasOperacion()]
+    .filter((programacion) => {
+      const estatus = programacion.estatus || "Programado";
+      if (programacionStatusFilter === "Todos") return true;
+      if (programacionStatusFilter === "Activos") return estatus !== "Realizado" && estatus !== "Cancelado";
+      return estatus === programacionStatusFilter;
+    })
+    .sort((a, b) => {
     const dateCompare = String(a.fecha || "").localeCompare(String(b.fecha || ""));
     if (dateCompare !== 0) return dateCompare;
     const timeCompare = String(a.hora || "").localeCompare(String(b.hora || ""));
@@ -1211,9 +1231,9 @@ function renderProgramacion() {
     return String(a.id || "").localeCompare(String(b.id || ""));
   });
   return `
-    ${topbar("Programacion", "Agenda interna de servicios por fecha, tecnico y operacion.", `${operationFilterControl()}<button class="primary" data-open="programacion">Nuevo programado</button>`)}
+    ${topbar("Programacion", "Agenda interna de servicios por fecha, tecnico y operacion.", `${operationFilterControl()}${programacionStatusFilterControl()}<button class="primary" data-open="programacion">Nuevo programado</button>`)}
     <section class="panel">
-      <h2>Servicios programados</h2>
+      <h2>Servicios programados - ${programacionStatusFilter}</h2>
       <div class="table-card service-list">
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th></th></tr></thead>
@@ -1696,6 +1716,13 @@ function bindApp() {
       render();
     });
   }
+  const programacionStatusSelect = document.querySelector("#programacionStatusFilter");
+  if (programacionStatusSelect) {
+    programacionStatusSelect.addEventListener("change", (event) => {
+      programacionStatusFilter = event.target.value;
+      render();
+    });
+  }
   const form = document.querySelector("#entityForm");
   if (form) form.addEventListener("submit", saveEntity);
 }
@@ -1726,6 +1753,7 @@ function saveEntity(event) {
         ? (updatedProgramacion = { ...programacion, estatus: "Realizado" })
         : programacion
     );
+    activeModule = "servicios";
   }
   saveLocalBackup();
   queueRemoteTask(async () => {
