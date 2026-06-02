@@ -101,6 +101,7 @@ let activeModule = "dashboard";
 let modal = null;
 let clienteSearch = "";
 let clienteTipoFilter = "";
+let clienteCiudadFilter = "";
 let servicioSearch = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
@@ -242,8 +243,10 @@ function migrateState(data) {
     precio: 0,
   }));
   data.clientes = (data.clientes || []).map((cliente) => ({
+    ciudad: "MERIDA",
     observaciones: "",
     ...cliente,
+    ciudad: cliente.ciudad || "MERIDA",
   }));
   data.productos = (data.productos || []).map((producto) => {
     if (producto.unidadCompra && producto.unidadUso && producto.factor) return normalizeProduct(producto);
@@ -1175,9 +1178,10 @@ function renderClientes() {
   const tipos = [...new Set(state.clientes.map((c) => c.tipo || "Sin tipo"))].sort();
   const clientes = state.clientes
     .filter((c) => !clienteTipoFilter || (c.tipo || "Sin tipo") === clienteTipoFilter)
+    .filter((c) => !clienteCiudadFilter || (c.ciudad || "MERIDA") === clienteCiudadFilter)
     .filter((c) => {
       if (!term) return true;
-      return [c.nombre, c.telefono, c.correo, c.direccion, c.tipo, c.observaciones]
+      return [c.nombre, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones]
         .some((value) => String(value || "").toLowerCase().includes(term));
     })
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")));
@@ -1195,20 +1199,27 @@ function renderClientes() {
           ${tipos.map((tipo) => `<option value="${tipo}" ${tipo === clienteTipoFilter ? "selected" : ""}>${tipo}</option>`).join("")}
         </select>
       </div>
+      <div class="field">
+        <label>Ciudad</label>
+        <select id="clienteCiudadFilter">
+          <option value="">Todas</option>
+          ${["MERIDA", "CDMX"].map((ciudad) => `<option value="${ciudad}" ${ciudad === clienteCiudadFilter ? "selected" : ""}>${ciudad}</option>`).join("")}
+        </select>
+      </div>
       <div class="filter-count">
         ${number(clientes.length)} de ${number(state.clientes.length)} clientes
       </div>
     </section>
     <div class="table-card service-list">
       <table>
-        <thead><tr><th>Cliente</th><th>Telefono</th><th>Tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Telefono</th><th>Ciudad</th><th>Tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
         <tbody>
           ${clientes.length ? clientes.map((c) => {
             const servicios = state.servicios.filter((s) => s.clienteId === c.id);
             const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
             const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
-            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong><br><span class="readonly">${c.direccion || ""}</span>${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Telefono">${c.telefono || ""}</td><td data-label="Tipo">${c.tipo || ""}</td><td data-label="Servicios">${servicios.length}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
-          }).join("") : `<tr><td colspan="7">No hay clientes que coincidan con la busqueda.</td></tr>`}
+            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong><br><span class="readonly">${c.direccion || ""}</span>${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Telefono">${c.telefono || ""}</td><td data-label="Ciudad">${c.ciudad || "MERIDA"}</td><td data-label="Tipo">${c.tipo || ""}</td><td data-label="Servicios">${servicios.length}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
+          }).join("") : `<tr><td colspan="8">No hay clientes que coincidan con la busqueda.</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -1554,7 +1565,7 @@ function text(name, label, value = "", extra = "") {
 
 function formFor(type, data) {
   if (type === "cliente") {
-    return `<div class="form-grid">${input("nombre", "Cliente", data.nombre, "text", "wide")}${input("telefono", "Telefono", data.telefono)}${input("correo", "Correo / contacto", data.correo)}${input("direccion", "Direccion", data.direccion, "text", "wide")}${select("tipo", "Tipo", data.tipo, ["Residencial", "Comercial", "Industrial", "Gobierno", "Otro"].map((x) => ({ value: x, label: x })))}${text("observaciones", "Observaciones", data.observaciones, "full")}</div>`;
+    return `<div class="form-grid">${input("nombre", "Cliente", data.nombre, "text", "wide")}${select("ciudad", "Ciudad", data.ciudad || "MERIDA", ["MERIDA", "CDMX"].map((x) => ({ value: x, label: x })))}${input("telefono", "Telefono", data.telefono)}${input("correo", "Correo / contacto", data.correo)}${input("direccion", "Direccion", data.direccion, "text", "wide")}${select("tipo", "Tipo", data.tipo, ["Residencial", "Comercial", "Industrial", "Gobierno", "Otro"].map((x) => ({ value: x, label: x })))}${text("observaciones", "Observaciones", data.observaciones, "full")}</div>`;
   }
   if (type === "producto") {
     return `<div class="form-grid">${input("producto", "Producto", data.producto, "text", "wide")}${select("unidadCompra", "Unidad de compra", data.unidadCompra, ["litro", "kilo", "envase", "pieza", "galon", "caja"].map((x) => ({ value: x, label: x })))}${select("unidadUso", "Unidad de uso", data.unidadUso, ["ml", "gr", "pieza"].map((x) => ({ value: x, label: x })))}${input("factor", "Equivalencia por unidad comprada", data.factor || 1000, "number")}${input("costo", "Costo por unidad de compra", data.costo, "number", "wide")}</div>`;
@@ -1694,6 +1705,13 @@ function bindApp() {
   if (clienteTipoSelect) {
     clienteTipoSelect.addEventListener("change", (event) => {
       clienteTipoFilter = event.target.value;
+      render();
+    });
+  }
+  const clienteCiudadSelect = document.querySelector("#clienteCiudadFilter");
+  if (clienteCiudadSelect) {
+    clienteCiudadSelect.addEventListener("change", (event) => {
+      clienteCiudadFilter = event.target.value;
       render();
     });
   }
