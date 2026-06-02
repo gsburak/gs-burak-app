@@ -135,7 +135,7 @@ async function loadInitialState() {
     const data = await response.json();
     const hasData = data && Object.keys(data).length > 0;
     const remoteState = migrateState(hasData ? data : structuredClone(seed));
-    const localRecovery = bestLocalRecoveryState(remoteState);
+    const localRecovery = totalRecords(remoteState) === 0 ? bestLocalRecoveryState(remoteState) : null;
     if (localRecovery) {
       await saveRemoteState(localRecovery);
       alert("Se recupero informacion guardada en este navegador y se subio a la nube. Revise los ultimos registros.");
@@ -212,6 +212,22 @@ async function saveRemoteState(nextState) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(nextState),
+  });
+}
+
+async function saveRemoteRecord(collection, record) {
+  if (!SERVER_MODE) return;
+  await fetch("/api/record", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ collection, record }),
+  });
+}
+
+async function deleteRemoteRecord(collection, id) {
+  if (!SERVER_MODE) return;
+  await fetch(`/api/record?collection=${encodeURIComponent(collection)}&id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
   });
 }
 
@@ -361,6 +377,15 @@ function saveState() {
   remoteSaveQueue = remoteSaveQueue
     .catch(() => {})
     .then(() => saveRemoteState(snapshot));
+  remoteSaveQueue.catch(() => {
+    alert("No se pudo guardar en la base compartida. Revise que el servidor siga abierto.");
+  });
+}
+
+function queueRemoteTask(task) {
+  remoteSaveQueue = remoteSaveQueue
+    .catch(() => {})
+    .then(task);
   remoteSaveQueue.catch(() => {
     alert("No se pudo guardar en la base compartida. Revise que el servidor siga abierto.");
   });
@@ -1609,7 +1634,8 @@ function bindApp() {
       if (!confirm("Quieres borrar este registro?")) return;
       const collection = typeToCollection(button.dataset.delete);
       state[collection] = state[collection].filter((x) => x.id !== button.dataset.id);
-      saveState();
+      saveLocalBackup();
+      queueRemoteTask(() => deleteRemoteRecord(collection, button.dataset.id));
       render();
     });
   });
@@ -1681,17 +1707,30 @@ function saveEntity(event) {
   const data = Object.fromEntries(new FormData(form));
   const entity = normalize(type, data);
   const collection = typeToCollection(type);
+  let savedEntity = null;
+  let updatedProgramacion = null;
   if (id) {
-    state[collection] = state[collection].map((x) => (x.id === id || x.nombre === id ? { ...x, ...entity, id: x.id || id } : x));
+    state[collection] = state[collection].map((x) => {
+      if (x.id !== id && x.nombre !== id) return x;
+      savedEntity = { ...x, ...entity, id: x.id || id };
+      return savedEntity;
+    });
   } else {
-    state[collection].push({ ...entity, id: uid() });
+    savedEntity = { ...entity, id: uid() };
+    state[collection].push(savedEntity);
   }
   if (type === "servicio" && entity.programacionId) {
     state.programaciones = state.programaciones.map((programacion) =>
-      programacion.id === entity.programacionId ? { ...programacion, estatus: "Realizado" } : programacion
+      programacion.id === entity.programacionId
+        ? (updatedProgramacion = { ...programacion, estatus: "Realizado" })
+        : programacion
     );
   }
-  saveState();
+  saveLocalBackup();
+  queueRemoteTask(async () => {
+    if (savedEntity) await saveRemoteRecord(collection, savedEntity);
+    if (updatedProgramacion) await saveRemoteRecord("programaciones", updatedProgramacion);
+  });
   modal = null;
   render();
 }

@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -11,7 +12,17 @@ from datetime import datetime
 ROOT = Path(__file__).resolve().parent
 DATA_FILE = ROOT / "gs_burak_data.json"
 BACKUP_DIR = ROOT / "backups"
-COLLECTIONS = ("clientes", "productos", "tiposServicio", "servicios", "compras", "gastos", "equipos")
+COLLECTIONS = ("clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos")
+COLLECTION_TABLES = {
+    "clientes": "app_clientes",
+    "productos": "app_productos",
+    "tiposServicio": "app_tipos_servicio",
+    "servicios": "app_servicios",
+    "programaciones": "app_programaciones",
+    "compras": "app_compras",
+    "gastos": "app_gastos",
+    "equipos": "app_equipos",
+}
 SUPABASE_URL = "https://xuswzuxtccpwlyizbrcj.supabase.co"
 SUPABASE_KEY = "sb_publishable_dBXdapkvlNFK2byoRHCLgw_mBAAF87-"
 SUPABASE_STATE_ID = "main"
@@ -71,6 +82,17 @@ def load_cloud_state():
     return {}
 
 
+def load_table_state():
+    data = {"schemaVersion": 2}
+    total_rows = 0
+    for collection, table in COLLECTION_TABLES.items():
+        rows = supabase_request("GET", f"{table}?select=data")
+        items = [row.get("data") for row in (rows or []) if isinstance(row, dict) and row.get("data")]
+        data[collection] = items
+        total_rows += len(items)
+    return data if total_rows else {}
+
+
 def save_cloud_state(data):
     payload = {
         "id": SUPABASE_STATE_ID,
@@ -82,6 +104,27 @@ def save_cloud_state(data):
         "app_state?on_conflict=id",
         [payload],
     )
+
+
+def save_cloud_record(collection, record):
+    table = COLLECTION_TABLES.get(collection)
+    record_id = record.get("id") if isinstance(record, dict) else None
+    if not table or not record_id:
+        raise ValueError("Invalid collection or record id")
+    payload = {
+        "id": str(record_id),
+        "data": record,
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+    }
+    return supabase_request("POST", f"{table}?on_conflict=id", [payload])
+
+
+def delete_cloud_record(collection, record_id):
+    table = COLLECTION_TABLES.get(collection)
+    if not table or not record_id:
+        raise ValueError("Invalid collection or record id")
+    safe_id = urllib.parse.quote(str(record_id), safe="")
+    return supabase_request("DELETE", f"{table}?id=eq.{safe_id}")
 
 
 def load_local_state():
@@ -103,7 +146,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
             try:
-                data = load_cloud_state()
+                data = load_table_state() or load_cloud_state()
                 if not data:
                     data = load_local_state()
                     if data:
@@ -141,6 +184,40 @@ class Handler(SimpleHTTPRequestHandler):
                 save_cloud_state(data)
             except Exception as error:
                 print(f"No se pudo guardar en Supabase: {error}")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+            return
+        if self.path == "/api/record":
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length)
+            try:
+                payload = json.loads(body.decode("utf-8"))
+                collection = payload.get("collection")
+                record = payload.get("record")
+                save_cloud_record(collection, record)
+            except Exception as error:
+                self.send_error(400, f"Invalid record: {error}")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+            return
+        self.send_error(404)
+
+    def do_DELETE(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/api/record":
+            params = urllib.parse.parse_qs(parsed.query)
+            collection = (params.get("collection") or [""])[0]
+            record_id = (params.get("id") or [""])[0]
+            try:
+                delete_cloud_record(collection, record_id)
+            except Exception as error:
+                self.send_error(400, f"Invalid delete: {error}")
+                return
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
