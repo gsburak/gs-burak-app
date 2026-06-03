@@ -105,6 +105,7 @@ let clienteCiudadFilter = "";
 let servicioSearch = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
+let gastoCategoriaFilter = "";
 let remoteSaveQueue = Promise.resolve();
 
 function uid() {
@@ -1462,13 +1463,16 @@ function renderCompras() {
 
 function renderGastos() {
   const gastosRows = gastosFiltradosOperacion();
+  const categorias = [...new Set(gastosRows.map((g) => g.categoria || "Sin categoria"))].sort();
+  const gastosFiltrados = gastosRows.filter((g) => !gastoCategoriaFilter || (g.categoria || "Sin categoria") === gastoCategoriaFilter);
   const gastosMensuales = gastosPorMes();
   const maxGastoMensual = Math.max(...gastosMensuales.map((row) => row.total), 1);
-  const gastosOrdenados = [...gastosRows].sort((a, b) => {
+  const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
     const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
     if (dateCompare !== 0) return dateCompare;
     return String(b.id || "").localeCompare(String(a.id || ""));
   });
+  const totalCategoria = gastosFiltrados.reduce((sum, gasto) => sum + Number(gasto.monto || 0), 0);
   return `
     ${topbar("Gastos", "Gastos operativos por categoria, comprobante y responsable.", `${operationFilterControl()}<button class="primary" data-open="gasto">Nuevo gasto</button>`)}
     <section class="panel">
@@ -1484,11 +1488,23 @@ function renderGastos() {
     ${renderGastosPagadorResumen()}
     <section class="panel" style="margin-top:14px">
       <h2>Historial de gastos</h2>
+      <section class="filters" style="margin-bottom:0">
+        <div class="field">
+          <label>Categoria</label>
+          <select id="gastoCategoriaFilter">
+            <option value="">Todas</option>
+            ${categorias.map((categoria) => `<option value="${categoria}" ${categoria === gastoCategoriaFilter ? "selected" : ""}>${categoria}</option>`).join("")}
+          </select>
+        </div>
+        <div class="filter-count">
+          ${number(gastosFiltrados.length)} de ${number(gastosRows.length)} gastos · ${money(totalCategoria)}
+        </div>
+      </section>
     </section>
     <div class="table-card">
       <table>
         <thead><tr><th>Fecha</th><th>Operacion</th><th>Categoria</th><th>Descripcion</th><th>Monto</th><th>Pagado por</th><th></th></tr></thead>
-        <tbody>${gastosOrdenados.map((g) => `<tr><td data-label="Fecha">${g.fecha}</td><td data-label="Operacion">${operacionRegistro(g)}</td><td data-label="Categoria">${g.categoria}</td><td data-label="Descripcion">${g.descripcion || ""}<br><span class="readonly">${g.comprobante || ""}</span></td><td data-label="Monto">${money(g.monto)}</td><td data-label="Pagado por">${g.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("gasto", g.id)}</td></tr>`).join("")}</tbody>
+        <tbody>${gastosOrdenados.length ? gastosOrdenados.map((g) => `<tr><td data-label="Fecha">${g.fecha}</td><td data-label="Operacion">${operacionRegistro(g)}</td><td data-label="Categoria">${g.categoria}</td><td data-label="Descripcion">${g.descripcion || ""}<br><span class="readonly">${g.comprobante || ""}</span></td><td data-label="Monto">${money(g.monto)}</td><td data-label="Pagado por">${g.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("gasto", g.id)}</td></tr>`).join("") : `<tr><td colspan="7">No hay gastos que coincidan con este filtro.</td></tr>`}</tbody>
       </table>
     </div>
   `;
@@ -1738,6 +1754,13 @@ function bindApp() {
   if (programacionStatusSelect) {
     programacionStatusSelect.addEventListener("change", (event) => {
       programacionStatusFilter = event.target.value;
+      render();
+    });
+  }
+  const gastoCategoriaSelect = document.querySelector("#gastoCategoriaFilter");
+  if (gastoCategoriaSelect) {
+    gastoCategoriaSelect.addEventListener("change", (event) => {
+      gastoCategoriaFilter = event.target.value;
       render();
     });
   }
