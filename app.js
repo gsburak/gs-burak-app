@@ -3,8 +3,8 @@ const BACKUP_KEY = "gs_burak_app_backups_v1";
 const SERVER_MODE = location.protocol.startsWith("http");
 
 const users = [
-  { id: "admin", name: "Administrador", role: "admin", password: "admin123" },
-  { id: "tecnico", name: "Tecnico", role: "operativo", password: "tecnico123" },
+  { id: "admin", name: "VICTOR", role: "admin", password: "G5687vbm" },
+  { id: "tecnico", name: "TECNICO", role: "operativo", password: "12345" },
 ];
 
 const modules = [
@@ -811,20 +811,19 @@ function renderLogin() {
         <div class="field">
           <label>Usuario</label>
           <select name="user">
-            <option value="admin">Administrador</option>
-            <option value="tecnico">Tecnico</option>
+            <option value="admin">VICTOR</option>
+            <option value="tecnico">TECNICO</option>
           </select>
         </div>
         <div class="field">
           <label>Contraseña</label>
-          <input name="password" type="password" value="admin123" />
+          <input name="password" type="password" value="" />
         </div>
         <div class="form-actions">
           <button class="primary" type="submit">Entrar</button>
         </div>
         <div class="hint">
-          Administrador: admin123<br />
-          Tecnico: tecnico123
+          Acceso autorizado para usuarios registrados.
         </div>
       </form>
     </section>
