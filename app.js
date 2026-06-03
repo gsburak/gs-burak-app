@@ -921,7 +921,9 @@ function renderDashboard() {
       <div class="panel">
         <h2>Resumen mensual</h2>
         <div class="bars">
-          ${monthly.map((row) => renderBar(row.month, row.facturado, Math.max(...monthly.map((r) => r.facturado), 1), showMoney)).join("")}
+          ${showMoney
+            ? monthly.map((row) => renderBar(row.month, row.facturado, Math.max(...monthly.map((r) => r.facturado), 1), true)).join("")
+            : monthly.map((row) => renderBar(row.month, row.servicios, Math.max(...monthly.map((r) => r.servicios), 1), true, "servicios")).join("")}
         </div>
       </div>
       <div class="panel">
