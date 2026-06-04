@@ -26,6 +26,8 @@ COLLECTION_TABLES = {
 SUPABASE_URL = "https://xuswzuxtccpwlyizbrcj.supabase.co"
 SUPABASE_KEY = "sb_publishable_dBXdapkvlNFK2byoRHCLgw_mBAAF87-"
 SUPABASE_STATE_ID = "main"
+CALENDAR_BRIDGE_URL = "https://script.google.com/macros/s/AKfycbyERZACWl4G7T_Xvxl5tsKV9bZi0jn53Q1LqHkWPXQ6YClVFfAAGlVuXhJIsGXyPQiw/exec"
+CALENDAR_BRIDGE_SECRET = "p5X8ZCgabVdkJRDGPItQunM4iY7NyjfS"
 
 
 def backup_current_state():
@@ -127,6 +129,20 @@ def delete_cloud_record(collection, record_id):
     return supabase_request("DELETE", f"{table}?id=eq.{safe_id}")
 
 
+def create_calendar_event(payload):
+    data = dict(payload)
+    data["secret"] = CALENDAR_BRIDGE_SECRET
+    request = urllib.request.Request(
+        CALENDAR_BRIDGE_URL,
+        data=json.dumps(data, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        body = response.read().decode("utf-8")
+        return json.loads(body) if body else {"ok": True}
+
+
 def load_local_state():
     if DATA_FILE.exists():
         return json.loads(DATA_FILE.read_text(encoding="utf-8"))
@@ -204,6 +220,20 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
             self.wfile.write(b'{"ok": true}')
+            return
+        if self.path == "/api/calendar-event":
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length)
+            try:
+                payload = json.loads(body.decode("utf-8"))
+                result = create_calendar_event(payload)
+            except Exception as error:
+                self.send_error(400, f"Calendar error: {error}")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(result, ensure_ascii=False).encode("utf-8"))
             return
         self.send_error(404)
 

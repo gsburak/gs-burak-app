@@ -234,6 +234,27 @@ async function deleteRemoteRecord(collection, id) {
   });
 }
 
+async function createRemoteCalendarEvent(programacion) {
+  if (!SERVER_MODE) return null;
+  const response = await fetch("/api/calendar-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      programacionId: programacion.id,
+      fecha: programacion.fecha,
+      hora: programacion.hora,
+      cliente: nombreCliente(programacion.clienteId),
+      tipo: programacion.tipo,
+      tecnico: programacion.tecnico,
+      ciudad: programacion.ciudad,
+      direccion: programacion.direccion,
+      notas: programacion.notas,
+      duracionMinutos: 90,
+    }),
+  });
+  return response.json();
+}
+
 function migrateState(data) {
   const oldVersion = !data.schemaVersion;
   const oldProducts = new Map((data.productos || []).map((producto) => [producto.id, producto]));
@@ -1249,9 +1270,9 @@ function renderProgramacion() {
       <h2>Servicios programados - ${programacionStatusFilter}</h2>
       <div class="table-card service-list">
         <table>
-          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="8">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1263,6 +1284,12 @@ function programacionPill(estatus) {
   const value = estatus || "Programado";
   const className = value === "Realizado" ? "good" : value === "Cancelado" ? "pending" : "";
   return `<span class="pill ${className}">${value}</span>`;
+}
+
+function calendarPill(programacion) {
+  if (programacion.calendarStatus === "Creado") return `<span class="pill good">Calendario</span>`;
+  if (programacion.calendarStatus) return `<span class="pill pending">Calendario error</span>`;
+  return `<span class="pill">Sin calendario</span>`;
 }
 
 function renderServiciosAnterior() {
@@ -1779,6 +1806,7 @@ function saveEntity(event) {
   const collection = typeToCollection(type);
   let savedEntity = null;
   let updatedProgramacion = null;
+  const isNewEntity = !id;
   if (id) {
     state[collection] = state[collection].map((x) => {
       if (x.id !== id && x.nombre !== id) return x;
@@ -1800,6 +1828,22 @@ function saveEntity(event) {
   saveLocalBackup();
   queueRemoteTask(async () => {
     if (savedEntity) await saveRemoteRecord(collection, savedEntity);
+    if (type === "programacion" && isNewEntity && savedEntity && !savedEntity.calendarEventId) {
+      const calendarResult = await createRemoteCalendarEvent(savedEntity);
+      if (calendarResult?.ok) {
+        savedEntity.calendarEventId = calendarResult.eventId || "";
+        savedEntity.calendarEventUrl = calendarResult.eventUrl || "";
+        savedEntity.calendarStatus = "Creado";
+      } else {
+        savedEntity.calendarStatus = `Error: ${calendarResult?.error || "No se pudo crear evento"}`;
+      }
+      state.programaciones = state.programaciones.map((programacion) =>
+        programacion.id === savedEntity.id ? { ...programacion, ...savedEntity } : programacion
+      );
+      saveLocalBackup();
+      await saveRemoteRecord("programaciones", savedEntity);
+      render();
+    }
     if (updatedProgramacion) await saveRemoteRecord("programaciones", updatedProgramacion);
   });
   modal = null;
