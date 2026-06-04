@@ -1031,7 +1031,13 @@ function gastosPorMes() {
 }
 
 function renderMiniServices() {
-  const rows = [...state.servicios].slice(-5).reverse();
+  const rows = serviciosFiltradosOperacion()
+    .sort((a, b) => {
+      const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
+      if (dateCompare !== 0) return dateCompare;
+      return String(b.id || "").localeCompare(String(a.id || ""));
+    })
+    .slice(0, 5);
   if (!rows.length) return `<p class="readonly">Aun no hay servicios capturados.</p>`;
   return `<div class="table-card"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Estatus</th></tr></thead><tbody>${rows
     .map((s) => `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Estatus">${paymentPill(s)}</td></tr>`)
