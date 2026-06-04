@@ -234,13 +234,15 @@ async function deleteRemoteRecord(collection, id) {
   });
 }
 
-async function createRemoteCalendarEvent(programacion) {
+async function sendRemoteCalendarEvent(programacion, action = "create") {
   if (!SERVER_MODE) return null;
   const response = await fetch("/api/calendar-event", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      action,
       programacionId: programacion.id,
+      eventId: programacion.calendarEventId || "",
       fecha: programacion.fecha,
       hora: programacion.hora,
       cliente: nombreCliente(programacion.clienteId),
@@ -253,6 +255,18 @@ async function createRemoteCalendarEvent(programacion) {
     }),
   });
   return response.json();
+}
+
+function createRemoteCalendarEvent(programacion) {
+  return sendRemoteCalendarEvent(programacion, "create");
+}
+
+function updateRemoteCalendarEvent(programacion) {
+  return sendRemoteCalendarEvent(programacion, "update");
+}
+
+function deleteRemoteCalendarEvent(programacion) {
+  return sendRemoteCalendarEvent(programacion, "delete");
 }
 
 function migrateState(data) {
@@ -1287,7 +1301,8 @@ function programacionPill(estatus) {
 }
 
 function calendarPill(programacion) {
-  if (programacion.calendarStatus === "Creado") return `<span class="pill good">Calendario</span>`;
+  if (["Creado", "Actualizado"].includes(programacion.calendarStatus)) return `<span class="pill good">Calendario</span>`;
+  if (programacion.calendarStatus === "Cancelado") return `<span class="pill pending">Calendario cancelado</span>`;
   if (programacion.calendarStatus) return `<span class="pill pending">Calendario error</span>`;
   return `<span class="pill">Sin calendario</span>`;
 }
@@ -1709,9 +1724,15 @@ function bindApp() {
     button.addEventListener("click", () => {
       if (!confirm("Quieres borrar este registro?")) return;
       const collection = typeToCollection(button.dataset.delete);
+      const deletedEntity = state[collection].find((x) => x.id === button.dataset.id);
       state[collection] = state[collection].filter((x) => x.id !== button.dataset.id);
       saveLocalBackup();
-      queueRemoteTask(() => deleteRemoteRecord(collection, button.dataset.id));
+      queueRemoteTask(async () => {
+        if (collection === "programaciones" && deletedEntity?.calendarEventId) {
+          await deleteRemoteCalendarEvent(deletedEntity);
+        }
+        await deleteRemoteRecord(collection, button.dataset.id);
+      });
       render();
     });
   });
@@ -1828,21 +1849,32 @@ function saveEntity(event) {
   saveLocalBackup();
   queueRemoteTask(async () => {
     if (savedEntity) await saveRemoteRecord(collection, savedEntity);
-    if (type === "programacion" && isNewEntity && savedEntity && !savedEntity.calendarEventId) {
-      const calendarResult = await createRemoteCalendarEvent(savedEntity);
-      if (calendarResult?.ok) {
-        savedEntity.calendarEventId = calendarResult.eventId || "";
-        savedEntity.calendarEventUrl = calendarResult.eventUrl || "";
-        savedEntity.calendarStatus = "Creado";
-      } else {
-        savedEntity.calendarStatus = `Error: ${calendarResult?.error || "No se pudo crear evento"}`;
+    if (type === "programacion" && savedEntity) {
+      let calendarResult = null;
+      if (savedEntity.estatus === "Cancelado" && savedEntity.calendarEventId) {
+        calendarResult = await deleteRemoteCalendarEvent(savedEntity);
+        savedEntity.calendarEventId = "";
+        savedEntity.calendarEventUrl = "";
+        savedEntity.calendarStatus = calendarResult?.ok ? "Cancelado" : `Error: ${calendarResult?.error || "No se pudo cancelar evento"}`;
+      } else if (isNewEntity && !savedEntity.calendarEventId) {
+        calendarResult = await createRemoteCalendarEvent(savedEntity);
+        savedEntity.calendarEventId = calendarResult?.eventId || "";
+        savedEntity.calendarEventUrl = calendarResult?.eventUrl || "";
+        savedEntity.calendarStatus = calendarResult?.ok ? "Creado" : `Error: ${calendarResult?.error || "No se pudo crear evento"}`;
+      } else if (!isNewEntity && savedEntity.calendarEventId) {
+        calendarResult = await updateRemoteCalendarEvent(savedEntity);
+        savedEntity.calendarEventId = calendarResult?.eventId || savedEntity.calendarEventId || "";
+        savedEntity.calendarEventUrl = calendarResult?.eventUrl || savedEntity.calendarEventUrl || "";
+        savedEntity.calendarStatus = calendarResult?.ok ? "Actualizado" : `Error: ${calendarResult?.error || "No se pudo actualizar evento"}`;
       }
-      state.programaciones = state.programaciones.map((programacion) =>
-        programacion.id === savedEntity.id ? { ...programacion, ...savedEntity } : programacion
-      );
-      saveLocalBackup();
-      await saveRemoteRecord("programaciones", savedEntity);
-      render();
+      if (calendarResult) {
+        state.programaciones = state.programaciones.map((programacion) =>
+          programacion.id === savedEntity.id ? { ...programacion, ...savedEntity } : programacion
+        );
+        saveLocalBackup();
+        await saveRemoteRecord("programaciones", savedEntity);
+        render();
+      }
     }
     if (updatedProgramacion) await saveRemoteRecord("programaciones", updatedProgramacion);
   });
