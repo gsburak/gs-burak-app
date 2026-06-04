@@ -103,6 +103,7 @@ let clienteSearch = "";
 let clienteTipoFilter = "";
 let clienteCiudadFilter = "";
 let servicioSearch = "";
+let servicioPagoFilter = "Todos";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
 let gastoCategoriaFilter = "";
@@ -768,6 +769,18 @@ function programacionStatusFilterControl() {
   `;
 }
 
+function servicioPagoFilterControl() {
+  const options = ["Todos", "Por cobrar", "Cobrados"];
+  return `
+    <div class="field compact-filter">
+      <label>Pago</label>
+      <select id="servicioPagoFilter">
+        ${options.map((option) => `<option value="${option}" ${option === servicioPagoFilter ? "selected" : ""}>${option}</option>`).join("")}
+      </select>
+    </div>
+  `;
+}
+
 function dateKeyFromOffset(offset) {
   const date = new Date();
   date.setDate(date.getDate() + offset);
@@ -1379,6 +1392,11 @@ function renderServicios() {
       if (!term) return true;
       return nombreCliente(s.clienteId).toLowerCase().includes(term);
     })
+    .filter((s) => {
+      if (servicioPagoFilter === "Por cobrar") return pendienteServicio(s) > 0;
+      if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
+      return true;
+    })
     .sort((a, b) => {
       const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
       if (dateCompare !== 0) return dateCompare;
@@ -1393,7 +1411,7 @@ function renderServicios() {
     return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
   }).join("");
   return `
-    ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}<button class="primary" data-open="servicio">Nuevo servicio</button>`)}
+    ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}${servicioPagoFilterControl()}<button class="primary" data-open="servicio">Nuevo servicio</button>`)}
     <section class="panel filters">
       <div class="field">
         <label>Buscar servicios por cliente</label>
@@ -1401,6 +1419,7 @@ function renderServicios() {
       </div>
       <div class="filter-count">
         ${number(servicios.length)} de ${number(serviciosFiltradosOperacion().length)} servicios en ${operacionFilter}
+        ${servicioPagoFilter !== "Todos" ? `<br>${servicioPagoFilter}` : ""}
         ${term ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
       </div>
     </section>
@@ -1847,6 +1866,13 @@ function bindApp() {
   if (operacionSelect) {
     operacionSelect.addEventListener("change", (event) => {
       operacionFilter = event.target.value;
+      render();
+    });
+  }
+  const servicioPagoSelect = document.querySelector("#servicioPagoFilter");
+  if (servicioPagoSelect) {
+    servicioPagoSelect.addEventListener("change", (event) => {
+      servicioPagoFilter = event.target.value;
       render();
     });
   }
