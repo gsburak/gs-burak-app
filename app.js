@@ -768,6 +768,18 @@ function programacionStatusFilterControl() {
   `;
 }
 
+function dateKeyFromOffset(offset) {
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
+function shortDateLabel(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const days = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
+  return `${days[date.getDay()]} ${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function metrics() {
   const servicios = serviciosFiltradosOperacion();
   const gastosRows = gastosFiltradosOperacion();
@@ -1286,6 +1298,7 @@ function renderProgramacion() {
   });
   return `
     ${topbar("Programacion", "Agenda interna de servicios por fecha, tecnico y operacion.", `${operationFilterControl()}${programacionStatusFilterControl()}<button class="primary" data-open="programacion">Nuevo programado</button>`)}
+    ${renderProgramacionAgenda(rows)}
     <section class="panel">
       <h2>Servicios programados - ${programacionStatusFilter}</h2>
       <div class="table-card service-list">
@@ -1295,6 +1308,38 @@ function renderProgramacion() {
             ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderProgramacionAgenda(rows) {
+  const days = Array.from({ length: 7 }, (_, index) => dateKeyFromOffset(index));
+  return `
+    <section class="panel agenda-panel">
+      <h2>Agenda proximos 7 dias</h2>
+      <div class="agenda-grid">
+        ${days.map((day) => {
+          const eventos = rows
+            .filter((programacion) => programacion.fecha === day)
+            .sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
+          return `
+            <div class="agenda-day">
+              <div class="agenda-date">${shortDateLabel(day)}</div>
+              <div class="agenda-events">
+                ${eventos.length
+                  ? eventos.map((programacion) => `
+                    <button class="agenda-event" data-edit="programacion" data-id="${programacion.id}">
+                      <strong>${programacion.hora || "--:--"} ${nombreCliente(programacion.clienteId)}</strong>
+                      <span>${programacion.tipo || ""}</span>
+                      <small>${programacion.tecnico || ""} · ${programacion.ciudad || "Yucatan"} · ${programacion.estatus || "Programado"}</small>
+                    </button>
+                  `).join("")
+                  : `<p class="readonly">Sin servicios</p>`}
+              </div>
+            </div>
+          `;
+        }).join("")}
       </div>
     </section>
   `;
