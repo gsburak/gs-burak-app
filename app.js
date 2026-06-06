@@ -637,6 +637,23 @@ function gastosPorPagador() {
   }, {});
 }
 
+function gastosPorPagadorMes() {
+  const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const rows = labels.map((month) => ({ month, VICTOR: 0, SISPROVISA: 0, otros: 0, total: 0 }));
+  gastosFiltradosOperacion().forEach((gasto) => {
+    if (!gasto.fecha) return;
+    const idx = new Date(`${gasto.fecha}T00:00:00`).getMonth();
+    if (Number.isNaN(idx)) return;
+    const monto = Number(gasto.monto || 0);
+    const pagador = String(gasto.pagadoPor || "Sin dato").toUpperCase();
+    if (pagador === "VICTOR") rows[idx].VICTOR += monto;
+    else if (pagador === "SISPROVISA") rows[idx].SISPROVISA += monto;
+    else rows[idx].otros += monto;
+    rows[idx].total += monto;
+  });
+  return rows.filter((row) => row.total > 0);
+}
+
 function comprasPorPagador() {
   return comprasFiltradasOperacion().reduce((rows, compra) => {
     const pagador = compra.pagadoPor || "Sin dato";
@@ -993,6 +1010,7 @@ function renderDashboard() {
     ${renderClientesTipoResumen()}
     ${renderServiciosTecnicoResumen()}
     ${showMoney ? renderGastosPagadorResumen() : ""}
+    ${showMoney ? renderGastosPagadorMensualResumen() : ""}
     ${showMoney ? renderComprasPagadorResumen() : ""}
     ${showMoney ? renderEquiposPagadorResumen() : ""}
     ${showMoney ? renderTotalPagadorResumen() : ""}
@@ -1166,6 +1184,27 @@ function renderGastosPagadorResumen() {
             ? rows.map(([pagador, total]) => renderBar(pagador, total, Math.max(...rows.map((row) => row[1]), 1), true)).join("")
             : `<p class="readonly">Aun no hay gastos registrados.</p>`
         }
+      </div>
+    </section>
+  `;
+}
+
+function renderGastosPagadorMensualResumen() {
+  const rows = gastosPorPagadorMes();
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Gastos por mes y pagador</h2>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Mes</th><th>VICTOR</th><th>SISPROVISA</th><th>Otros</th><th>Total gastos</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Mes">${row.month}</td><td data-label="VICTOR">${money(row.VICTOR)}</td><td data-label="SISPROVISA">${money(row.SISPROVISA)}</td><td data-label="Otros">${money(row.otros)}</td><td data-label="Total gastos"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                : `<tr><td colspan="5">Aun no hay gastos registrados.</td></tr>`
+            }
+          </tbody>
+        </table>
       </div>
     </section>
   `;
