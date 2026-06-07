@@ -219,6 +219,16 @@ async function saveRemoteState(nextState) {
   });
 }
 
+async function restoreRemoteState(nextState) {
+  if (!SERVER_MODE) return;
+  const response = await fetch("/api/restore", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(nextState),
+  });
+  if (!response.ok) throw new Error("No se pudo restaurar el respaldo en la nube");
+}
+
 async function saveRemoteRecord(collection, record) {
   if (!SERVER_MODE) return;
   await fetch("/api/record", {
@@ -440,6 +450,63 @@ function saveLocalBackup() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
     console.warn("No se pudo guardar respaldo local", error);
+  }
+}
+
+function backupFileName() {
+  const now = new Date();
+  const stamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+  return `respaldo-gs-burak-${stamp}.json`;
+}
+
+function exportBackup() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    app: "GS Burak Control Operativo",
+    data: state,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = backupFileName();
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function triggerBackupImport() {
+  document.querySelector("#backupImportInput")?.click();
+}
+
+async function importBackupFile(file) {
+  if (!file) return;
+  try {
+    const textContent = await file.text();
+    const payload = JSON.parse(textContent);
+    const nextState = payload?.data || payload;
+    const required = ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"];
+    const valid = required.every((collection) => Array.isArray(nextState?.[collection]));
+    if (!valid) {
+      alert("El archivo no parece ser un respaldo valido de GS Burak.");
+      return;
+    }
+    const total = required.reduce((sum, collection) => sum + nextState[collection].length, 0);
+    const ok = confirm(`Este respaldo contiene ${number(total)} registros. Si continuas, reemplazara la informacion actual de la nube. Deseas restaurarlo?`);
+    if (!ok) return;
+    state = migrateState(nextState);
+    saveLocalBackup();
+    if (SERVER_MODE) await restoreRemoteState(state);
+    else localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    alert("Respaldo restaurado. La informacion se cargo en la app.");
+    render();
+  } catch (error) {
+    alert(`No se pudo importar el respaldo: ${error.message}`);
   }
 }
 
@@ -973,8 +1040,11 @@ function renderDashboard() {
   const m = metrics();
   const showMoney = currentUser.role === "admin";
   const monthly = groupByMonth();
+  const backupControls = showMoney
+    ? `${operationFilterControl()}<button class="secondary" data-action="exportBackup">Exportar respaldo</button><button class="secondary" data-action="importBackup">Importar respaldo</button><input id="backupImportInput" type="file" accept="application/json" hidden />`
+    : operationFilterControl();
   return `
-    ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.", operationFilterControl())}
+    ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.", backupControls)}
     ${currentUser.role !== "admin" ? `<div class="notice">Tu usuario puede capturar clientes y servicios. Las metricas financieras completas quedan reservadas para administrador.</div>` : ""}
     <section class="grid kpis">
       <div class="kpi"><span>Ventas totales</span><strong>${showMoney ? money(m.facturado) : "Restringido"}</strong><small>Todos los servicios</small></div>
@@ -1863,6 +1933,19 @@ function bindApp() {
       alert("Listo. Revise productos y servicios; las unidades fueron recalculadas.");
     });
   });
+  document.querySelectorAll("[data-action='exportBackup']").forEach((button) => {
+    button.addEventListener("click", exportBackup);
+  });
+  document.querySelectorAll("[data-action='importBackup']").forEach((button) => {
+    button.addEventListener("click", triggerBackupImport);
+  });
+  const backupImportInput = document.querySelector("#backupImportInput");
+  if (backupImportInput) {
+    backupImportInput.addEventListener("change", (event) => {
+      importBackupFile(event.target.files?.[0]);
+      event.target.value = "";
+    });
+  }
   const clienteSearchInput = document.querySelector("#clienteSearch");
   if (clienteSearchInput) {
     clienteSearchInput.addEventListener("input", (event) => {

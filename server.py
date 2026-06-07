@@ -108,6 +108,25 @@ def save_cloud_state(data):
     )
 
 
+def restore_cloud_state(data):
+    save_cloud_state(data)
+    for collection, table in COLLECTION_TABLES.items():
+        supabase_request("DELETE", f"{table}?id=not.is.null")
+        rows = data.get(collection) or []
+        payload = [
+            {
+                "id": str(row.get("id")),
+                "data": row,
+                "updated_at": datetime.utcnow().isoformat() + "Z",
+            }
+            for row in rows
+            if isinstance(row, dict) and row.get("id")
+        ]
+        if payload:
+            supabase_request("POST", f"{table}?on_conflict=id", payload)
+    return {"ok": True}
+
+
 def save_cloud_record(collection, record):
     table = COLLECTION_TABLES.get(collection)
     record_id = record.get("id") if isinstance(record, dict) else None
@@ -200,6 +219,26 @@ class Handler(SimpleHTTPRequestHandler):
                 save_cloud_state(data)
             except Exception as error:
                 print(f"No se pudo guardar en Supabase: {error}")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+            return
+        if self.path == "/api/restore":
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length)
+            try:
+                data = json.loads(body.decode("utf-8"))
+            except json.JSONDecodeError:
+                self.send_error(400, "Invalid JSON")
+                return
+            backup_current_state()
+            DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            try:
+                restore_cloud_state(data)
+            except Exception as error:
+                self.send_error(500, f"Restore failed: {error}")
+                return
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
