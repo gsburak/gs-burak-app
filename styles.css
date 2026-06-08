@@ -610,6 +610,78 @@ textarea {
   background: var(--brand);
 }
 
+.agenda-panel {
+  margin-bottom: 14px;
+}
+
+.agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(155px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.agenda-day {
+  min-height: 170px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  overflow: hidden;
+}
+
+.agenda-date {
+  background: #f1f5f6;
+  border-bottom: 1px solid var(--line);
+  padding: 9px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #344054;
+}
+
+.agenda-events {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.agenda-event {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+  background: var(--soft);
+  color: var(--brand-dark);
+  border-radius: 6px;
+  padding: 9px;
+  line-height: 1.25;
+}
+
+.agenda-event:hover {
+  background: #d9efeb;
+}
+
+.agenda-event strong,
+.agenda-event span,
+.agenda-event small {
+  overflow-wrap: anywhere;
+}
+
+.agenda-event strong {
+  font-size: 12px;
+}
+
+.agenda-event span {
+  color: #344054;
+  font-size: 12px;
+}
+
+.agenda-event small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .table-card {
   overflow: auto;
 }
