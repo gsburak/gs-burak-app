@@ -311,6 +311,267 @@ textarea {
   color: var(--muted);
 }
 
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.hero-card,
+.dash-panel {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 18px 38px rgba(8, 22, 32, 0.16);
+}
+
+.hero-card {
+  min-height: 138px;
+  padding: 18px;
+  color: white;
+  background: linear-gradient(135deg, #0f766e, #12b886);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hero-card.cyan {
+  background: linear-gradient(135deg, #0284c7, #22d3ee);
+}
+
+.hero-card.violet {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+}
+
+.hero-card.amber {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+}
+
+.hero-card span,
+.dash-panel .panel-head span {
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0.82;
+}
+
+.hero-card strong {
+  display: block;
+  font-size: clamp(23px, 2.6vw, 34px);
+  line-height: 1.05;
+}
+
+.hero-card small {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr 0.8fr;
+  gap: 14px;
+}
+
+.dash-panel {
+  background: #102332;
+  color: #e8f5f4;
+  padding: 16px;
+  min-height: 260px;
+}
+
+.dash-panel.wide {
+  grid-column: span 2;
+}
+
+.dash-panel h2 {
+  color: white;
+  margin: 0;
+  font-size: 18px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.month-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(42px, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 230px;
+}
+
+.month-column {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  text-align: center;
+}
+
+.month-bars {
+  height: 160px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.month-bar {
+  width: 14px;
+  border-radius: 999px 999px 2px 2px;
+  min-height: 5px;
+}
+
+.month-bar.billed {
+  background: linear-gradient(180deg, #22d3ee, #0f766e);
+}
+
+.month-bar.paid {
+  background: linear-gradient(180deg, #facc15, #f97316);
+}
+
+.month-column strong {
+  color: #cfe7e5;
+  font-size: 12px;
+}
+
+.month-column small {
+  color: #8fb1b3;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.donut {
+  --value: 0;
+  width: min(220px, 100%);
+  aspect-ratio: 1;
+  margin: 8px auto 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #102332 0 57%, transparent 58%),
+    conic-gradient(#22d3ee var(--value), rgba(255, 255, 255, 0.09) 0);
+  display: grid;
+  place-items: center;
+}
+
+.donut.profit {
+  background:
+    radial-gradient(circle at center, #102332 0 57%, transparent 58%),
+    conic-gradient(#facc15 var(--value), rgba(255, 255, 255, 0.09) 0);
+}
+
+.donut div {
+  width: 70%;
+  text-align: center;
+}
+
+.donut strong {
+  display: block;
+  color: white;
+  font-size: 24px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.donut span {
+  color: #8fb1b3;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.split-metrics,
+.metric-list {
+  display: grid;
+  gap: 10px;
+}
+
+.split-metrics {
+  grid-template-columns: 1fr 1fr;
+}
+
+.split-metrics span,
+.metric-list div {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.split-metrics strong,
+.metric-list strong {
+  display: block;
+  color: white;
+  margin-top: 4px;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.metric-list span {
+  color: #8fb1b3;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.metric-list.compact {
+  margin-top: 10px;
+}
+
+.recent-services {
+  display: grid;
+  gap: 10px;
+}
+
+.recent-service {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.recent-service div {
+  min-width: 0;
+}
+
+.recent-service strong,
+.recent-service span {
+  display: block;
+}
+
+.recent-service strong {
+  color: white;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.recent-service span {
+  color: #9fc1c2;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.dash-panel .pill.good {
+  background: rgba(34, 197, 94, 0.18);
+  color: #bbf7d0;
+}
+
+.dash-panel .pill.pending {
+  background: rgba(249, 115, 22, 0.18);
+  color: #fed7aa;
+}
+
+.dashboard-insights {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
 .panel {
   padding: 16px;
 }
@@ -597,9 +858,32 @@ th {
   }
 
   .kpis,
+  .dashboard-hero,
+  .dashboard-grid,
   .two,
   .form-grid,
   .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-panel.wide {
+    grid-column: auto;
+  }
+
+  .dash-panel {
+    min-height: 0;
+  }
+
+  .month-chart {
+    grid-template-columns: repeat(3, 1fr);
+    min-height: 0;
+  }
+
+  .month-bars {
+    height: 120px;
+  }
+
+  .split-metrics {
     grid-template-columns: 1fr;
   }
 
