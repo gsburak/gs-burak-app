@@ -1040,52 +1040,143 @@ function renderDashboard() {
   const m = metrics();
   const showMoney = currentUser.role === "admin";
   const monthly = groupByMonth();
+  const maxMonthly = Math.max(...monthly.map((row) => row.facturado), 1);
+  const cobradoRatio = m.facturado > 0 ? Math.min(100, Math.round((m.cobrado / m.facturado) * 100)) : 0;
+  const pendienteRatio = m.facturado > 0 ? Math.min(100, Math.round((m.porCobrar / m.facturado) * 100)) : 0;
+  const utilidadRatio = m.cobrado > 0 ? Math.max(0, Math.min(100, Math.round((m.utilidad / m.cobrado) * 100))) : 0;
   const backupControls = showMoney
     ? `${operationFilterControl()}<button class="secondary" data-action="exportBackup">Exportar respaldo</button><button class="secondary" data-action="importBackup">Importar respaldo</button><input id="backupImportInput" type="file" accept="application/json" hidden />`
     : operationFilterControl();
   return `
     ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.", backupControls)}
     ${currentUser.role !== "admin" ? `<div class="notice">Tu usuario puede capturar clientes y servicios. Las metricas financieras completas quedan reservadas para administrador.</div>` : ""}
-    <section class="grid kpis">
-      <div class="kpi"><span>Ventas totales</span><strong>${showMoney ? money(m.facturado) : "Restringido"}</strong><small>Todos los servicios</small></div>
-      <div class="kpi"><span>Ingresos cobrados</span><strong>${showMoney ? money(m.cobrado) : "Restringido"}</strong><small>Pagos registrados</small></div>
-      <div class="kpi"><span>Por cobrar</span><strong>${showMoney ? money(m.porCobrar) : "Restringido"}</strong><small>Servicios pendientes</small></div>
-      <div class="kpi"><span>Servicios</span><strong>${number(m.servicios)}</strong><small>Capturados</small></div>
-      <div class="kpi"><span>Clientes</span><strong>${number(m.totalClientes)}</strong><small>Registrados</small></div>
-      <div class="kpi"><span>Ticket promedio</span><strong>${showMoney ? money(m.ticket) : "Restringido"}</strong><small>Importe por servicio</small></div>
-      ${showMoney ? `
-      <div class="kpi"><span>Costo productos</span><strong>${money(m.costoProductos)}</strong><small>Consumo registrado</small></div>
-      <div class="kpi"><span>Gastos operativos</span><strong>${money(m.gastos)}</strong><small>Gastos capturados</small></div>
-      <div class="kpi"><span>Compra productos</span><strong>${money(m.comprasProductos)}</strong><small>Inversion en inventario</small></div>
-      <div class="kpi"><span>Depreciacion mensual</span><strong>${money(m.depreciacion)}</strong><small>Equipos</small></div>
-      <div class="kpi"><span>Utilidad neta</span><strong>${money(m.utilidad)}</strong><small>Margen ${(m.margen * 100).toFixed(1)}%</small></div>
-      <div class="kpi"><span>Inversion equipos</span><strong>${money(m.inversionEquipo)}</strong><small>Costo de adquisicion</small></div>
-      <div class="kpi"><span>Deprec. acumulada</span><strong>${money(m.depreciacionEquipoAcumulada)}</strong><small>Desgaste registrado</small></div>
-      <div class="kpi"><span>Valor neto equipos</span><strong>${money(m.valorNetoEquipo)}</strong><small>Inversion menos depreciacion</small></div>` : ""}
+    <section class="dashboard-hero">
+      <div class="hero-card hero-main">
+        <span>Ventas totales</span>
+        <strong>${showMoney ? money(m.facturado) : "Restringido"}</strong>
+        <small>${number(m.servicios)} servicios capturados</small>
+      </div>
+      <div class="hero-card cyan">
+        <span>Ingresos cobrados</span>
+        <strong>${showMoney ? money(m.cobrado) : "Restringido"}</strong>
+        <small>${showMoney ? `${cobradoRatio}% de venta total` : "Pagos registrados"}</small>
+      </div>
+      <div class="hero-card violet">
+        <span>Por cobrar</span>
+        <strong>${showMoney ? money(m.porCobrar) : "Restringido"}</strong>
+        <small>${showMoney ? `${pendienteRatio}% pendiente` : "Servicios pendientes"}</small>
+      </div>
+      <div class="hero-card amber">
+        <span>Utilidad neta</span>
+        <strong>${showMoney ? money(m.utilidad) : "Restringido"}</strong>
+        <small>${showMoney ? `Margen ${(m.margen * 100).toFixed(1)}%` : "Reservado para admin"}</small>
+      </div>
     </section>
-    <section class="grid two" style="margin-top:14px">
-      <div class="panel">
-        <h2>Resumen mensual</h2>
-        <div class="bars">
-          ${showMoney
-            ? monthly.map((row) => renderBar(row.month, row.facturado, Math.max(...monthly.map((r) => r.facturado), 1), true)).join("")
-            : monthly.map((row) => renderBar(row.month, row.servicios, Math.max(...monthly.map((r) => r.servicios), 1), true, "servicios")).join("")}
+    <section class="dashboard-grid">
+      <div class="dash-panel wide">
+        <div class="panel-head">
+          <h2>Ventas por mes</h2>
+          <span>${showMoney ? "Venta total" : "Servicios"}</span>
+        </div>
+        ${showMoney ? renderDashboardMonthlyChart(monthly, maxMonthly) : `<div class="bars">${monthly.map((row) => renderBar(row.month, row.servicios, Math.max(...monthly.map((r) => r.servicios), 1), true, "servicios")).join("")}</div>`}
+      </div>
+      <div class="dash-panel ring-panel">
+        <div class="panel-head">
+          <h2>Estado de cobro</h2>
+          <span>${showMoney ? `${cobradoRatio}% cobrado` : "Resumen"}</span>
+        </div>
+        ${renderDashboardRing(cobradoRatio, showMoney ? "Cobrado" : "Servicios", showMoney ? money(m.cobrado) : number(m.servicios))}
+        <div class="split-metrics">
+          <span>Cobrado <strong>${showMoney ? money(m.cobrado) : "Restringido"}</strong></span>
+          <span>Pendiente <strong>${showMoney ? money(m.porCobrar) : "Restringido"}</strong></span>
         </div>
       </div>
-      <div class="panel">
-        <h2>Servicios recientes</h2>
+      <div class="dash-panel">
+        <div class="panel-head">
+          <h2>Operacion</h2>
+          <span>${operacionFilter}</span>
+        </div>
+        <div class="metric-list">
+          <div><span>Clientes</span><strong>${number(m.totalClientes)}</strong></div>
+          <div><span>Ticket promedio</span><strong>${showMoney ? money(m.ticket) : "Restringido"}</strong></div>
+          <div><span>Costo productos</span><strong>${showMoney ? money(m.costoProductos) : "Restringido"}</strong></div>
+          <div><span>Gastos operativos</span><strong>${showMoney ? money(m.gastos) : "Restringido"}</strong></div>
+        </div>
+      </div>
+      <div class="dash-panel">
+        <div class="panel-head">
+          <h2>Utilidad</h2>
+          <span>${showMoney ? `${utilidadRatio}% sobre cobrado` : "Admin"}</span>
+        </div>
+        ${renderDashboardRing(utilidadRatio, "Margen", showMoney ? `${(m.margen * 100).toFixed(1)}%` : "Restringido", "profit")}
+        <div class="metric-list compact">
+          <div><span>Compras producto</span><strong>${showMoney ? money(m.comprasProductos) : "Restringido"}</strong></div>
+          <div><span>Deprec. mensual</span><strong>${showMoney ? money(m.depreciacion) : "Restringido"}</strong></div>
+        </div>
+      </div>
+      <div class="dash-panel wide">
+        <div class="panel-head">
+          <h2>Servicios recientes</h2>
+          <span>Ultimos registros</span>
+        </div>
         ${renderMiniServices()}
       </div>
+      <div class="dash-panel">
+        <div class="panel-head">
+          <h2>Equipos</h2>
+          <span>Inversion</span>
+        </div>
+        <div class="metric-list">
+          <div><span>Inversion equipos</span><strong>${showMoney ? money(m.inversionEquipo) : "Restringido"}</strong></div>
+          <div><span>Deprec. acumulada</span><strong>${showMoney ? money(m.depreciacionEquipoAcumulada) : "Restringido"}</strong></div>
+          <div><span>Valor neto</span><strong>${showMoney ? money(m.valorNetoEquipo) : "Restringido"}</strong></div>
+        </div>
+      </div>
     </section>
-    ${renderClientesTipoResumen()}
-    ${renderServiciosTecnicoResumen()}
-    ${showMoney ? renderGastosPagadorResumen() : ""}
-    ${showMoney ? renderGastosPagadorMensualResumen() : ""}
-    ${showMoney ? renderComprasPagadorResumen() : ""}
-    ${showMoney ? renderEquiposPagadorResumen() : ""}
-    ${showMoney ? renderTotalPagadorResumen() : ""}
-    ${showMoney ? renderVentasCiudadResumen() : ""}
-    ${showMoney ? renderPendientesResumen() : ""}
+    <section class="dashboard-insights">
+      ${renderClientesTipoResumen()}
+      ${renderServiciosTecnicoResumen()}
+      ${showMoney ? renderVentasCiudadResumen() : ""}
+      ${showMoney ? renderGastosPagadorResumen() : ""}
+      ${showMoney ? renderComprasPagadorResumen() : ""}
+      ${showMoney ? renderEquiposPagadorResumen() : ""}
+      ${showMoney ? renderTotalPagadorResumen() : ""}
+      ${showMoney ? renderGastosPagadorMensualResumen() : ""}
+      ${showMoney ? renderPendientesResumen() : ""}
+    </section>
+  `;
+}
+
+function renderDashboardMonthlyChart(monthly, max) {
+  return `
+    <div class="month-chart">
+      ${monthly.map((row) => {
+        const height = Math.max(7, Math.round((row.facturado / max) * 100));
+        const cobradoHeight = row.facturado > 0 ? Math.max(5, Math.round((row.cobrado / max) * 100)) : 0;
+        return `
+          <div class="month-column">
+            <div class="month-bars" title="${row.month}: ${money(row.facturado)}">
+              <span class="month-bar billed" style="height:${height}%"></span>
+              <span class="month-bar paid" style="height:${cobradoHeight}%"></span>
+            </div>
+            <strong>${row.month}</strong>
+            <small>${money(row.facturado)}</small>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderDashboardRing(percent, label, value, variant = "") {
+  const safePercent = Math.max(0, Math.min(100, Number(percent || 0)));
+  return `
+    <div class="donut ${variant}" style="--value:${safePercent}%">
+      <div>
+        <strong>${value}</strong>
+        <span>${label}</span>
+      </div>
+    </div>
   `;
 }
 
@@ -1152,9 +1243,19 @@ function renderMiniServices() {
     })
     .slice(0, 5);
   if (!rows.length) return `<p class="readonly">Aun no hay servicios capturados.</p>`;
-  return `<div class="table-card"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Estatus</th></tr></thead><tbody>${rows
-    .map((s) => `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Estatus">${paymentPill(s)}</td></tr>`)
-    .join("")}</tbody></table></div>`;
+  return `
+    <div class="recent-services">
+      ${rows.map((s) => `
+        <div class="recent-service">
+          <div>
+            <strong>${nombreCliente(s.clienteId)}</strong>
+            <span>${s.fecha} · ${s.tipo || "Servicio"}</span>
+          </div>
+          ${paymentPill(s)}
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderPendientesResumen() {
