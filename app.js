@@ -463,6 +463,38 @@ function backupFileName() {
   return `respaldo-gs-burak-${stamp}.json`;
 }
 
+function datedFileName(prefix, extension) {
+  const now = new Date();
+  const stamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+  return `${prefix}-${stamp}.${extension}`;
+}
+
+function csvCell(value) {
+  let textValue = String(value ?? "");
+  if (/^[=+\-@]/.test(textValue)) textValue = `'${textValue}`;
+  return `"${textValue.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(fileName, headers, rows) {
+  const lines = [
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => row.map(csvCell).join(",")),
+  ];
+  const blob = new Blob([`\ufeff${lines.join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function exportBackup() {
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -478,6 +510,90 @@ function exportBackup() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function clientesFiltradosVista() {
+  const term = clienteSearch.trim().toLowerCase();
+  return state.clientes
+    .filter((c) => !clienteTipoFilter || (c.tipo || "Sin tipo") === clienteTipoFilter)
+    .filter((c) => !clienteCiudadFilter || (c.ciudad || "MERIDA") === clienteCiudadFilter)
+    .filter((c) => {
+      if (!term) return true;
+      return [c.nombre, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones]
+        .some((value) => String(value || "").toLowerCase().includes(term));
+    })
+    .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")));
+}
+
+function serviciosFiltradosVista() {
+  const term = servicioSearch.trim().toLowerCase();
+  return serviciosFiltradosOperacion()
+    .filter((s) => {
+      if (!term) return true;
+      return nombreCliente(s.clienteId).toLowerCase().includes(term);
+    })
+    .filter((s) => {
+      if (servicioPagoFilter === "Por cobrar") return pendienteServicio(s) > 0;
+      if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
+      return true;
+    })
+    .sort((a, b) => {
+      const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
+      if (dateCompare !== 0) return dateCompare;
+      const clientCompare = nombreCliente(a.clienteId).localeCompare(nombreCliente(b.clienteId));
+      if (clientCompare !== 0) return clientCompare;
+      return String(a.id || "").localeCompare(String(b.id || ""));
+    });
+}
+
+function exportClientesCsv() {
+  const rows = clientesFiltradosVista().map((c) => {
+    const servicios = state.servicios.filter((s) => s.clienteId === c.id);
+    const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
+    const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
+    return [
+      c.nombre,
+      c.telefono,
+      c.correo,
+      c.ciudad || "MERIDA",
+      c.tipo || "",
+      c.direccion || "",
+      c.observaciones || "",
+      servicios.length,
+      facturado,
+      cobrado,
+      Math.max(0, facturado - cobrado),
+    ];
+  });
+  downloadCsv(
+    datedFileName("clientes-gs-burak", "csv"),
+    ["Cliente", "Telefono", "Correo", "Ciudad", "Tipo", "Direccion", "Observaciones", "Servicios", "Facturado", "Cobrado", "Por cobrar"],
+    rows
+  );
+}
+
+function exportServiciosCsv() {
+  const rows = serviciosFiltradosVista().map((s) => [
+    s.fecha,
+    nombreCliente(s.clienteId),
+    s.ciudad || "Yucatan",
+    s.tipo || "",
+    s.tecnico || "",
+    s.zona || "",
+    s.observaciones || "",
+    totalServicio(s),
+    Number(s.cobrado || 0),
+    pendienteServicio(s),
+    costoServicio(s),
+    `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%`,
+    pendienteServicio(s) > 0 ? "Por cobrar" : "Cobrado",
+    s.formaPago || "",
+  ]);
+  downloadCsv(
+    datedFileName("ventas-servicios-gs-burak", "csv"),
+    ["Fecha", "Cliente", "Ciudad", "Servicio", "Tecnico", "Zona / direccion", "Observaciones", "Total", "Cobrado", "Pendiente", "Costo producto", "% producto", "Estatus", "Forma de pago"],
+    rows
+  );
 }
 
 function triggerBackupImport() {
@@ -1452,19 +1568,10 @@ function paymentPill(s) {
 }
 
 function renderClientes() {
-  const term = clienteSearch.trim().toLowerCase();
   const tipos = [...new Set(state.clientes.map((c) => c.tipo || "Sin tipo"))].sort();
-  const clientes = state.clientes
-    .filter((c) => !clienteTipoFilter || (c.tipo || "Sin tipo") === clienteTipoFilter)
-    .filter((c) => !clienteCiudadFilter || (c.ciudad || "MERIDA") === clienteCiudadFilter)
-    .filter((c) => {
-      if (!term) return true;
-      return [c.nombre, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones]
-        .some((value) => String(value || "").toLowerCase().includes(term));
-    })
-    .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")));
+  const clientes = clientesFiltradosVista();
   return `
-    ${topbar("Clientes", "Alta, contacto, direccion e historial financiero por cliente.", `<button class="primary" data-open="cliente">Nuevo cliente</button>`)}
+    ${topbar("Clientes", "Alta, contacto, direccion e historial financiero por cliente.", `<button class="secondary" data-action="exportClientes">Exportar clientes</button><button class="primary" data-open="cliente">Nuevo cliente</button>`)}
     <section class="panel filters">
       <div class="field">
         <label>Buscar cliente</label>
@@ -1601,23 +1708,7 @@ function renderServiciosAnterior() {
 
 function renderServicios() {
   const term = servicioSearch.trim().toLowerCase();
-  const servicios = serviciosFiltradosOperacion()
-    .filter((s) => {
-      if (!term) return true;
-      return nombreCliente(s.clienteId).toLowerCase().includes(term);
-    })
-    .filter((s) => {
-      if (servicioPagoFilter === "Por cobrar") return pendienteServicio(s) > 0;
-      if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
-      return true;
-    })
-    .sort((a, b) => {
-      const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
-      if (dateCompare !== 0) return dateCompare;
-      const clientCompare = nombreCliente(a.clienteId).localeCompare(nombreCliente(b.clienteId));
-      if (clientCompare !== 0) return clientCompare;
-      return String(a.id || "").localeCompare(String(b.id || ""));
-    });
+  const servicios = serviciosFiltradosVista();
   const totalFiltrado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
   const rows = servicios.map((s) => {
     const costo = currentUser.role === "admin" ? money(costoServicio(s)) : "Restringido";
@@ -1625,7 +1716,7 @@ function renderServicios() {
     return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
   }).join("");
   return `
-    ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}${servicioPagoFilterControl()}<button class="primary" data-open="servicio">Nuevo servicio</button>`)}
+    ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}${servicioPagoFilterControl()}<button class="secondary" data-action="exportServicios">Exportar ventas</button><button class="primary" data-open="servicio">Nuevo servicio</button>`)}
     <section class="panel filters">
       <div class="field">
         <label>Buscar servicios por cliente</label>
@@ -2043,6 +2134,12 @@ function bindApp() {
   });
   document.querySelectorAll("[data-action='importBackup']").forEach((button) => {
     button.addEventListener("click", triggerBackupImport);
+  });
+  document.querySelectorAll("[data-action='exportClientes']").forEach((button) => {
+    button.addEventListener("click", exportClientesCsv);
+  });
+  document.querySelectorAll("[data-action='exportServicios']").forEach((button) => {
+    button.addEventListener("click", exportServiciosCsv);
   });
   const backupImportInput = document.querySelector("#backupImportInput");
   if (backupImportInput) {
