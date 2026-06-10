@@ -1552,11 +1552,15 @@ function renderProgramacionAgenda(rows) {
               <div class="agenda-events">
                 ${eventos.length
                   ? eventos.map((programacion) => `
-                    <button class="agenda-event" data-edit="programacion" data-id="${programacion.id}">
+                    <div class="agenda-event">
                       <strong>${programacion.hora || "--:--"} ${nombreCliente(programacion.clienteId)}</strong>
                       <span>${programacion.tipo || ""}</span>
                       <small>${programacion.tecnico || ""} · ${programacion.ciudad || "Yucatan"} · ${programacion.estatus || "Programado"}</small>
-                    </button>
+                      <div class="agenda-actions">
+                        <button class="secondary" data-edit="programacion" data-id="${programacion.id}">Editar</button>
+                        <button class="primary" data-convert-programacion="${programacion.id}">Pasar a ventas</button>
+                      </div>
+                    </div>
                   `).join("")
                   : `<p class="readonly">Sin servicios</p>`}
               </div>
