@@ -22,8 +22,8 @@ const modules = [
 const seed = {
   schemaVersion: 2,
   clientes: [
-    { id: uid(), nombre: "Residencial Montebello", telefono: "999 123 4567", correo: "admin@montebello.mx", direccion: "Merida, Yucatan", tipo: "Residencial", observaciones: "Cliente de ejemplo." },
-    { id: uid(), nombre: "Restaurante Centro", telefono: "999 765 4321", correo: "contacto@restaurante.mx", direccion: "Centro, Merida", tipo: "Comercial", observaciones: "Cliente de ejemplo." },
+    { id: uid(), nombre: "Residencial Montebello", contacto: "Administrador", telefono: "999 123 4567", correo: "admin@montebello.mx", direccion: "Merida, Yucatan", tipo: "Residencial", observaciones: "Cliente de ejemplo." },
+    { id: uid(), nombre: "Restaurante Centro", contacto: "Encargado", telefono: "999 765 4321", correo: "contacto@restaurante.mx", direccion: "Centro, Merida", tipo: "Comercial", observaciones: "Cliente de ejemplo." },
   ],
   productos: [
     { id: uid(), producto: "Fendona", unidadCompra: "litro", unidadUso: "ml", factor: 1000, costo: 2500 },
@@ -291,9 +291,11 @@ function migrateState(data) {
   }));
   data.clientes = (data.clientes || []).map((cliente) => ({
     ciudad: "MERIDA",
+    contacto: "",
     observaciones: "",
     ...cliente,
     ciudad: cliente.ciudad || "MERIDA",
+    contacto: cliente.contacto || "",
   }));
   data.productos = (data.productos || []).map((producto) => {
     if (producto.unidadCompra && producto.unidadUso && producto.factor) return normalizeProduct(producto);
@@ -312,6 +314,24 @@ function migrateState(data) {
     });
   });
   data.productos = (data.productos || []).map(normalizeProduct);
+  data.clientes = (data.clientes || []).map((cliente) => {
+    const domicilios = Array.isArray(cliente.domicilios)
+      ? cliente.domicilios.filter((domicilio) => domicilio && (domicilio.direccion || domicilio.alias))
+      : [];
+    if (!domicilios.length && cliente.direccion) {
+      domicilios.push({
+        alias: "Principal",
+        direccion: cliente.direccion,
+        ciudad: cliente.ciudad || "MERIDA",
+        referencia: "",
+        contacto: "",
+      });
+    }
+    return {
+      ...cliente,
+      domicilios,
+    };
+  });
   if (oldVersion) {
     data.compras = (data.compras || []).map((compra) => {
       const oldProduct = oldProducts.get(compra.productoId);
@@ -519,7 +539,10 @@ function clientesFiltradosVista() {
     .filter((c) => !clienteCiudadFilter || (c.ciudad || "MERIDA") === clienteCiudadFilter)
     .filter((c) => {
       if (!term) return true;
-      return [c.nombre, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones]
+      const domiciliosText = domiciliosCliente(c)
+        .map((domicilio) => [domicilio.alias, domicilio.direccion, domicilio.ciudad, domicilio.referencia, domicilio.contacto].join(" "))
+        .join(" ");
+      return [c.nombre, c.contacto, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones, domiciliosText]
         .some((value) => String(value || "").toLowerCase().includes(term));
     })
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")));
@@ -551,13 +574,18 @@ function exportClientesCsv() {
     const servicios = state.servicios.filter((s) => s.clienteId === c.id);
     const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
     const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
+    const domicilios = domiciliosCliente(c)
+      .map((domicilio) => `${domicilio.alias || "Domicilio"}: ${domicilio.direccion || ""} ${domicilio.referencia ? `(${domicilio.referencia})` : ""}`)
+      .join(" | ");
     return [
       c.nombre,
+      c.contacto,
       c.telefono,
       c.correo,
       c.ciudad || "MERIDA",
       c.tipo || "",
       c.direccion || "",
+      domicilios,
       c.observaciones || "",
       servicios.length,
       facturado,
@@ -567,7 +595,7 @@ function exportClientesCsv() {
   });
   downloadCsv(
     datedFileName("clientes-gs-burak", "csv"),
-    ["Cliente", "Telefono", "Correo", "Ciudad", "Tipo", "Direccion", "Observaciones", "Servicios", "Facturado", "Cobrado", "Por cobrar"],
+    ["Cliente", "Contacto", "Telefono", "Correo", "Ciudad", "Tipo", "Direccion principal", "Domicilios", "Observaciones", "Servicios", "Facturado", "Cobrado", "Por cobrar"],
     rows
   );
 }
@@ -687,6 +715,31 @@ function cantidadConsumidaUsoOperacion(productoId, operacion) {
 
 function nombreCliente(clienteId) {
   return state.clientes.find((c) => c.id === clienteId)?.nombre || "Sin cliente";
+}
+
+function domiciliosCliente(cliente) {
+  const domicilios = Array.isArray(cliente?.domicilios)
+    ? cliente.domicilios.filter((domicilio) => domicilio && (domicilio.direccion || domicilio.alias))
+    : [];
+  if (domicilios.length) return domicilios;
+  if (cliente?.direccion) {
+    return [{
+      alias: "Principal",
+      direccion: cliente.direccion,
+      ciudad: cliente.ciudad || "MERIDA",
+      referencia: "",
+      contacto: "",
+    }];
+  }
+  return [];
+}
+
+function resumenDomiciliosCliente(cliente) {
+  const domicilios = domiciliosCliente(cliente);
+  if (!domicilios.length) return "";
+  const principal = domicilios[0];
+  const extra = domicilios.length > 1 ? `<br><span class="readonly">${number(domicilios.length)} domicilios registrados</span>` : "";
+  return `<br><span class="readonly">${principal.alias ? `${principal.alias}: ` : ""}${principal.direccion || ""}</span>${extra}`;
 }
 
 function costoServicio(servicio) {
@@ -1597,14 +1650,14 @@ function renderClientes() {
     </section>
     <div class="table-card service-list">
       <table>
-        <thead><tr><th>Cliente</th><th>Telefono</th><th>Ciudad</th><th>Tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Contacto</th><th>Telefono</th><th>Correo</th><th>Ciudad</th><th>Tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
         <tbody>
           ${clientes.length ? clientes.map((c) => {
             const servicios = state.servicios.filter((s) => s.clienteId === c.id);
             const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
             const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
-            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong><br><span class="readonly">${c.direccion || ""}</span>${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Telefono">${c.telefono || ""}</td><td data-label="Ciudad">${c.ciudad || "MERIDA"}</td><td data-label="Tipo">${c.tipo || ""}</td><td data-label="Servicios">${servicios.length}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
-          }).join("") : `<tr><td colspan="8">No hay clientes que coincidan con la busqueda.</td></tr>`}
+            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${c.contacto || ""}</td><td data-label="Telefono">${c.telefono || ""}</td><td data-label="Correo">${c.correo || ""}</td><td data-label="Ciudad">${c.ciudad || "MERIDA"}</td><td data-label="Tipo">${c.tipo || ""}</td><td data-label="Servicios">${servicios.length}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
+          }).join("") : `<tr><td colspan="10">No hay clientes que coincidan con la busqueda.</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -1997,9 +2050,33 @@ function text(name, label, value = "", extra = "") {
   return `<div class="field ${extra}"><label>${label}</label><textarea name="${name}">${value ?? ""}</textarea></div>`;
 }
 
+function formDomiciliosCliente(data) {
+  const domicilios = domiciliosCliente(data);
+  const rows = Array.from({ length: 3 }, (_, index) => domicilios[index] || {});
+  return `
+    <div class="full panel">
+      <h2>Domicilios del cliente</h2>
+      <div class="domicilios-grid">
+        ${rows.map((domicilio, index) => `
+          <div class="domicilio-block">
+            <h3>Domicilio ${index + 1}</h3>
+            <div class="form-grid">
+              ${input(`domicilioAlias${index}`, "Alias", domicilio.alias || (index === 0 ? "Principal" : ""))}
+              ${select(`domicilioCiudad${index}`, "Ciudad", domicilio.ciudad || data.ciudad || "MERIDA", ["MERIDA", "CDMX"].map((x) => ({ value: x, label: x })))}
+              ${input(`domicilioDireccion${index}`, "Direccion", domicilio.direccion || "", "text", "full")}
+              ${input(`domicilioContacto${index}`, "Contacto en sitio", domicilio.contacto || "")}
+              ${input(`domicilioReferencia${index}`, "Referencia / notas", domicilio.referencia || "", "text", "wide")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function formFor(type, data) {
   if (type === "cliente") {
-    return `<div class="form-grid">${input("nombre", "Cliente", data.nombre, "text", "wide")}${select("ciudad", "Ciudad", data.ciudad || "MERIDA", ["MERIDA", "CDMX"].map((x) => ({ value: x, label: x })))}${input("telefono", "Telefono", data.telefono)}${input("correo", "Correo / contacto", data.correo)}${input("direccion", "Direccion", data.direccion, "text", "wide")}${select("tipo", "Tipo", data.tipo, ["Residencial", "Comercial", "Industrial", "Gobierno", "Otro"].map((x) => ({ value: x, label: x })))}${text("observaciones", "Observaciones", data.observaciones, "full")}</div>`;
+    return `<div class="form-grid">${input("nombre", "Cliente", data.nombre, "text", "wide")}${select("ciudad", "Ciudad principal", data.ciudad || "MERIDA", ["MERIDA", "CDMX"].map((x) => ({ value: x, label: x })))}${input("contacto", "Contacto", data.contacto)}${input("telefono", "Telefono", data.telefono)}${input("correo", "Correo", data.correo)}${select("tipo", "Tipo", data.tipo, ["Residencial", "Comercial", "Industrial", "Gobierno", "Otro"].map((x) => ({ value: x, label: x })))}${text("observaciones", "Observaciones", data.observaciones, "full")}${formDomiciliosCliente(data)}</div>`;
   }
   if (type === "producto") {
     return `<div class="form-grid">${input("producto", "Producto", data.producto, "text", "wide")}${select("unidadCompra", "Unidad de compra", data.unidadCompra, ["litro", "kilo", "envase", "pieza", "galon", "caja"].map((x) => ({ value: x, label: x })))}${select("unidadUso", "Unidad de uso", data.unidadUso, ["ml", "gr", "pieza"].map((x) => ({ value: x, label: x })))}${input("factor", "Equivalencia por unidad comprada", data.factor || 1000, "number")}${input("costo", "Costo por unidad de compra", data.costo, "number", "wide")}</div>`;
@@ -2288,6 +2365,26 @@ function normalize(type, data) {
   numericFields.forEach((field) => {
     if (field in data) data[field] = toNumber(data[field]);
   });
+  if (type === "cliente") {
+    data.domicilios = [0, 1, 2]
+      .map((index) => ({
+        alias: String(data[`domicilioAlias${index}`] || "").trim(),
+        ciudad: data[`domicilioCiudad${index}`] || data.ciudad || "MERIDA",
+        direccion: String(data[`domicilioDireccion${index}`] || "").trim(),
+        contacto: String(data[`domicilioContacto${index}`] || "").trim(),
+        referencia: String(data[`domicilioReferencia${index}`] || "").trim(),
+      }))
+      .filter((domicilio) => domicilio.direccion || domicilio.alias || domicilio.contacto || domicilio.referencia);
+    [0, 1, 2].forEach((index) => {
+      delete data[`domicilioAlias${index}`];
+      delete data[`domicilioCiudad${index}`];
+      delete data[`domicilioDireccion${index}`];
+      delete data[`domicilioContacto${index}`];
+      delete data[`domicilioReferencia${index}`];
+    });
+    data.direccion = data.domicilios[0]?.direccion || "";
+    data.ciudad = data.domicilios[0]?.ciudad || data.ciudad || "MERIDA";
+  }
   if (type === "servicio") {
     data.productos = [0, 1, 2, 3]
       .map((i) => ({ productoId: data[`productoId${i}`], cantidad: toNumber(data[`cantidad${i}`]) }))
