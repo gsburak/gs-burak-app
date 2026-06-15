@@ -104,6 +104,7 @@ let clienteTipoFilter = "";
 let clienteCiudadFilter = "";
 let servicioSearch = "";
 let servicioPagoFilter = "Todos";
+let compraSearch = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
 let gastoCategoriaFilter = "";
@@ -1880,7 +1881,14 @@ function renderProductos() {
 }
 
 function renderCompras() {
-  const comprasRows = comprasFiltradasOperacion();
+  const term = compraSearch.trim().toLowerCase();
+  const comprasRows = comprasFiltradasOperacion()
+    .filter((compra) => !term || nombreProducto(compra.productoId).toLowerCase().includes(term))
+    .sort((a, b) => {
+      const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
+      if (dateCompare !== 0) return dateCompare;
+      return nombreProducto(a.productoId).localeCompare(nombreProducto(b.productoId));
+    });
   const stockOperacion = operacionFilter === "Todas" ? null : operacionFilter;
   const stockRows = state.productos
     .map((p) => {
@@ -1895,6 +1903,16 @@ function renderCompras() {
   const maxCompraMensual = Math.max(...comprasMensuales.map((row) => row.total), 1);
   return `
     ${topbar("Compras", "Entradas de producto para alimentar inventario.", `${operationFilterControl()}<button class="primary" data-open="compra">Nueva compra</button>`)}
+    <section class="panel filters">
+      <div class="field">
+        <label>Buscar producto comprado</label>
+        <input id="compraSearch" type="search" placeholder="Escribe el nombre del producto" value="${compraSearch}" />
+      </div>
+      <div class="filter-count">
+        ${number(comprasRows.length)} de ${number(comprasFiltradasOperacion().length)} compras
+        ${term ? `<br><strong>${money(comprasRows.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0))}</strong> en compras encontradas` : ""}
+      </div>
+    </section>
     <section class="panel">
       <h2>Compras por mes</h2>
       <div class="bars">
@@ -1926,7 +1944,7 @@ function renderCompras() {
     <div class="table-card">
       <table>
         <thead><tr><th>Fecha</th><th>Operacion</th><th>Producto</th><th>Cantidad comprada</th><th>Costo unidad compra</th><th>Total</th><th>Proveedor</th><th>Pagado por</th><th></th></tr></thead>
-        <tbody>${comprasRows.map((c) => `<tr><td data-label="Fecha">${c.fecha}</td><td data-label="Operacion">${operacionRegistro(c)}</td><td data-label="Producto">${nombreProducto(c.productoId)}</td><td data-label="Cantidad">${number(c.cantidad)} ${unidadCompraProducto(c.productoId)}</td><td data-label="Costo unidad">${money(c.costoUnitario)}</td><td data-label="Total">${money(Number(c.cantidad || 0) * Number(c.costoUnitario || 0))}</td><td data-label="Proveedor">${c.proveedor || ""}</td><td data-label="Pagado por">${c.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("compra", c.id)}</td></tr>`).join("")}</tbody>
+        <tbody>${comprasRows.length ? comprasRows.map((c) => `<tr><td data-label="Fecha">${c.fecha}</td><td data-label="Operacion">${operacionRegistro(c)}</td><td data-label="Producto">${nombreProducto(c.productoId)}</td><td data-label="Cantidad">${number(c.cantidad)} ${unidadCompraProducto(c.productoId)}</td><td data-label="Costo unidad">${money(c.costoUnitario)}</td><td data-label="Total">${money(Number(c.cantidad || 0) * Number(c.costoUnitario || 0))}</td><td data-label="Proveedor">${c.proveedor || ""}</td><td data-label="Pagado por">${c.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("compra", c.id)}</td></tr>`).join("") : `<tr><td colspan="9">No hay compras que coincidan con la busqueda.</td></tr>`}</tbody>
       </table>
     </div>
   `;
@@ -2275,6 +2293,18 @@ function bindApp() {
     servicioPagoSelect.addEventListener("change", (event) => {
       servicioPagoFilter = event.target.value;
       render();
+    });
+  }
+  const compraSearchInput = document.querySelector("#compraSearch");
+  if (compraSearchInput) {
+    compraSearchInput.addEventListener("input", (event) => {
+      compraSearch = event.target.value;
+      render();
+      const nextInput = document.querySelector("#compraSearch");
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+      }
     });
   }
   const programacionStatusSelect = document.querySelector("#programacionStatusFilter");
