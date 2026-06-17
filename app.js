@@ -42,6 +42,7 @@ const seed = {
     { id: uid(), nombre: "Nebulizacion", precio: 0 },
     { id: uid(), nombre: "Inspeccion", precio: 0 },
     { id: uid(), nombre: "Control de Roedores", precio: 0 },
+    { id: uid(), nombre: "Solo exteriores", precio: 0 },
     { id: uid(), nombre: "Otro", precio: 0 },
   ],
   servicios: [],
@@ -260,6 +261,7 @@ async function sendRemoteCalendarEvent(programacion, action = "create") {
       cliente: nombreCliente(programacion.clienteId),
       tipo: programacion.tipo,
       tecnico: programacion.tecnico,
+      tecnicoAdicional: programacion.tecnicoAdicional || "",
       ciudad: programacion.ciudad,
       direccion: programacion.direccion,
       notas: programacion.notas,
@@ -290,6 +292,9 @@ function migrateState(data) {
     nombre: tipo.nombre,
     precio: 0,
   }));
+  if (!data.tiposServicio.some((tipo) => String(tipo.nombre || "").toLowerCase() === "solo exteriores")) {
+    data.tiposServicio.push({ id: uid(), nombre: "Solo exteriores", precio: 0 });
+  }
   data.clientes = (data.clientes || []).map((cliente) => ({
     ciudad: "MERIDA",
     contacto: "",
@@ -382,6 +387,7 @@ function migrateState(data) {
     ...programacion,
     ciudad: programacion.ciudad || programacion.operacion || "Yucatan",
     tecnico: programacion.tecnico === "SISPROVISA" ? "SANTOS" : programacion.tecnico || "SANTOS",
+    tecnicoAdicional: programacion.tecnicoAdicional || "",
     estatus: programacion.estatus || "Programado",
   }));
   data.schemaVersion = 2;
@@ -997,6 +1003,17 @@ function equiposFiltradosOperacion() {
 
 function programacionesFiltradasOperacion() {
   return state.programaciones.filter((programacion) => matchesOperacion(programacion, "Yucatan"));
+}
+
+function tecnicosProgramacionOptions(includeNone = false) {
+  const options = ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"];
+  return (includeNone ? ["", ...options] : options).map((x) => ({ value: x, label: x || "Ninguno" }));
+}
+
+function tecnicosProgramacionTexto(programacion) {
+  const principal = programacion.tecnico || "";
+  const adicional = programacion.tecnicoAdicional || "";
+  return [principal, adicional].filter(Boolean).join(" + ");
 }
 
 function operationFilterControl() {
@@ -1689,7 +1706,7 @@ function renderProgramacion() {
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${p.tecnico || ""}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1716,7 +1733,7 @@ function renderProgramacionAgenda(rows) {
                     <div class="agenda-event">
                       <strong>${programacion.hora || "--:--"} ${nombreCliente(programacion.clienteId)}</strong>
                       <span>${programacion.tipo || ""}</span>
-                      <small>${programacion.tecnico || ""} · ${programacion.ciudad || "Yucatan"} · ${programacion.estatus || "Programado"}</small>
+                      <small>${tecnicosProgramacionTexto(programacion)} · ${programacion.ciudad || "Yucatan"} · ${programacion.estatus || "Programado"}</small>
                       <div class="agenda-actions">
                         <button class="secondary" data-edit="programacion" data-id="${programacion.id}">Editar</button>
                         <button class="primary" data-convert-programacion="${programacion.id}">Pasar a ventas</button>
@@ -2107,7 +2124,7 @@ function formFor(type, data) {
       .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
       .map((c) => ({ value: c.id, label: c.nombre }));
     const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
-    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico", data.tecnico || "SANTOS", ["SANTOS", "VICTOR", "FREDDY"].map((x) => ({ value: x, label: x })))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${input("direccion", "Direccion / referencia", data.direccion, "text", "wide")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
+    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "SANTOS", tecnicosProgramacionOptions())}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${input("direccion", "Direccion / referencia", data.direccion, "text", "wide")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
   }
   if (type === "compra") {
     return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("productoId", "Producto", data.productoId, state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadCompra || "unidad"})` })), "wide")}${input("cantidad", "Cantidad comprada", data.cantidad, "number")}${input("costoUnitario", "Costo por unidad comprada", data.costoUnitario, "number")}${input("proveedor", "Proveedor", data.proveedor)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${input("factura", "Factura / ref.", data.factura)}${text("notas", "Notas", data.notas, "full")}</div>`;
@@ -2136,11 +2153,11 @@ function formServicio(data) {
     ${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}
     ${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}
     ${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}
-    ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY"].map((x) => ({ value: x, label: x })))}
+    ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((x) => ({ value: x, label: x })))}
     ${input("zona", "Zona / direccion", data.zona, "text", "wide")}
     ${input("subtotal", "Importe del servicio", data.subtotal, "number")}
     ${input("cobrado", "Cobrado", data.cobrado, "number")}
-    ${select("formaPago", "Forma de pago", data.formaPago, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesia"].map((x) => ({ value: x, label: x })))}
+    ${select("formaPago", "Forma de pago", data.formaPago, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesia", "Refuerzo"].map((x) => ({ value: x, label: x })))}
     ${data.programacionId ? `<input type="hidden" name="programacionId" value="${data.programacionId}" />` : ""}
     <div class="full panel"><h2>Productos usados</h2><div class="form-grid">${productRows}</div></div>
     ${text("observaciones", "Observaciones", data.observaciones, "full")}
@@ -2423,6 +2440,10 @@ function normalize(type, data) {
       delete data[`productoId${i}`];
       delete data[`cantidad${i}`];
     });
+  }
+  if (type === "programacion") {
+    data.tecnico = data.tecnico || "SANTOS";
+    if (data.tecnicoAdicional === data.tecnico) data.tecnicoAdicional = "";
   }
   return data;
 }

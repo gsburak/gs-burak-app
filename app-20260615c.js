@@ -1006,7 +1006,7 @@ function programacionesFiltradasOperacion() {
 }
 
 function tecnicosProgramacionOptions(includeNone = false) {
-  const options = ["SANTOS", "FREDDY", "CRISTIAN"];
+  const options = ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"];
   return (includeNone ? ["", ...options] : options).map((x) => ({ value: x, label: x || "Ninguno" }));
 }
 
