@@ -105,6 +105,8 @@ let clienteTipoFilter = "";
 let clienteCiudadFilter = "";
 let servicioSearch = "";
 let servicioPagoFilter = "Todos";
+let servicioTipoFilter = "Todos";
+let servicioProductoFilter = "Todos";
 let compraSearch = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
@@ -560,17 +562,22 @@ function serviciosFiltradosVista() {
   return serviciosFiltradosOperacion()
     .filter((s) => {
       if (!term) return true;
-      return nombreCliente(s.clienteId).toLowerCase().includes(term);
+      return nombreCliente(s.clienteId, s).toLowerCase().includes(term);
     })
     .filter((s) => {
       if (servicioPagoFilter === "Por cobrar") return pendienteServicio(s) > 0;
       if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
       return true;
     })
+    .filter((s) => servicioTipoFilter === "Todos" || s.tipo === servicioTipoFilter)
+    .filter((s) => {
+      if (servicioProductoFilter === "Todos") return true;
+      return (s.productos || []).some((item) => item.productoId === servicioProductoFilter);
+    })
     .sort((a, b) => {
       const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
       if (dateCompare !== 0) return dateCompare;
-      const clientCompare = nombreCliente(a.clienteId).localeCompare(nombreCliente(b.clienteId));
+      const clientCompare = nombreCliente(a.clienteId, a).localeCompare(nombreCliente(b.clienteId, b));
       if (clientCompare !== 0) return clientCompare;
       return String(a.id || "").localeCompare(String(b.id || ""));
     });
@@ -610,7 +617,7 @@ function exportClientesCsv() {
 function exportServiciosCsv() {
   const rows = serviciosFiltradosVista().map((s) => [
     s.fecha,
-    nombreCliente(s.clienteId),
+    nombreCliente(s.clienteId, s),
     s.ciudad || "Yucatan",
     s.tipo || "",
     s.tecnico || "",
@@ -720,8 +727,13 @@ function cantidadConsumidaUsoOperacion(productoId, operacion) {
     .reduce((sum, item) => sum + Number(item.cantidad || 0), 0);
 }
 
-function nombreCliente(clienteId) {
-  return state.clientes.find((c) => c.id === clienteId)?.nombre || "Sin cliente";
+function nombreCliente(clienteId, registro = {}) {
+  return state.clientes.find((c) => c.id === clienteId)?.nombre
+    || registro.cliente
+    || registro.clienteNombre
+    || registro.nombreCliente
+    || registro.razonSocial
+    || "Sin cliente";
 }
 
 function domiciliosCliente(cliente) {
@@ -1435,7 +1447,7 @@ function renderMiniServices() {
       ${rows.map((s) => `
         <div class="recent-service">
           <div>
-            <strong>${nombreCliente(s.clienteId)}</strong>
+            <strong>${nombreCliente(s.clienteId, s)}</strong>
             <span>${s.fecha} · ${s.tipo || "Servicio"}</span>
           </div>
           ${paymentPill(s)}
@@ -1770,7 +1782,7 @@ function renderServiciosAnterior() {
       <table>
         <thead><tr><th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Total</th><th>Cobrado</th><th>Pendiente</th><th>Costo prod.</th><th>% producto</th><th>Estatus</th><th></th></tr></thead>
         <tbody>
-          ${state.servicios.map((s) => `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} · ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${currentUser.role === "admin" ? money(costoServicio(s)) : "Restringido"}</td><td data-label="% producto">${currentUser.role === "admin" ? `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%` : "Restringido"}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`).join("")}
+          ${state.servicios.map((s) => `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId, s)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} · ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${currentUser.role === "admin" ? money(costoServicio(s)) : "Restringido"}</td><td data-label="% producto">${currentUser.role === "admin" ? `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%` : "Restringido"}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`).join("")}
         </tbody>
       </table>
     </div>
@@ -1784,7 +1796,7 @@ function renderServicios() {
   const rows = servicios.map((s) => {
     const costo = currentUser.role === "admin" ? money(costoServicio(s)) : "Restringido";
     const porcentaje = currentUser.role === "admin" ? `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%` : "Restringido";
-    return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
+    return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId, s)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
   }).join("");
   return `
     ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}${servicioPagoFilterControl()}<button class="secondary" data-action="exportServicios">Exportar ventas</button><button class="primary" data-open="servicio">Nuevo servicio</button>`)}
@@ -1793,10 +1805,31 @@ function renderServicios() {
         <label>Buscar servicios por cliente</label>
         <input id="servicioSearch" type="search" placeholder="Escribe el nombre del cliente" value="${servicioSearch}" />
       </div>
+      <div class="field">
+        <label>Tipo de servicio</label>
+        <select id="servicioTipoFilter">
+          <option value="Todos">Todos</option>
+          ${state.tiposServicio
+            .map((tipo) => `<option value="${tipo.nombre}" ${servicioTipoFilter === tipo.nombre ? "selected" : ""}>${tipo.nombre}</option>`)
+            .join("")}
+        </select>
+      </div>
+      <div class="field">
+        <label>Producto utilizado</label>
+        <select id="servicioProductoFilter">
+          <option value="Todos">Todos</option>
+          ${[...state.productos]
+            .sort((a, b) => String(a.producto || "").localeCompare(String(b.producto || "")))
+            .map((producto) => `<option value="${producto.id}" ${servicioProductoFilter === producto.id ? "selected" : ""}>${producto.producto}</option>`)
+            .join("")}
+        </select>
+      </div>
       <div class="filter-count">
         ${number(servicios.length)} de ${number(serviciosFiltradosOperacion().length)} servicios en ${operacionFilter}
         ${servicioPagoFilter !== "Todos" ? `<br>${servicioPagoFilter}` : ""}
-        ${term ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
+        ${servicioTipoFilter !== "Todos" ? `<br>${servicioTipoFilter}` : ""}
+        ${servicioProductoFilter !== "Todos" ? `<br>Producto: ${nombreProducto(servicioProductoFilter)}` : ""}
+        ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
       </div>
     </section>
     <div class="table-card service-list">
@@ -2309,6 +2342,20 @@ function bindApp() {
   if (servicioPagoSelect) {
     servicioPagoSelect.addEventListener("change", (event) => {
       servicioPagoFilter = event.target.value;
+      render();
+    });
+  }
+  const servicioTipoSelect = document.querySelector("#servicioTipoFilter");
+  if (servicioTipoSelect) {
+    servicioTipoSelect.addEventListener("change", (event) => {
+      servicioTipoFilter = event.target.value;
+      render();
+    });
+  }
+  const servicioProductoSelect = document.querySelector("#servicioProductoFilter");
+  if (servicioProductoSelect) {
+    servicioProductoSelect.addEventListener("change", (event) => {
+      servicioProductoFilter = event.target.value;
       render();
     });
   }
