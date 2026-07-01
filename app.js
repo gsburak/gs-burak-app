@@ -4,7 +4,7 @@ const SERVER_MODE = location.protocol.startsWith("http");
 
 const users = [
   { id: "admin", name: "VICTOR", role: "admin", password: "G5687vbm" },
-  { id: "tecnico", name: "TECNICO", role: "operativo", password: "12345" },
+  { id: "tecnico", name: "PROGRAMACION", role: "operativo", password: "12345" },
   { id: "consulta", name: "CONSULTA", role: "consulta", password: "12345" },
 ];
 
@@ -1219,7 +1219,7 @@ function renderLogin() {
           <label>Usuario</label>
           <select name="user">
             <option value="admin">VICTOR</option>
-            <option value="tecnico">TECNICO</option>
+            <option value="tecnico">PROGRAMACION</option>
             <option value="consulta">CONSULTA</option>
           </select>
         </div>
@@ -1267,7 +1267,7 @@ function renderSidebar() {
       </nav>
       <div class="user-box">
         <strong>${currentUser.name}</strong>
-        <span>${currentUser.role === "admin" ? "Administrador" : currentUser.role === "consulta" ? "Consulta de programacion" : "Operativo / Tecnico"}</span>
+        <span>${currentUser.role === "admin" ? "Administrador" : currentUser.role === "consulta" ? "Consulta de programacion" : "Programacion"}</span>
         <button class="ghost" data-action="logout">Salir</button>
       </div>
     </aside>
