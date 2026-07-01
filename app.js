@@ -1801,9 +1801,9 @@ function renderProgramacion() {
       <h2>Servicios programados - ${programacionStatusFilter}</h2>
       <div class="table-card service-list">
         <table>
-          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th>${readOnly ? "" : "<th></th>"}</tr></thead>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td>${readOnly ? "" : `<td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td>`}</tr>`).join("") : `<tr><td colspan="${readOnly ? "8" : "9"}">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2166,6 +2166,7 @@ function rowActions(type, id) {
 
 function renderModal() {
   const { type, id } = modal;
+  if (type === "programacionConsulta") return renderProgramacionConsultaModal(id);
   if (type === "servicioConsulta") return renderServicioConsultaModal(id);
   const data = modal.data || (id ? state[typeToCollection(type)].find((x) => x.id === id || x.nombre === id) : {});
   return `
@@ -2191,6 +2192,55 @@ function renderModal() {
 
 function readField(label, value, extra = "") {
   return `<div class="field ${extra}"><label>${label}</label><div class="readonly">${value || "-"}</div></div>`;
+}
+
+function renderProgramacionConsultaModal(id) {
+  const programacion = state.programaciones.find((item) => item.id === id);
+  if (!programacion) {
+    return `
+      <div class="modal-backdrop">
+        <div class="modal">
+          <div class="modal-header">
+            <div><h2>Consultar programado</h2></div>
+            <button class="ghost" data-action="close">Cerrar</button>
+          </div>
+          <p>No se encontro el servicio programado.</p>
+          <div class="form-actions">
+            <button class="primary" type="button" data-action="close">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2>Consultar programado</h2>
+            <p class="readonly">Solo lectura. Este perfil no puede modificar la programacion.</p>
+          </div>
+          <button class="ghost" data-action="close">Cerrar</button>
+        </div>
+        <div class="form-grid">
+          ${readField("Fecha", programacion.fecha)}
+          ${readField("Hora", programacion.hora)}
+          ${readField("Cliente", nombreCliente(programacion.clienteId), "wide")}
+          ${readField("Ciudad", programacion.ciudad || "Yucatan")}
+          ${readField("Tipo de servicio", programacion.tipo)}
+          ${readField("Tecnico(s)", tecnicosProgramacionTexto(programacion), "wide")}
+          ${readField("Estatus", programacion.estatus || "Programado")}
+          ${readField("Calendario", programacion.calendarStatus || "Sin calendario")}
+          ${readField("Direccion / referencia", programacion.direccion, "full")}
+          ${readField("Notas para el tecnico", programacion.notas, "full")}
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button" data-action="close">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderServicioConsultaModal(id) {
@@ -2401,6 +2451,12 @@ function bindApp() {
   document.querySelectorAll("[data-view-service]").forEach((button) => {
     button.addEventListener("click", () => {
       modal = { type: "servicioConsulta", id: button.dataset.viewService };
+      render();
+    });
+  });
+  document.querySelectorAll("[data-view-programacion]").forEach((button) => {
+    button.addEventListener("click", () => {
+      modal = { type: "programacionConsulta", id: button.dataset.viewProgramacion };
       render();
     });
   });
