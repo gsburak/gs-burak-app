@@ -5,12 +5,13 @@ const SERVER_MODE = location.protocol.startsWith("http");
 const users = [
   { id: "admin", name: "VICTOR", role: "admin", password: "G5687vbm" },
   { id: "tecnico", name: "TECNICO", role: "operativo", password: "12345" },
+  { id: "consulta", name: "CONSULTA", role: "consulta", password: "12345" },
 ];
 
 const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
-  { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo"] },
+  { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
   { id: "productos", label: "Productos", icon: "Stock", roles: ["admin"] },
@@ -43,6 +44,7 @@ const seed = {
     { id: uid(), nombre: "Inspeccion", precio: 0 },
     { id: uid(), nombre: "Control de Roedores", precio: 0 },
     { id: uid(), nombre: "Solo exteriores", precio: 0 },
+    { id: uid(), nombre: "Presupuesto", precio: 0 },
     { id: uid(), nombre: "Otro", precio: 0 },
   ],
   servicios: [],
@@ -297,6 +299,9 @@ function migrateState(data) {
   if (!data.tiposServicio.some((tipo) => String(tipo.nombre || "").toLowerCase() === "solo exteriores")) {
     data.tiposServicio.push({ id: uid(), nombre: "Solo exteriores", precio: 0 });
   }
+  if (!data.tiposServicio.some((tipo) => String(tipo.nombre || "").toLowerCase() === "presupuesto")) {
+    data.tiposServicio.push({ id: uid(), nombre: "Presupuesto", precio: 0 });
+  }
   data.clientes = (data.clientes || []).map((cliente) => ({
     ciudad: "MERIDA",
     contacto: "",
@@ -388,7 +393,7 @@ function migrateState(data) {
     estatus: "Programado",
     ...programacion,
     ciudad: programacion.ciudad || programacion.operacion || "Yucatan",
-    tecnico: programacion.tecnico === "SISPROVISA" ? "SANTOS" : programacion.tecnico || "SANTOS",
+    tecnico: programacion.tecnico === "SISPROVISA" ? "SANTOS" : programacion.tecnico || "",
     tecnicoAdicional: programacion.tecnicoAdicional || "",
     estatus: programacion.estatus || "Programado",
   }));
@@ -952,6 +957,59 @@ function ventasPorCiudad() {
   }, {});
 }
 
+function utilidadPorCiudad() {
+  const ciudades = ["Yucatan", "CDMX", "Sin clasificar"];
+  const rows = {};
+  const ensure = (ciudad) => {
+    const key = ciudad || "Sin clasificar";
+    if (!rows[key]) {
+      rows[key] = {
+        ciudad: key,
+        cobrado: 0,
+        porCobrar: 0,
+        productoUsado: 0,
+        gastos: 0,
+        depreciacion: 0,
+        comprasInventario: 0,
+        utilidad: 0,
+      };
+    }
+    return rows[key];
+  };
+
+  ciudades.forEach(ensure);
+
+  state.servicios.forEach((servicio) => {
+    const row = ensure(operacionRegistro(servicio, "Yucatan"));
+    row.cobrado += Number(servicio.cobrado || 0);
+    row.porCobrar += pendienteServicio(servicio);
+    row.productoUsado += costoServicio(servicio);
+  });
+
+  state.gastos.forEach((gasto) => {
+    ensure(operacionRegistro(gasto)).gastos += Number(gasto.monto || 0);
+  });
+
+  state.equipos.forEach((equipo) => {
+    ensure(operacionRegistro(equipo)).depreciacion += gastoDepreciacionMensual([equipo]);
+  });
+
+  state.compras.forEach((compra) => {
+    ensure(operacionRegistro(compra)).comprasInventario += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
+  });
+
+  return Object.values(rows)
+    .map((row) => ({
+      ...row,
+      utilidad: row.cobrado - row.productoUsado - row.gastos - row.depreciacion,
+    }))
+    .filter((row) => row.cobrado || row.porCobrar || row.productoUsado || row.gastos || row.depreciacion || row.comprasInventario)
+    .sort((a, b) => {
+      const order = { Yucatan: 1, CDMX: 2, "Sin clasificar": 3 };
+      return (order[a.ciudad] || 99) - (order[b.ciudad] || 99);
+    });
+}
+
 function serviciosPorTecnico() {
   return serviciosFiltradosOperacion().reduce((rows, servicio) => {
     const tecnico = servicio.tecnico || "Sin tecnico";
@@ -1025,7 +1083,7 @@ function tecnicosProgramacionOptions(includeNone = false) {
 function tecnicosProgramacionTexto(programacion) {
   const principal = programacion.tecnico || "";
   const adicional = programacion.tecnicoAdicional || "";
-  return [principal, adicional].filter(Boolean).join(" + ");
+  return [principal, adicional].filter(Boolean).join(" + ") || "Sin asignar";
 }
 
 function operationFilterControl() {
@@ -1116,6 +1174,10 @@ function can(moduleId) {
   return modules.find((m) => m.id === moduleId)?.roles.includes(currentUser.role);
 }
 
+function isProgramacionReadOnly() {
+  return currentUser?.role === "consulta";
+}
+
 function render() {
   const app = document.querySelector("#app");
   if (!state) {
@@ -1128,7 +1190,9 @@ function render() {
     return;
   }
 
-  if (!can(activeModule)) activeModule = "dashboard";
+  if (!can(activeModule)) {
+    activeModule = modules.find((module) => module.roles.includes(currentUser.role))?.id || "programacion";
+  }
   app.innerHTML = `
     <div class="shell">
       ${renderSidebar()}
@@ -1150,12 +1214,13 @@ function renderLogin() {
       </div>
       <form class="login-card" id="loginForm">
         <h2>Entrar</h2>
-        <small>Prototipo de prueba con dos usuarios.</small>
+        <small>Acceso para usuarios autorizados.</small>
         <div class="field">
           <label>Usuario</label>
           <select name="user">
             <option value="admin">VICTOR</option>
             <option value="tecnico">TECNICO</option>
+            <option value="consulta">CONSULTA</option>
           </select>
         </div>
         <div class="field">
@@ -1183,6 +1248,7 @@ function bindLogin() {
       return;
     }
     currentUser = user;
+    activeModule = modules.find((module) => module.roles.includes(user.role))?.id || "programacion";
     render();
   });
 }
@@ -1201,7 +1267,7 @@ function renderSidebar() {
       </nav>
       <div class="user-box">
         <strong>${currentUser.name}</strong>
-        <span>${currentUser.role === "admin" ? "Administrador" : "Operativo / Tecnico"}</span>
+        <span>${currentUser.role === "admin" ? "Administrador" : currentUser.role === "consulta" ? "Consulta de programacion" : "Operativo / Tecnico"}</span>
         <button class="ghost" data-action="logout">Salir</button>
       </div>
     </aside>
@@ -1313,13 +1379,6 @@ function renderDashboard() {
           <div><span>Deprec. mensual</span><strong>${showMoney ? money(m.depreciacion) : "Restringido"}</strong></div>
         </div>
       </div>
-      <div class="dash-panel wide">
-        <div class="panel-head">
-          <h2>Servicios recientes</h2>
-          <span>Ultimos registros</span>
-        </div>
-        ${renderMiniServices()}
-      </div>
       <div class="dash-panel">
         <div class="panel-head">
           <h2>Equipos</h2>
@@ -1333,6 +1392,7 @@ function renderDashboard() {
       </div>
     </section>
     <section class="dashboard-insights">
+      ${showMoney ? renderUtilidadCiudadResumen() : ""}
       ${renderClientesTipoResumen()}
       ${renderServiciosTecnicoResumen()}
       ${showMoney ? renderVentasCiudadResumen() : ""}
@@ -1342,6 +1402,29 @@ function renderDashboard() {
       ${showMoney ? renderTotalPagadorResumen() : ""}
       ${showMoney ? renderGastosPagadorMensualResumen() : ""}
       ${showMoney ? renderPendientesResumen() : ""}
+    </section>
+  `;
+}
+
+function renderUtilidadCiudadResumen() {
+  const rows = utilidadPorCiudad();
+  const total = rows.reduce((sum, row) => sum + row.utilidad, 0);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Utilidad real por ciudad (${money(total)})</h2>
+      <p class="readonly">Formula: cobrado - producto usado - gastos - depreciacion mensual. Las compras de inventario se muestran como referencia, no se restan aqui para no duplicar el costo del producto.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Ciudad</th><th>Cobrado</th><th>Producto usado</th><th>Gastos</th><th>Deprec. mensual</th><th>Utilidad real</th><th>Por cobrar</th><th>Compras inventario</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Ciudad"><strong>${row.ciudad}</strong></td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec. mensual">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
+                : `<tr><td colspan="8">Aun no hay informacion para calcular utilidad por ciudad.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
     </section>
   `;
 }
@@ -1617,7 +1700,8 @@ function renderTotalPagadorResumen() {
   const totalGeneral = rows.reduce((sum, row) => sum + row[1], 0);
   return `
     <section class="panel" style="margin-top:14px">
-      <h2>Total inversion y gasto por socio (${money(totalGeneral)})</h2>
+      <h2>Total pagado por socio: gastos + compras + equipos (${money(totalGeneral)})</h2>
+      <p class="readonly">Este total suma gastos operativos, compras de inventario y equipos. Para ver solo gastos usa la seccion "Gastos pagados por" o "Gastos por mes y pagador".</p>
       <div class="bars">
         ${
           rows.length
@@ -1695,6 +1779,7 @@ function renderClientes() {
 }
 
 function renderProgramacion() {
+  const readOnly = isProgramacionReadOnly();
   const rows = [...programacionesFiltradasOperacion()]
     .filter((programacion) => {
       const estatus = programacion.estatus || "Programado";
@@ -1710,15 +1795,15 @@ function renderProgramacion() {
     return String(a.id || "").localeCompare(String(b.id || ""));
   });
   return `
-    ${topbar("Programacion", "Agenda interna de servicios por fecha, tecnico y operacion.", `${operationFilterControl()}${programacionStatusFilterControl()}<button class="primary" data-open="programacion">Nuevo programado</button>`)}
+    ${topbar("Programacion", "Agenda interna de servicios por fecha, tecnico y operacion.", `${operationFilterControl()}${programacionStatusFilterControl()}${readOnly ? "" : `<button class="primary" data-open="programacion">Nuevo programado</button>`}`)}
     ${renderProgramacionAgenda(rows)}
     <section class="panel">
       <h2>Servicios programados - ${programacionStatusFilter}</h2>
       <div class="table-card service-list">
         <table>
-          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th>${readOnly ? "" : "<th></th>"}</tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td>${readOnly ? "" : `<td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button></div></td>`}</tr>`).join("") : `<tr><td colspan="${readOnly ? "8" : "9"}">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1727,6 +1812,7 @@ function renderProgramacion() {
 }
 
 function renderProgramacionAgenda(rows) {
+  const readOnly = isProgramacionReadOnly();
   const days = Array.from({ length: 7 }, (_, index) => dateKeyFromOffset(index));
   return `
     <section class="panel agenda-panel">
@@ -1746,10 +1832,12 @@ function renderProgramacionAgenda(rows) {
                       <strong>${programacion.hora || "--:--"} ${nombreCliente(programacion.clienteId)}</strong>
                       <span>${programacion.tipo || ""}</span>
                       <small>${tecnicosProgramacionTexto(programacion)} · ${programacion.ciudad || "Yucatan"} · ${programacion.estatus || "Programado"}</small>
-                      <div class="agenda-actions">
-                        <button class="secondary" data-edit="programacion" data-id="${programacion.id}">Editar</button>
-                        <button class="primary" data-convert-programacion="${programacion.id}">Pasar a ventas</button>
-                      </div>
+                      ${readOnly ? "" : `
+                        <div class="agenda-actions">
+                          <button class="secondary" data-edit="programacion" data-id="${programacion.id}">Editar</button>
+                          <button class="primary" data-convert-programacion="${programacion.id}">Pasar a ventas</button>
+                        </div>
+                      `}
                     </div>
                   `).join("")
                   : `<p class="readonly">Sin servicios</p>`}
@@ -1832,7 +1920,7 @@ function renderServicios() {
         ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
       </div>
     </section>
-    <div class="table-card service-list">
+    <div class="table-card service-list sales-list">
       <table>
         <thead><tr><th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Total</th><th>Cobrado</th><th>Pendiente</th><th>Costo prod.</th><th>% producto</th><th>Estatus</th><th></th></tr></thead>
         <tbody>
@@ -2070,11 +2158,15 @@ function renderEquipos() {
 }
 
 function rowActions(type, id) {
+  if (type === "servicio") {
+    return `<div class="actions"><button class="secondary" data-view-service="${id}">Consultar</button><button class="secondary" data-edit="${type}" data-id="${id}">Editar</button><button class="ghost" data-delete="${type}" data-id="${id}">Borrar</button></div>`;
+  }
   return `<div class="actions"><button class="secondary" data-edit="${type}" data-id="${id}">Editar</button><button class="ghost" data-delete="${type}" data-id="${id}">Borrar</button></div>`;
 }
 
 function renderModal() {
   const { type, id } = modal;
+  if (type === "servicioConsulta") return renderServicioConsultaModal(id);
   const data = modal.data || (id ? state[typeToCollection(type)].find((x) => x.id === id || x.nombre === id) : {});
   return `
     <div class="modal-backdrop">
@@ -2092,6 +2184,78 @@ function renderModal() {
             <button class="primary" type="submit">Guardar</button>
           </div>
         </form>
+      </div>
+    </div>
+  `;
+}
+
+function readField(label, value, extra = "") {
+  return `<div class="field ${extra}"><label>${label}</label><div class="readonly">${value || "-"}</div></div>`;
+}
+
+function renderServicioConsultaModal(id) {
+  const servicio = state.servicios.find((item) => item.id === id);
+  if (!servicio) {
+    return `
+      <div class="modal-backdrop">
+        <div class="modal">
+          <div class="modal-header">
+            <div><h2>Consultar servicio</h2></div>
+            <button class="ghost" data-action="close">Cerrar</button>
+          </div>
+          <p>No se encontro el servicio.</p>
+          <div class="form-actions">
+            <button class="primary" type="button" data-action="close">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const productos = servicio.productos || [];
+  const productosRows = productos.length
+    ? productos.map((producto) => `<tr><td data-label="Producto">${nombreProducto(producto.productoId)}</td><td data-label="Cantidad">${number(producto.cantidad)} ${unidadUsoProducto(producto.productoId)}</td></tr>`).join("")
+    : `<tr><td colspan="2">Sin productos registrados.</td></tr>`;
+  const costo = currentUser.role === "admin" ? money(costoServicio(servicio)) : "Restringido";
+  const porcentaje = currentUser.role === "admin" ? `${(porcentajeCostoProducto(servicio) * 100).toFixed(1)}%` : "Restringido";
+
+  return `
+    <div class="modal-backdrop">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2>Consultar servicio</h2>
+            <p class="readonly">Solo lectura. Para modificar usa el boton Editar.</p>
+          </div>
+          <button class="ghost" data-action="close">Cerrar</button>
+        </div>
+        <div class="form-grid">
+          ${readField("Fecha", servicio.fecha)}
+          ${readField("Cliente", nombreCliente(servicio.clienteId, servicio), "wide")}
+          ${readField("Ciudad", servicio.ciudad || "Yucatan")}
+          ${readField("Tipo de servicio", servicio.tipo)}
+          ${readField("Tecnico", servicio.tecnico)}
+          ${readField("Direccion / zona", servicio.zona, "wide")}
+          ${readField("Total", money(totalServicio(servicio)))}
+          ${readField("Cobrado", money(servicio.cobrado))}
+          ${readField("Pendiente", money(pendienteServicio(servicio)))}
+          ${readField("Forma de pago", servicio.formaPago)}
+          ${readField("Costo producto", costo)}
+          ${readField("% producto", porcentaje)}
+          ${readField("Observaciones", servicio.observaciones, "full")}
+          <div class="full panel">
+            <h2>Productos usados</h2>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Producto</th><th>Cantidad</th></tr></thead>
+                <tbody>${productosRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="primary" type="button" data-action="close">Cerrar</button>
+        </div>
       </div>
     </div>
   `;
@@ -2116,6 +2280,28 @@ function select(name, label, value, options, extra = "") {
 
 function text(name, label, value = "", extra = "") {
   return `<div class="field ${extra}"><label>${label}</label><textarea name="${name}">${value ?? ""}</textarea></div>`;
+}
+
+function programacionClienteFields(value) {
+  const selectedClient = state.clientes.find((cliente) => String(cliente.id) === String(value));
+  return `
+    <div class="field wide" style="position:relative">
+      <label>Cliente</label>
+      <input
+        id="programacionClienteSearch"
+        type="search"
+        value="${selectedClient?.nombre || ""}"
+        placeholder="Escribe el nombre del cliente"
+        autocomplete="off"
+      />
+      <input id="programacionClienteId" name="clienteId" type="hidden" value="${selectedClient?.id || ""}" />
+      <div
+        id="programacionClienteResults"
+        style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;box-shadow:0 8px 20px rgba(15,23,42,.16)"
+      ></div>
+      <small id="programacionClienteCount" class="readonly">${selectedClient ? "Cliente seleccionado" : "Escribe al menos 2 letras y toca el cliente"}</small>
+    </div>
+  `;
 }
 
 function formDomiciliosCliente(data) {
@@ -2153,11 +2339,8 @@ function formFor(type, data) {
     return `<div class="form-grid">${input("nombre", "Tipo de servicio", data.nombre, "text", "wide")}</div>`;
   }
   if (type === "programacion") {
-    const clienteOptions = [...state.clientes]
-      .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
-      .map((c) => ({ value: c.id, label: c.nombre }));
     const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
-    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "SANTOS", tecnicosProgramacionOptions())}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${input("direccion", "Direccion / referencia", data.direccion, "text", "wide")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
+    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${programacionClienteFields(data.clienteId)}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "", tecnicosProgramacionOptions(true))}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${text("direccion", "Direccion / referencia", data.direccion, "full")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
   }
   if (type === "compra") {
     return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("productoId", "Producto", data.productoId, state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadCompra || "unidad"})` })), "wide")}${input("cantidad", "Cantidad comprada", data.cantidad, "number")}${input("costoUnitario", "Costo por unidad comprada", data.costoUnitario, "number")}${input("proveedor", "Proveedor", data.proveedor)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${input("factura", "Factura / ref.", data.factura)}${text("notas", "Notas", data.notas, "full")}</div>`;
@@ -2181,9 +2364,14 @@ function formServicio(data) {
   const clienteOptions = [...state.clientes]
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
     .map((c) => ({ value: c.id, label: c.nombre }));
+  const clienteManualNombre = nombreCliente(data.clienteId, data);
+  const clienteOptionsFinal = data.clienteId
+    ? clienteOptions
+    : [{ value: "", label: clienteManualNombre || "Cliente manual" }, ...clienteOptions];
   return `<div class="form-grid">
     ${input("fecha", "Fecha", data.fecha || today(), "date")}
-    ${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}
+    ${select("clienteId", "Cliente", data.clienteId || "", clienteOptionsFinal, "wide")}
+    ${!data.clienteId ? input("cliente", "Cliente manual", clienteManualNombre, "text", "wide") : ""}
     ${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}
     ${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}
     ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((x) => ({ value: x, label: x })))}
@@ -2207,6 +2395,12 @@ function bindApp() {
   document.querySelectorAll("[data-open]").forEach((button) => {
     button.addEventListener("click", () => {
       modal = { type: button.dataset.open };
+      render();
+    });
+  });
+  document.querySelectorAll("[data-view-service]").forEach((button) => {
+    button.addEventListener("click", () => {
+      modal = { type: "servicioConsulta", id: button.dataset.viewService };
       render();
     });
   });
@@ -2385,8 +2579,109 @@ function bindApp() {
       render();
     });
   }
+  bindProgramacionClienteSearch();
   const form = document.querySelector("#entityForm");
   if (form) form.addEventListener("submit", saveEntity);
+}
+
+function bindProgramacionClienteSearch() {
+  const searchInput = document.querySelector("#programacionClienteSearch");
+  const clientIdInput = document.querySelector("#programacionClienteId");
+  const resultsBox = document.querySelector("#programacionClienteResults");
+  const countLabel = document.querySelector("#programacionClienteCount");
+  if (!searchInput || !clientIdInput || !resultsBox) return;
+
+  const clientes = [...state.clientes]
+    .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")));
+
+  const matchesSearch = (cliente, term) => {
+    const domicilios = domiciliosCliente(cliente);
+    const searchable = [
+      cliente.nombre,
+      cliente.telefono,
+      cliente.direccion,
+      cliente.contacto,
+      ...domicilios.flatMap((domicilio) => [
+        domicilio.alias,
+        domicilio.direccion,
+        domicilio.contacto,
+        domicilio.referencia,
+      ]),
+    ];
+    return searchable.some((value) => String(value || "").toLowerCase().includes(term));
+  };
+
+  const selectClient = (cliente) => {
+    searchInput.value = cliente.nombre || "";
+    clientIdInput.value = cliente.id;
+    resultsBox.style.display = "none";
+    resultsBox.innerHTML = "";
+    if (countLabel) countLabel.textContent = "Cliente seleccionado";
+  };
+
+  const updateResults = () => {
+    const term = searchInput.value.trim().toLowerCase();
+    clientIdInput.value = "";
+    resultsBox.innerHTML = "";
+
+    if (term.length < 2) {
+      resultsBox.style.display = "none";
+      if (countLabel) countLabel.textContent = "Escribe al menos 2 letras y toca el cliente";
+      return;
+    }
+
+    const filtered = clientes.filter((cliente) => matchesSearch(cliente, term)).slice(0, 15);
+    if (countLabel) {
+      countLabel.textContent = `${filtered.length} ${filtered.length === 1 ? "cliente encontrado" : "clientes encontrados"}`;
+    }
+
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.textContent = "No se encontraron clientes";
+      empty.style.padding = "14px";
+      resultsBox.appendChild(empty);
+      resultsBox.style.display = "block";
+      return;
+    }
+
+    filtered.forEach((cliente) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.style.cssText = "display:block;width:100%;padding:14px;text-align:left;background:#fff;border:0;border-bottom:1px solid #e2e8f0;color:#0f172a;font:inherit;";
+
+      const name = document.createElement("strong");
+      name.textContent = cliente.nombre || "Sin nombre";
+      button.appendChild(name);
+
+      const domicilio = domiciliosCliente(cliente)[0]?.direccion || cliente.direccion || "";
+      if (domicilio) {
+        const detail = document.createElement("small");
+        detail.textContent = domicilio;
+        detail.style.cssText = "display:block;margin-top:4px;color:#64748b;";
+        button.appendChild(detail);
+      }
+
+      button.addEventListener("click", () => selectClient(cliente));
+      resultsBox.appendChild(button);
+    });
+    resultsBox.style.display = "block";
+  };
+
+  searchInput.addEventListener("input", updateResults);
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const firstResult = resultsBox.querySelector("button");
+    if (firstResult) firstResult.click();
+  });
+  searchInput.addEventListener("focus", () => {
+    if (searchInput.value.trim().length >= 2 && !clientIdInput.value) updateResults();
+  });
+  searchInput.addEventListener("blur", () => {
+    setTimeout(() => {
+      resultsBox.style.display = "none";
+    }, 200);
+  });
 }
 
 function saveEntity(event) {
@@ -2395,6 +2690,11 @@ function saveEntity(event) {
   const type = form.dataset.type;
   const id = form.dataset.id;
   const data = Object.fromEntries(new FormData(form));
+  if (type === "programacion" && !data.clienteId) {
+    alert("Escribe el nombre y toca un cliente de la lista antes de guardar.");
+    document.querySelector("#programacionClienteSearch")?.focus();
+    return;
+  }
   const entity = normalize(type, data);
   const collection = typeToCollection(type);
   let savedEntity = null;
@@ -2480,6 +2780,12 @@ function normalize(type, data) {
     data.ciudad = data.domicilios[0]?.ciudad || data.ciudad || "MERIDA";
   }
   if (type === "servicio") {
+    if (!data.clienteId && data.cliente) {
+      data.clienteNombre = data.cliente;
+      data.nombreCliente = data.cliente;
+      data.razonSocial = data.cliente;
+      data.clienteManual = true;
+    }
     data.productos = [0, 1, 2, 3]
       .map((i) => ({ productoId: data[`productoId${i}`], cantidad: toNumber(data[`cantidad${i}`]) }))
       .filter((item) => item.productoId && item.cantidad > 0);
@@ -2489,8 +2795,9 @@ function normalize(type, data) {
     });
   }
   if (type === "programacion") {
-    data.tecnico = data.tecnico || "SANTOS";
-    if (data.tecnicoAdicional === data.tecnico) data.tecnicoAdicional = "";
+    data.tecnico = data.tecnico || "";
+    data.tecnicoAdicional = data.tecnicoAdicional || "";
+    if (data.tecnico && data.tecnicoAdicional === data.tecnico) data.tecnicoAdicional = "";
   }
   return data;
 }
