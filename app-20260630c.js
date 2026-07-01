@@ -2288,9 +2288,14 @@ function formServicio(data) {
   const clienteOptions = [...state.clientes]
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
     .map((c) => ({ value: c.id, label: c.nombre }));
+  const clienteManualNombre = nombreCliente(data.clienteId, data);
+  const clienteOptionsFinal = data.clienteId
+    ? clienteOptions
+    : [{ value: "", label: clienteManualNombre || "Cliente manual" }, ...clienteOptions];
   return `<div class="form-grid">
     ${input("fecha", "Fecha", data.fecha || today(), "date")}
-    ${select("clienteId", "Cliente", data.clienteId, clienteOptions, "wide")}
+    ${select("clienteId", "Cliente", data.clienteId || "", clienteOptionsFinal, "wide")}
+    ${!data.clienteId ? input("cliente", "Cliente manual", clienteManualNombre, "text", "wide") : ""}
     ${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}
     ${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}
     ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((x) => ({ value: x, label: x })))}
@@ -2693,6 +2698,12 @@ function normalize(type, data) {
     data.ciudad = data.domicilios[0]?.ciudad || data.ciudad || "MERIDA";
   }
   if (type === "servicio") {
+    if (!data.clienteId && data.cliente) {
+      data.clienteNombre = data.cliente;
+      data.nombreCliente = data.cliente;
+      data.razonSocial = data.cliente;
+      data.clienteManual = true;
+    }
     data.productos = [0, 1, 2, 3]
       .map((i) => ({ productoId: data[`productoId${i}`], cantidad: toNumber(data[`cantidad${i}`]) }))
       .filter((item) => item.productoId && item.cantidad > 0);
