@@ -1393,6 +1393,7 @@ function renderDashboard() {
     </section>
     <section class="dashboard-insights">
       ${showMoney ? renderUtilidadCiudadResumen() : ""}
+      ${showMoney ? renderResumenMensualFinanciero() : ""}
       ${renderClientesTipoResumen()}
       ${renderServiciosTecnicoResumen()}
       ${showMoney ? renderVentasCiudadResumen() : ""}
@@ -1421,6 +1422,109 @@ function renderUtilidadCiudadResumen() {
               rows.length
                 ? rows.map((row) => `<tr><td data-label="Ciudad"><strong>${row.ciudad}</strong></td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec. mensual">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
                 : `<tr><td colspan="8">Aun no hay informacion para calcular utilidad por ciudad.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function monthKey(dateText) {
+  if (!dateText) return "";
+  return String(dateText).slice(0, 7);
+}
+
+function monthEndDate(key) {
+  const [year, month] = String(key).split("-").map(Number);
+  return new Date(year, month, 0, 23, 59, 59);
+}
+
+function monthLabel(key) {
+  const labels = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const [year, month] = String(key).split("-").map(Number);
+  return `${labels[(month || 1) - 1]} ${year || ""}`.trim();
+}
+
+function depreciacionMensualParaMes(key) {
+  const end = monthEndDate(key);
+  const equipos = equiposFiltradosOperacion().filter((equipo) => {
+    if (!equipo.fecha) return true;
+    return new Date(`${equipo.fecha}T00:00:00`) <= end;
+  });
+  return gastoDepreciacionMensual(equipos);
+}
+
+function resumenMensualFinanciero() {
+  const rows = {};
+  const ensure = (key) => {
+    if (!key) return null;
+    if (!rows[key]) {
+      rows[key] = {
+        key,
+        mes: monthLabel(key),
+        ventas: 0,
+        cobrado: 0,
+        porCobrar: 0,
+        productoUsado: 0,
+        gastos: 0,
+        depreciacion: 0,
+        comprasInventario: 0,
+        utilidad: 0,
+        servicios: 0,
+      };
+    }
+    return rows[key];
+  };
+
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    const row = ensure(monthKey(servicio.fecha));
+    if (!row) return;
+    row.ventas += totalServicio(servicio);
+    row.cobrado += Number(servicio.cobrado || 0);
+    row.porCobrar += pendienteServicio(servicio);
+    row.productoUsado += costoServicio(servicio);
+    row.servicios += 1;
+  });
+
+  gastosFiltradosOperacion().forEach((gasto) => {
+    const row = ensure(monthKey(gasto.fecha));
+    if (!row) return;
+    row.gastos += Number(gasto.monto || 0);
+  });
+
+  comprasFiltradasOperacion().forEach((compra) => {
+    const row = ensure(monthKey(compra.fecha));
+    if (!row) return;
+    row.comprasInventario += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
+  });
+
+  return Object.values(rows)
+    .sort((a, b) => String(a.key).localeCompare(String(b.key)))
+    .map((row) => {
+      const depreciacion = depreciacionMensualParaMes(row.key);
+      return {
+        ...row,
+        depreciacion,
+        utilidad: row.cobrado - row.productoUsado - row.gastos - depreciacion,
+      };
+    });
+}
+
+function renderResumenMensualFinanciero() {
+  const rows = resumenMensualFinanciero();
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Resumen mensual financiero</h2>
+      <p class="readonly">Formula de utilidad real: cobrado - producto usado - gastos - depreciacion mensual. Las compras de inventario se muestran como referencia, no se restan otra vez.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Mes</th><th>Ventas</th><th>Cobrado</th><th>Por cobrar</th><th>Producto usado</th><th>Gastos</th><th>Deprec.</th><th>Utilidad real</th><th>Compras inventario</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec.">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
+                : `<tr><td colspan="9">Aun no hay informacion mensual para mostrar.</td></tr>`
             }
           </tbody>
         </table>
