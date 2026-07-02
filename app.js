@@ -1594,10 +1594,10 @@ function groupByMonth() {
   return rows.filter((row) => row.facturado || row.cobrado || row.servicios).length ? rows : [{ month: "Sin datos", facturado: 0, cobrado: 0, servicios: 0 }];
 }
 
-function comprasPorMes() {
+function comprasPorMes(rowsSource = comprasFiltradasOperacion()) {
   const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const rows = labels.map((month) => ({ month, total: 0, compras: 0 }));
-  comprasFiltradasOperacion().forEach((compra) => {
+  rowsSource.forEach((compra) => {
     if (!compra.fecha) return;
     const idx = new Date(compra.fecha + "T00:00:00").getMonth();
     if (Number.isNaN(idx)) return;
@@ -2123,9 +2123,18 @@ function renderProductos() {
 }
 
 function renderCompras() {
-  const term = compraSearch.trim().toLowerCase();
+  const normalizeTerm = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const term = normalizeTerm(compraSearch.trim());
   const comprasRows = comprasFiltradasOperacion()
-    .filter((compra) => !term || nombreProducto(compra.productoId).toLowerCase().includes(term))
+    .filter((compra) => {
+      if (!term) return true;
+      return [
+        nombreProducto(compra.productoId),
+        compra.proveedor,
+        compra.pagadoPor,
+        operacionRegistro(compra),
+      ].some((value) => normalizeTerm(value).includes(term));
+    })
     .sort((a, b) => {
       const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
       if (dateCompare !== 0) return dateCompare;
@@ -2140,8 +2149,9 @@ function renderCompras() {
       return { producto: p, comprado, consumido, stock: comprado - consumido, lotes };
     })
     .filter((row) => row.comprado > 0 || row.consumido > 0 || row.lotes.length > 0)
+    .filter((row) => !term || normalizeTerm(row.producto.producto).includes(term))
     .sort((a, b) => String(a.producto.producto || "").localeCompare(String(b.producto.producto || "")));
-  const comprasMensuales = comprasPorMes();
+  const comprasMensuales = comprasPorMes(comprasRows);
   const maxCompraMensual = Math.max(...comprasMensuales.map((row) => row.total), 1);
   return `
     ${topbar("Compras", "Entradas de producto para alimentar inventario.", `${operationFilterControl()}<button class="primary" data-open="compra">Nueva compra</button>`)}
