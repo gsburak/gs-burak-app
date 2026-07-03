@@ -1394,6 +1394,7 @@ function renderDashboard() {
     <section class="dashboard-insights">
       ${showMoney ? renderUtilidadCiudadResumen() : ""}
       ${showMoney ? renderResumenMensualFinanciero() : ""}
+      ${showMoney ? renderCobrosFormaPagoResumen() : ""}
       ${renderClientesTipoResumen()}
       ${renderServiciosTecnicoResumen()}
       ${showMoney ? renderVentasCiudadResumen() : ""}
@@ -1525,6 +1526,59 @@ function renderResumenMensualFinanciero() {
               rows.length
                 ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec.">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
                 : `<tr><td colspan="9">Aun no hay informacion mensual para mostrar.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function cobrosPorFormaPago() {
+  const order = ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesias / refuerzos sin cobro", "Sin dato"];
+  const rows = {};
+  const ensure = (forma) => {
+    if (!rows[forma]) {
+      rows[forma] = { forma, cobrado: 0, servicios: 0 };
+    }
+    return rows[forma];
+  };
+
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    const rawForma = String(servicio.formaPago || "").trim();
+    const forma = ["Cortesia", "Refuerzo"].includes(rawForma)
+      ? "Cortesias / refuerzos sin cobro"
+      : rawForma || "Sin dato";
+    const row = ensure(forma);
+    row.cobrado += Number(servicio.cobrado || 0);
+    row.servicios += 1;
+  });
+
+  return Object.values(rows).sort((a, b) => {
+    const aIndex = order.indexOf(a.forma);
+    const bIndex = order.indexOf(b.forma);
+    if (aIndex !== -1 || bIndex !== -1) {
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    }
+    return a.forma.localeCompare(b.forma);
+  });
+}
+
+function renderCobrosFormaPagoResumen() {
+  const rows = cobrosPorFormaPago();
+  const total = rows.reduce((sum, row) => sum + row.cobrado, 0);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Cobros por forma de pago (${money(total)})</h2>
+      <p class="readonly">Suma el importe cobrado de cada servicio segun la forma de pago capturada. Las cortesias y refuerzos se muestran aparte como servicios sin cobro.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Forma de pago</th><th>Monto cobrado</th><th>Servicios</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Forma de pago"><strong>${row.forma}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Servicios">${number(row.servicios)}</td></tr>`).join("")
+                : `<tr><td colspan="3">Aun no hay cobros registrados.</td></tr>`
             }
           </tbody>
         </table>
