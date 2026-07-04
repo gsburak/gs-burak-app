@@ -1832,10 +1832,10 @@ function comprasPorMes(rowsSource = comprasFiltradasOperacion()) {
   return rows.filter((row) => row.total || row.compras);
 }
 
-function gastosPorMes() {
+function gastosPorMes(rowsSource = gastosFiltradosOperacion()) {
   const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   const rows = labels.map((month) => ({ month, total: 0, gastos: 0 }));
-  gastosFiltradosOperacion().forEach((gasto) => {
+  rowsSource.forEach((gasto) => {
     if (!gasto.fecha) return;
     const idx = new Date(gasto.fecha + "T00:00:00").getMonth();
     if (Number.isNaN(idx)) return;
@@ -1843,6 +1843,18 @@ function gastosPorMes() {
     rows[idx].gastos += 1;
   });
   return rows.filter((row) => row.total || row.gastos);
+}
+
+function gastosPorCategoria(rowsSource = gastosFiltradosOperacion()) {
+  return Object.entries(rowsSource.reduce((rows, gasto) => {
+    const categoria = gasto.categoria || "Sin categoria";
+    if (!rows[categoria]) rows[categoria] = { total: 0, gastos: 0 };
+    rows[categoria].total += Number(gasto.monto || 0);
+    rows[categoria].gastos += 1;
+    return rows;
+  }, {}))
+    .map(([categoria, data]) => ({ categoria, ...data }))
+    .sort((a, b) => b.total - a.total);
 }
 
 function renderMiniServices() {
@@ -1964,6 +1976,24 @@ function renderGastosPagadorResumen() {
         ${
           rows.length
             ? rows.map(([pagador, total]) => renderBar(pagador, total, Math.max(...rows.map((row) => row[1]), 1), true)).join("")
+            : `<p class="readonly">Aun no hay gastos registrados.</p>`
+        }
+      </div>
+    </section>
+  `;
+}
+
+function renderGastosCategoriaResumen(rowsSource = gastosFiltradosOperacion()) {
+  const rows = gastosPorCategoria(rowsSource);
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+  const max = Math.max(...rows.map((row) => row.total), 1);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Gastos por tipo / categoria (${money(total)})</h2>
+      <div class="bars">
+        ${
+          rows.length
+            ? rows.map((row) => `${renderBar(row.categoria, row.total, max, true)}<span class="readonly">${number(row.gastos)} gasto${row.gastos === 1 ? "" : "s"}</span>`).join("")
             : `<p class="readonly">Aun no hay gastos registrados.</p>`
         }
       </div>
@@ -2431,7 +2461,7 @@ function renderGastos() {
   const gastosRows = gastosFiltradosOperacion();
   const categorias = [...new Set(gastosRows.map((g) => g.categoria || "Sin categoria"))].sort();
   const gastosFiltrados = gastosRows.filter((g) => !gastoCategoriaFilter || (g.categoria || "Sin categoria") === gastoCategoriaFilter);
-  const gastosMensuales = gastosPorMes();
+  const gastosMensuales = gastosPorMes(gastosFiltrados);
   const maxGastoMensual = Math.max(...gastosMensuales.map((row) => row.total), 1);
   const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
     const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
@@ -2442,7 +2472,7 @@ function renderGastos() {
   return `
     ${topbar("Gastos", "Gastos operativos por categoria, comprobante y responsable.", `${operationFilterControl()}<button class="primary" data-open="gasto">Nuevo gasto</button>`)}
     <section class="panel">
-      <h2>Gastos por mes</h2>
+      <h2>Gastos por mes${gastoCategoriaFilter ? ` - ${gastoCategoriaFilter}` : ""}</h2>
       <div class="bars">
         ${
           gastosMensuales.length
@@ -2451,12 +2481,13 @@ function renderGastos() {
         }
       </div>
     </section>
+    ${renderGastosCategoriaResumen(gastosRows)}
     ${renderGastosPagadorResumen()}
     <section class="panel" style="margin-top:14px">
       <h2>Historial de gastos</h2>
       <section class="filters" style="margin-bottom:0">
         <div class="field">
-          <label>Categoria</label>
+          <label>Tipo de gasto / Categoria</label>
           <select id="gastoCategoriaFilter">
             <option value="">Todas</option>
             ${categorias.map((categoria) => `<option value="${categoria}" ${categoria === gastoCategoriaFilter ? "selected" : ""}>${categoria}</option>`).join("")}
