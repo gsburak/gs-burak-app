@@ -133,6 +133,15 @@ function number(value) {
   return Number(value || 0).toLocaleString("es-MX");
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   return migrateState(saved ? JSON.parse(saved) : structuredClone(seed));
@@ -641,6 +650,167 @@ function exportServiciosCsv() {
     ["Fecha", "Cliente", "Ciudad", "Servicio", "Tecnico", "Zona / direccion", "Observaciones", "Total", "Cobrado", "Pendiente", "Costo producto", "% producto", "Estatus", "Forma de pago"],
     rows
   );
+}
+
+function exportDashboardExecutiveReport() {
+  if (currentUser?.id !== "admin") {
+    alert("Este reporte solo esta disponible para VICTOR.");
+    return;
+  }
+
+  const m = metrics();
+  const monthly = resumenMensualFinanciero();
+  const utilidadCiudad = utilidadPorCiudad();
+  const cobrosForma = cobrosPorFormaPago();
+  const gastosMesPagador = gastosPorPagadorMes();
+  const totalPagador = Object.entries(totalInversionYGastoPorPagador()).sort((a, b) => b[1] - a[1]);
+  const periodo = operacionFilter === "Todas" ? "Todas las operaciones" : operacionFilter;
+  const generatedAt = new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
+  const row = (cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
+  const header = (cells) => `<tr>${cells.map((cell) => `<th>${escapeHtml(cell)}</th>`).join("")}</tr>`;
+  const emptyRow = (colspan, text) => `<tr><td colspan="${colspan}">${escapeHtml(text)}</td></tr>`;
+  const table = (headers, rows, emptyText) => `
+    <table>
+      <thead>${header(headers)}</thead>
+      <tbody>${rows.length ? rows.join("") : emptyRow(headers.length, emptyText)}</tbody>
+    </table>
+  `;
+
+  const html = `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Reporte ejecutivo GS Burak</title>
+  <style>
+    @page { size: letter; margin: 16mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #0f172a; font-family: Arial, Helvetica, sans-serif; background: #f4f7f7; }
+    .page { max-width: 980px; margin: 0 auto; padding: 28px; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 16px; }
+    .toolbar button { border: 0; border-radius: 6px; padding: 10px 16px; background: #0f766e; color: white; font-weight: 700; cursor: pointer; }
+    .cover { background: #0b2230; color: white; border-radius: 10px; padding: 30px; margin-bottom: 18px; }
+    .cover h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: 0; }
+    .cover p { margin: 4px 0; color: #c8f2ea; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0; }
+    .card { background: white; border: 1px solid #d7e1e4; border-radius: 8px; padding: 14px; }
+    .card span { display: block; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+    .card strong { display: block; font-size: 20px; color: #0f766e; }
+    section { background: white; border: 1px solid #d7e1e4; border-radius: 8px; padding: 18px; margin: 14px 0; break-inside: avoid; }
+    h2 { margin: 0 0 12px; font-size: 18px; color: #0b2230; }
+    .note { color: #64748b; margin: 0 0 12px; line-height: 1.45; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #edf4f5; text-align: left; color: #12313f; }
+    th, td { border-bottom: 1px solid #d7e1e4; padding: 9px 8px; vertical-align: top; }
+    td strong { color: #0b2230; }
+    .money { font-weight: 700; color: #0f766e; }
+    .footer { color: #64748b; font-size: 11px; margin-top: 18px; }
+    @media print {
+      body { background: white; }
+      .page { padding: 0; max-width: none; }
+      .toolbar { display: none; }
+      .cover, section, .card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="toolbar"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
+    <div class="cover">
+      <h1>GS Burak - Reporte ejecutivo</h1>
+      <p>Resumen financiero y operativo</p>
+      <p>Operacion: ${escapeHtml(periodo)} · Generado: ${escapeHtml(generatedAt)}</p>
+    </div>
+    <div class="cards">
+      <div class="card"><span>Ventas totales</span><strong>${money(m.facturado)}</strong></div>
+      <div class="card"><span>Cobrado</span><strong>${money(m.cobrado)}</strong></div>
+      <div class="card"><span>Por cobrar</span><strong>${money(m.porCobrar)}</strong></div>
+      <div class="card"><span>Utilidad real</span><strong>${money(m.utilidad)}</strong></div>
+    </div>
+    <section>
+      <h2>Resumen mensual financiero</h2>
+      <p class="note">Utilidad real = cobrado - producto usado - gastos - depreciacion mensual. Las compras de inventario se muestran como referencia y no se restan otra vez.</p>
+      ${table(
+        ["Mes", "Ventas", "Cobrado", "Por cobrar", "Producto usado", "Gastos", "Deprec.", "Utilidad real", "Compras inventario"],
+        monthly.map((item) => row([
+          `<strong>${escapeHtml(item.mes)}</strong><br>${number(item.servicios)} servicios`,
+          money(item.ventas),
+          money(item.cobrado),
+          money(item.porCobrar),
+          money(item.productoUsado),
+          money(item.gastos),
+          money(item.depreciacion),
+          `<span class="money">${money(item.utilidad)}</span>`,
+          money(item.comprasInventario),
+        ])),
+        "Aun no hay informacion mensual para mostrar."
+      )}
+    </section>
+    <section>
+      <h2>Utilidad real por ciudad</h2>
+      ${table(
+        ["Ciudad", "Cobrado", "Producto usado", "Gastos", "Deprec. mensual", "Utilidad real", "Por cobrar", "Compras inventario"],
+        utilidadCiudad.map((item) => row([
+          `<strong>${escapeHtml(item.ciudad)}</strong>`,
+          money(item.cobrado),
+          money(item.productoUsado),
+          money(item.gastos),
+          money(item.depreciacion),
+          `<span class="money">${money(item.utilidad)}</span>`,
+          money(item.porCobrar),
+          money(item.comprasInventario),
+        ])),
+        "Aun no hay informacion por ciudad."
+      )}
+    </section>
+    <section>
+      <h2>Cobros por forma de pago</h2>
+      ${table(
+        ["Forma de pago", "Monto cobrado", "Servicios"],
+        cobrosForma.map((item) => row([
+          `<strong>${escapeHtml(item.forma)}</strong>`,
+          money(item.cobrado),
+          number(item.servicios),
+        ])),
+        "Aun no hay cobros registrados."
+      )}
+    </section>
+    <section>
+      <h2>Gastos por mes y pagador</h2>
+      ${table(
+        ["Mes", "VICTOR", "SISPROVISA", "Otros", "Total gastos"],
+        gastosMesPagador.map((item) => row([
+          `<strong>${escapeHtml(item.month)}</strong>`,
+          money(item.VICTOR),
+          money(item.SISPROVISA),
+          money(item.otros),
+          `<span class="money">${money(item.total)}</span>`,
+        ])),
+        "Aun no hay gastos registrados."
+      )}
+    </section>
+    <section>
+      <h2>Total pagado por socio</h2>
+      <p class="note">Incluye gastos operativos, compras de inventario y equipos.</p>
+      ${table(
+        ["Pagador", "Total"],
+        totalPagador.map(([pagador, total]) => row([`<strong>${escapeHtml(pagador)}</strong>`, `<span class="money">${money(total)}</span>`])),
+        "Aun no hay informacion de pagos por socio."
+      )}
+    </section>
+    <p class="footer">Reporte generado desde GS Burak Control Operativo. Este archivo es informativo y no da acceso a la aplicacion.</p>
+  </div>
+</body>
+</html>`;
+
+  const reportWindow = window.open("", "_blank");
+  if (!reportWindow) {
+    alert("El navegador bloqueo la ventana del reporte. Permite ventanas emergentes para esta pagina e intenta de nuevo.");
+    return;
+  }
+  reportWindow.document.open();
+  reportWindow.document.write(html);
+  reportWindow.document.close();
 }
 
 function triggerBackupImport() {
@@ -1309,8 +1479,9 @@ function renderDashboard() {
   const cobradoRatio = m.facturado > 0 ? Math.min(100, Math.round((m.cobrado / m.facturado) * 100)) : 0;
   const pendienteRatio = m.facturado > 0 ? Math.min(100, Math.round((m.porCobrar / m.facturado) * 100)) : 0;
   const utilidadRatio = m.cobrado > 0 ? Math.max(0, Math.min(100, Math.round((m.utilidad / m.cobrado) * 100))) : 0;
+  const executiveReportButton = currentUser.id === "admin" ? `<button class="secondary" data-action="exportDashboardReport">Reporte ejecutivo</button>` : "";
   const backupControls = showMoney
-    ? `${operationFilterControl()}<button class="secondary" data-action="exportBackup">Exportar respaldo</button><button class="secondary" data-action="importBackup">Importar respaldo</button><input id="backupImportInput" type="file" accept="application/json" hidden />`
+    ? `${operationFilterControl()}${executiveReportButton}<button class="secondary" data-action="exportBackup">Exportar respaldo</button><button class="secondary" data-action="importBackup">Importar respaldo</button><input id="backupImportInput" type="file" accept="application/json" hidden />`
     : operationFilterControl();
   return `
     ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.", backupControls)}
@@ -2703,6 +2874,9 @@ function bindApp() {
   });
   document.querySelectorAll("[data-action='exportServicios']").forEach((button) => {
     button.addEventListener("click", exportServiciosCsv);
+  });
+  document.querySelectorAll("[data-action='exportDashboardReport']").forEach((button) => {
+    button.addEventListener("click", exportDashboardExecutiveReport);
   });
   const backupImportInput = document.querySelector("#backupImportInput");
   if (backupImportInput) {
