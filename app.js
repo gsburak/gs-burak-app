@@ -2121,16 +2121,17 @@ function renderClientes() {
         ${number(clientes.length)} de ${number(state.clientes.length)} clientes
       </div>
     </section>
-    <div class="table-card service-list">
+    <div class="table-card service-list client-list">
       <table>
-        <thead><tr><th>Cliente</th><th>Contacto</th><th>Telefono</th><th>Correo</th><th>Ciudad</th><th>Tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Contacto</th><th>Ciudad / tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
         <tbody>
           ${clientes.length ? clientes.map((c) => {
             const servicios = state.servicios.filter((s) => s.clienteId === c.id);
             const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
             const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
-            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${c.contacto || ""}</td><td data-label="Telefono">${c.telefono || ""}</td><td data-label="Correo">${c.correo || ""}</td><td data-label="Ciudad">${c.ciudad || "MERIDA"}</td><td data-label="Tipo">${c.tipo || ""}</td><td data-label="Servicios">${servicios.length}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
-          }).join("") : `<tr><td colspan="10">No hay clientes que coincidan con la busqueda.</td></tr>`}
+            const contacto = [c.contacto, c.telefono, c.correo].filter(Boolean).join(" · ");
+            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${contacto || ""}</td><td data-label="Ciudad / tipo">${c.ciudad || "MERIDA"}<br><span class="readonly">${c.tipo || ""}</span></td><td data-label="Servicios">${number(servicios.length)}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
+          }).join("") : `<tr><td colspan="7">No hay clientes que coincidan con la busqueda.</td></tr>`}
         </tbody>
       </table>
     </div>

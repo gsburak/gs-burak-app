@@ -74,10 +74,63 @@
         padding-left: 8px;
         padding-right: 8px;
       }
+
+      .client-list {
+        overflow-x: visible;
+      }
+
+      .client-list table {
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      .client-list th,
+      .client-list td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        vertical-align: top;
+      }
+
+      .client-list th:nth-child(1),
+      .client-list td:nth-child(1) {
+        width: 28%;
+      }
+
+      .client-list th:nth-child(2),
+      .client-list td:nth-child(2) {
+        width: 22%;
+      }
+
+      .client-list th:nth-child(3),
+      .client-list td:nth-child(3) {
+        width: 13%;
+      }
+
+      .client-list th:nth-child(4),
+      .client-list td:nth-child(4),
+      .client-list th:nth-child(5),
+      .client-list td:nth-child(5),
+      .client-list th:nth-child(6),
+      .client-list td:nth-child(6) {
+        width: 10%;
+      }
+
+      .client-list th:nth-child(7),
+      .client-list td:nth-child(7) {
+        width: 7%;
+      }
+
+      .client-list .actions button {
+        width: 100%;
+        min-width: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+      }
     </style>
   </head>
   <body>
     <div id="app"></div>
-  <script src="app.js?v=20260704b"></script>
+  <script src="app.js?v=20260709a"></script>
   </body>
 </html>
