@@ -1135,6 +1135,7 @@ function utilidadPorCiudad() {
     if (!rows[key]) {
       rows[key] = {
         ciudad: key,
+        facturado: 0,
         cobrado: 0,
         porCobrar: 0,
         productoUsado: 0,
@@ -1142,6 +1143,7 @@ function utilidadPorCiudad() {
         depreciacion: 0,
         comprasInventario: 0,
         utilidad: 0,
+        servicios: 0,
       };
     }
     return rows[key];
@@ -1151,9 +1153,11 @@ function utilidadPorCiudad() {
 
   state.servicios.forEach((servicio) => {
     const row = ensure(operacionRegistro(servicio, "Yucatan"));
+    row.facturado += totalServicio(servicio);
     row.cobrado += Number(servicio.cobrado || 0);
     row.porCobrar += pendienteServicio(servicio);
     row.productoUsado += costoServicio(servicio);
+    row.servicios += 1;
   });
 
   state.gastos.forEach((gasto) => {
@@ -1508,6 +1512,7 @@ function renderDashboard() {
         <small>${showMoney ? `Margen ${(m.margen * 100).toFixed(1)}%` : "Reservado para admin"}</small>
       </div>
     </section>
+    ${showMoney ? renderOperacionHeroCards() : ""}
     <section class="dashboard-grid">
       <div class="dash-panel wide">
         <div class="panel-head">
@@ -1598,6 +1603,49 @@ function renderUtilidadCiudadResumen() {
           </tbody>
         </table>
       </div>
+    </section>
+  `;
+}
+
+function renderOperacionHeroCards() {
+  const rows = utilidadPorCiudad().filter((row) => ["Yucatan", "CDMX"].includes(row.ciudad));
+  if (!rows.length) return "";
+  return `
+    <section class="panel operation-cards-panel">
+      <h2>Resumen por ciudad de operacion</h2>
+      <p class="readonly">Mismos conceptos del resumen general, separados por Yucatan y CDMX. La utilidad neta mantiene la formula: cobrado - producto usado - gastos - depreciacion mensual.</p>
+      ${rows.map((row) => {
+        const margen = row.cobrado > 0 ? row.utilidad / row.cobrado : 0;
+        const cobradoRatio = row.facturado > 0 ? Math.round((row.cobrado / row.facturado) * 100) : 0;
+        const pendienteRatio = row.facturado > 0 ? Math.round((row.porCobrar / row.facturado) * 100) : 0;
+        return `
+          <div class="operation-card-group">
+            <h3>${row.ciudad}</h3>
+            <div class="dashboard-hero compact-hero">
+              <div class="hero-card hero-main">
+                <span>Ventas totales</span>
+                <strong>${money(row.facturado)}</strong>
+                <small>${number(row.servicios)} servicios capturados</small>
+              </div>
+              <div class="hero-card cyan">
+                <span>Ingresos cobrados</span>
+                <strong>${money(row.cobrado)}</strong>
+                <small>${cobradoRatio}% de venta total</small>
+              </div>
+              <div class="hero-card violet">
+                <span>Por cobrar</span>
+                <strong>${money(row.porCobrar)}</strong>
+                <small>${pendienteRatio}% pendiente</small>
+              </div>
+              <div class="hero-card amber">
+                <span>Utilidad neta</span>
+                <strong>${money(row.utilidad)}</strong>
+                <small>Margen ${(margen * 100).toFixed(1)}%</small>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("")}
     </section>
   `;
 }
