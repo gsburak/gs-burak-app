@@ -3,7 +3,7 @@ const BACKUP_KEY = "gs_burak_app_backups_v1";
 const SERVER_MODE = location.protocol.startsWith("http");
 
 const users = [
-  { id: "admin", name: "VICTOR", role: "admin", password: "G5687vbm" },
+  { id: "admin", name: "VICTOR", role: "admin", password: "vicbus" },
   { id: "tecnico", name: "PROGRAMACION", role: "operativo", password: "12345" },
   { id: "consulta", name: "CONSULTA", role: "consulta", password: "12345" },
 ];
