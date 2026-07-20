@@ -128,6 +128,148 @@
         padding-right: 8px;
       }
 
+      .programacion-list {
+        overflow-x: visible;
+      }
+
+      .programacion-list table {
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      .programacion-list th,
+      .programacion-list td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        vertical-align: top;
+      }
+
+      .programacion-list th:nth-child(1),
+      .programacion-list td:nth-child(1) {
+        width: 74px;
+      }
+
+      .programacion-list th:nth-child(2),
+      .programacion-list td:nth-child(2) {
+        width: 58px;
+      }
+
+      .programacion-list th:nth-child(3),
+      .programacion-list td:nth-child(3) {
+        width: 20%;
+      }
+
+      .programacion-list th:nth-child(4),
+      .programacion-list td:nth-child(4) {
+        width: 82px;
+      }
+
+      .programacion-list th:nth-child(5),
+      .programacion-list td:nth-child(5) {
+        width: 26%;
+      }
+
+      .programacion-list th:nth-child(6),
+      .programacion-list td:nth-child(6) {
+        width: 96px;
+      }
+
+      .programacion-list th:nth-child(7),
+      .programacion-list td:nth-child(7),
+      .programacion-list th:nth-child(8),
+      .programacion-list td:nth-child(8) {
+        width: 88px;
+      }
+
+      .programacion-list th:nth-child(9),
+      .programacion-list td:nth-child(9) {
+        width: 112px;
+      }
+
+      .programacion-list .actions {
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .programacion-list .actions button {
+        width: 100%;
+        min-width: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+        line-height: 1.15;
+      }
+
+      @media (max-width: 760px) {
+        .programacion-list table,
+        .programacion-list thead,
+        .programacion-list tbody,
+        .programacion-list tr,
+        .programacion-list th,
+        .programacion-list td {
+          display: block;
+          width: 100% !important;
+        }
+
+        .programacion-list thead {
+          display: none;
+        }
+
+        .programacion-list tr {
+          border: 1px solid #d9e2e7;
+          border-radius: 8px;
+          margin: 0 0 16px;
+          overflow: hidden;
+          background: #fff;
+        }
+
+        .programacion-list td {
+          border-bottom: 1px solid #e6edf1;
+          padding: 12px 14px;
+        }
+
+        .programacion-list td::before {
+          content: attr(data-label);
+          display: block;
+          margin-bottom: 6px;
+          color: #667085;
+          font-weight: 800;
+          text-transform: uppercase;
+          font-size: 12px;
+        }
+
+        .programacion-list td[data-label="Fecha"],
+        .programacion-list td[data-label="Hora"],
+        .programacion-list td[data-label="Tecnico"],
+        .programacion-list td[data-label="Estatus"] {
+          display: inline-block;
+          width: 50% !important;
+        }
+
+        .programacion-list td[data-label="Calendar"] {
+          border-bottom: 0;
+        }
+
+        .programacion-list td[data-label="Acciones"] {
+          border-bottom: 0;
+          padding-top: 0;
+        }
+
+        .programacion-list .actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+
+        .programacion-list .actions button {
+          min-height: 44px;
+        }
+
+        .programacion-list .actions button:first-child {
+          grid-column: 1 / -1;
+        }
+      }
+
       .operation-cards-panel {
         margin: 14px 0;
       }
@@ -147,6 +289,6 @@
   </head>
   <body>
     <div id="app"></div>
-  <script src="app.js?v=20260720a"></script>
+  <script src="app.js?v=20260720b"></script>
   </body>
 </html>

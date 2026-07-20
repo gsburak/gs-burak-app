@@ -2207,7 +2207,7 @@ function renderProgramacion() {
     ${renderProgramacionAgenda(rows)}
     <section class="panel">
       <h2>Servicios programados - ${programacionStatusFilter}</h2>
-      <div class="table-card service-list">
+      <div class="table-card service-list programacion-list">
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
