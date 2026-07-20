@@ -75,6 +75,39 @@
         padding-right: 8px;
       }
 
+      @media (max-width: 760px) {
+        .sales-list td[data-label="Acciones"] {
+          display: block;
+          width: 100% !important;
+          clear: both;
+          padding-top: 12px;
+        }
+
+        .sales-list td[data-label="Acciones"]::before {
+          display: block;
+          width: 100%;
+        }
+
+        .sales-list td[data-label="Acciones"] .actions {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+          width: 100%;
+          align-items: stretch;
+        }
+
+        .sales-list td[data-label="Acciones"] .actions button {
+          width: 100%;
+          min-width: 100%;
+          min-height: 44px;
+          white-space: normal;
+          word-break: normal;
+          overflow-wrap: normal;
+          line-height: 1.2;
+          text-align: center;
+        }
+      }
+
       .client-list {
         overflow-x: visible;
       }
@@ -289,6 +322,6 @@
   </head>
   <body>
     <div id="app"></div>
-  <script src="app.js?v=20260720b"></script>
+  <script src="app.js?v=20260720c"></script>
   </body>
 </html>
