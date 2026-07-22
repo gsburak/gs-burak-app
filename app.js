@@ -105,10 +105,12 @@ let modal = null;
 let clienteSearch = "";
 let clienteTipoFilter = "";
 let clienteCiudadFilter = "";
+let clienteClasificacionFilter = "";
 let servicioSearch = "";
 let servicioPagoFilter = "Todos";
 let servicioTipoFilter = "Todos";
 let servicioProductoFilter = "Todos";
+let servicioClienteClasificacionFilter = "Todos";
 let compraSearch = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
@@ -314,10 +316,12 @@ function migrateState(data) {
   data.clientes = (data.clientes || []).map((cliente) => ({
     ciudad: "MERIDA",
     contacto: "",
+    clasificacion: "Sin clasificar",
     observaciones: "",
     ...cliente,
     ciudad: cliente.ciudad || "MERIDA",
     contacto: cliente.contacto || "",
+    clasificacion: cliente.clasificacion || "Sin clasificar",
   }));
   data.productos = (data.productos || []).map((producto) => {
     if (producto.unidadCompra && producto.unidadUso && producto.factor) return normalizeProduct(producto);
@@ -560,6 +564,7 @@ function clientesFiltradosVista() {
   return state.clientes
     .filter((c) => !clienteTipoFilter || (c.tipo || "Sin tipo") === clienteTipoFilter)
     .filter((c) => !clienteCiudadFilter || (c.ciudad || "MERIDA") === clienteCiudadFilter)
+    .filter((c) => !clienteClasificacionFilter || clasificacionCliente(c) === clienteClasificacionFilter)
     .filter((c) => {
       if (!term) return true;
       const domiciliosText = domiciliosCliente(c)
@@ -588,6 +593,7 @@ function serviciosFiltradosVista() {
       if (servicioProductoFilter === "Todos") return true;
       return (s.productos || []).some((item) => item.productoId === servicioProductoFilter);
     })
+    .filter((s) => servicioClienteClasificacionFilter === "Todos" || clasificacionServicio(s) === servicioClienteClasificacionFilter)
     .sort((a, b) => {
       const dateCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
       if (dateCompare !== 0) return dateCompare;
@@ -595,6 +601,24 @@ function serviciosFiltradosVista() {
       if (clientCompare !== 0) return clientCompare;
       return String(a.id || "").localeCompare(String(b.id || ""));
     });
+}
+
+function clasificacionCliente(cliente) {
+  return cliente?.clasificacion || "Sin clasificar";
+}
+
+function clasificacionServicio(servicio) {
+  const cliente = state.clientes.find((item) => item.id === servicio.clienteId);
+  return clasificacionCliente(cliente);
+}
+
+function clienteClasificacionOptions(includeTodos = false) {
+  const options = [
+    { value: "Nuevo", label: "Nuevo" },
+    { value: "Antiguo", label: "Antiguo" },
+    { value: "Sin clasificar", label: "Sin clasificar" },
+  ];
+  return includeTodos ? [{ value: "Todos", label: "Todos" }, ...options] : options;
 }
 
 function exportClientesCsv() {
@@ -612,6 +636,7 @@ function exportClientesCsv() {
       c.correo,
       c.ciudad || "MERIDA",
       c.tipo || "",
+      clasificacionCliente(c),
       c.direccion || "",
       domicilios,
       c.observaciones || "",
@@ -623,7 +648,7 @@ function exportClientesCsv() {
   });
   downloadCsv(
     datedFileName("clientes-gs-burak", "csv"),
-    ["Cliente", "Contacto", "Telefono", "Correo", "Ciudad", "Tipo", "Direccion principal", "Domicilios", "Observaciones", "Servicios", "Facturado", "Cobrado", "Por cobrar"],
+    ["Cliente", "Contacto", "Telefono", "Correo", "Ciudad", "Tipo", "Clasificacion", "Direccion principal", "Domicilios", "Observaciones", "Servicios", "Facturado", "Cobrado", "Por cobrar"],
     rows
   );
 }
@@ -633,6 +658,7 @@ function exportServiciosCsv() {
     s.fecha,
     nombreCliente(s.clienteId, s),
     s.ciudad || "Yucatan",
+    clasificacionServicio(s),
     s.tipo || "",
     s.tecnico || "",
     s.zona || "",
@@ -647,7 +673,7 @@ function exportServiciosCsv() {
   ]);
   downloadCsv(
     datedFileName("ventas-servicios-gs-burak", "csv"),
-    ["Fecha", "Cliente", "Ciudad", "Servicio", "Tecnico", "Zona / direccion", "Observaciones", "Total", "Cobrado", "Pendiente", "Costo producto", "% producto", "Estatus", "Forma de pago"],
+    ["Fecha", "Cliente", "Ciudad", "Clasificacion cliente", "Servicio", "Tecnico", "Zona / direccion", "Observaciones", "Total", "Cobrado", "Pendiente", "Costo producto", "% producto", "Estatus", "Forma de pago"],
     rows
   );
 }
@@ -1057,6 +1083,41 @@ function clientesPorTipo() {
     rows[tipo] = (rows[tipo] || 0) + 1;
     return rows;
   }, {});
+}
+
+function resumenVentasPorClasificacionCliente() {
+  const rows = {};
+  const ensure = (clasificacion) => {
+    if (!rows[clasificacion]) {
+      rows[clasificacion] = {
+        clasificacion,
+        servicios: 0,
+        ventas: 0,
+        cobrado: 0,
+        porCobrar: 0,
+        productoUsado: 0,
+        utilidadAntesGastos: 0,
+      };
+    }
+    return rows[clasificacion];
+  };
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    const row = ensure(clasificacionServicio(servicio));
+    row.servicios += 1;
+    row.ventas += totalServicio(servicio);
+    row.cobrado += Number(servicio.cobrado || 0);
+    row.porCobrar += pendienteServicio(servicio);
+    row.productoUsado += costoServicio(servicio);
+  });
+  return ["Nuevo", "Antiguo", "Sin clasificar"]
+    .map((clasificacion) => {
+      const row = ensure(clasificacion);
+      return {
+        ...row,
+        utilidadAntesGastos: row.cobrado - row.productoUsado,
+      };
+    })
+    .filter((row) => row.servicios || row.ventas || row.cobrado || row.porCobrar || row.productoUsado);
 }
 
 function gastosPorPagador() {
@@ -1571,6 +1632,7 @@ function renderDashboard() {
       ${showMoney ? renderUtilidadCiudadResumen() : ""}
       ${showMoney ? renderResumenMensualFinanciero() : ""}
       ${showMoney ? renderCobrosFormaPagoResumen() : ""}
+      ${showMoney ? renderVentasClasificacionClienteResumen() : ""}
       ${renderClientesTipoResumen()}
       ${renderServiciosTecnicoResumen()}
       ${showMoney ? renderVentasCiudadResumen() : ""}
@@ -1580,6 +1642,29 @@ function renderDashboard() {
       ${showMoney ? renderTotalPagadorResumen() : ""}
       ${showMoney ? renderGastosPagadorMensualResumen() : ""}
       ${showMoney ? renderPendientesResumen() : ""}
+    </section>
+  `;
+}
+
+function renderVentasClasificacionClienteResumen() {
+  const rows = resumenVentasPorClasificacionCliente();
+  const totalCobrado = rows.reduce((sum, row) => sum + row.cobrado, 0);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Ventas por cliente nuevo / antiguo (${money(totalCobrado)} cobrado)</h2>
+      <p class="readonly">Separa servicios segun la clasificacion capturada en la ficha del cliente. La utilidad aqui es antes de gastos generales: cobrado - producto usado.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Clasificacion</th><th>Servicios</th><th>Ventas</th><th>Cobrado</th><th>Por cobrar</th><th>Producto usado</th><th>Utilidad antes de gastos</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Clasificacion"><strong>${row.clasificacion}</strong></td><td data-label="Servicios">${number(row.servicios)}</td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Utilidad antes de gastos"><strong>${money(row.utilidadAntesGastos)}</strong></td></tr>`).join("")
+                : `<tr><td colspan="7">Aun no hay servicios con clientes clasificados.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
     </section>
   `;
 }
@@ -2143,6 +2228,7 @@ function paymentPill(s) {
 
 function renderClientes() {
   const tipos = [...new Set(state.clientes.map((c) => c.tipo || "Sin tipo"))].sort();
+  const clasificaciones = clienteClasificacionOptions(false);
   const clientes = clientesFiltradosVista();
   return `
     ${topbar("Clientes", "Alta, contacto, direccion e historial financiero por cliente.", `<button class="secondary" data-action="exportClientes">Exportar clientes</button><button class="primary" data-open="cliente">Nuevo cliente</button>`)}
@@ -2165,20 +2251,27 @@ function renderClientes() {
           ${["MERIDA", "CDMX"].map((ciudad) => `<option value="${ciudad}" ${ciudad === clienteCiudadFilter ? "selected" : ""}>${ciudad}</option>`).join("")}
         </select>
       </div>
+      <div class="field">
+        <label>Nuevo / antiguo</label>
+        <select id="clienteClasificacionFilter">
+          <option value="">Todas</option>
+          ${clasificaciones.map((item) => `<option value="${item.value}" ${item.value === clienteClasificacionFilter ? "selected" : ""}>${item.label}</option>`).join("")}
+        </select>
+      </div>
       <div class="filter-count">
         ${number(clientes.length)} de ${number(state.clientes.length)} clientes
       </div>
     </section>
     <div class="table-card service-list client-list">
       <table>
-        <thead><tr><th>Cliente</th><th>Contacto</th><th>Ciudad / tipo</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Contacto</th><th>Ciudad / tipo / clasif.</th><th>Servicios</th><th>Facturado</th><th>Por cobrar</th><th></th></tr></thead>
         <tbody>
           ${clientes.length ? clientes.map((c) => {
             const servicios = state.servicios.filter((s) => s.clienteId === c.id);
             const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
             const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
             const contacto = [c.contacto, c.telefono, c.correo].filter(Boolean).join(" · ");
-            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${contacto || ""}</td><td data-label="Ciudad / tipo">${c.ciudad || "MERIDA"}<br><span class="readonly">${c.tipo || ""}</span></td><td data-label="Servicios">${number(servicios.length)}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
+            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${contacto || ""}</td><td data-label="Ciudad / tipo / clasif.">${c.ciudad || "MERIDA"}<br><span class="readonly">${c.tipo || ""}</span><br><span class="pill">${clasificacionCliente(c)}</span></td><td data-label="Servicios">${number(servicios.length)}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
           }).join("") : `<tr><td colspan="7">No hay clientes que coincidan con la busqueda.</td></tr>`}
         </tbody>
       </table>
@@ -2292,7 +2385,7 @@ function renderServicios() {
   const rows = servicios.map((s) => {
     const costo = currentUser.role === "admin" ? money(costoServicio(s)) : "Restringido";
     const porcentaje = currentUser.role === "admin" ? `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%` : "Restringido";
-    return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId, s)}</td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
+    return `<tr><td data-label="Fecha">${s.fecha}</td><td data-label="Cliente">${nombreCliente(s.clienteId, s)}<br><span class="readonly">${clasificacionServicio(s)}</span></td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Servicio">${s.tipo}<br><span class="readonly">${s.tecnico || ""} - ${s.zona || ""}</span></td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Pendiente">${money(pendienteServicio(s))}</td><td data-label="Costo prod.">${costo}</td><td data-label="% producto">${porcentaje}</td><td data-label="Estatus">${paymentPill(s)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`;
   }).join("");
   return `
     ${topbar("Servicios / Ventas", "Captura de servicios, cobros, formas de pago y productos usados.", `${operationFilterControl()}${servicioPagoFilterControl()}<button class="secondary" data-action="exportServicios">Exportar ventas</button><button class="primary" data-open="servicio">Nuevo servicio</button>`)}
@@ -2320,12 +2413,19 @@ function renderServicios() {
             .join("")}
         </select>
       </div>
+      <div class="field">
+        <label>Cliente nuevo / antiguo</label>
+        <select id="servicioClienteClasificacionFilter">
+          ${clienteClasificacionOptions(true).map((item) => `<option value="${item.value}" ${servicioClienteClasificacionFilter === item.value ? "selected" : ""}>${item.label}</option>`).join("")}
+        </select>
+      </div>
       <div class="filter-count">
         ${number(servicios.length)} de ${number(serviciosFiltradosOperacion().length)} servicios en ${operacionFilter}
         ${servicioPagoFilter !== "Todos" ? `<br>${servicioPagoFilter}` : ""}
         ${servicioTipoFilter !== "Todos" ? `<br>${servicioTipoFilter}` : ""}
         ${servicioProductoFilter !== "Todos" ? `<br>Producto: ${nombreProducto(servicioProductoFilter)}` : ""}
-        ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
+        ${servicioClienteClasificacionFilter !== "Todos" ? `<br>Cliente: ${servicioClienteClasificacionFilter}` : ""}
+        ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos" || servicioClienteClasificacionFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
       </div>
     </section>
     <div class="table-card service-list sales-list">
@@ -2799,7 +2899,7 @@ function formDomiciliosCliente(data) {
 
 function formFor(type, data) {
   if (type === "cliente") {
-    return `<div class="form-grid">${input("nombre", "Cliente", data.nombre, "text", "wide")}${select("ciudad", "Ciudad principal", data.ciudad || "MERIDA", ["MERIDA", "CDMX"].map((x) => ({ value: x, label: x })))}${input("contacto", "Contacto", data.contacto)}${input("telefono", "Telefono", data.telefono)}${input("correo", "Correo", data.correo)}${select("tipo", "Tipo", data.tipo, ["Residencial", "Comercial", "Industrial", "Gobierno", "Otro"].map((x) => ({ value: x, label: x })))}${text("observaciones", "Observaciones", data.observaciones, "full")}${formDomiciliosCliente(data)}</div>`;
+    return `<div class="form-grid">${input("nombre", "Cliente", data.nombre, "text", "wide")}${select("ciudad", "Ciudad principal", data.ciudad || "MERIDA", ["MERIDA", "CDMX"].map((x) => ({ value: x, label: x })))}${select("clasificacion", "Nuevo / antiguo", data.clasificacion || "Sin clasificar", clienteClasificacionOptions(false))}${input("contacto", "Contacto", data.contacto)}${input("telefono", "Telefono", data.telefono)}${input("correo", "Correo", data.correo)}${select("tipo", "Tipo", data.tipo, ["Residencial", "Comercial", "Industrial", "Gobierno", "Otro"].map((x) => ({ value: x, label: x })))}${text("observaciones", "Observaciones", data.observaciones, "full")}${formDomiciliosCliente(data)}</div>`;
   }
   if (type === "producto") {
     return `<div class="form-grid">${input("producto", "Producto", data.producto, "text", "wide")}${select("unidadCompra", "Unidad de compra", data.unidadCompra, ["litro", "kilo", "envase", "pieza", "galon", "caja"].map((x) => ({ value: x, label: x })))}${select("unidadUso", "Unidad de uso", data.unidadUso, ["ml", "gr", "pieza"].map((x) => ({ value: x, label: x })))}${input("factor", "Equivalencia por unidad comprada", data.factor || 1000, "number")}${input("costo", "Costo por unidad de compra", data.costo, "number", "wide")}</div>`;
@@ -2991,6 +3091,13 @@ function bindApp() {
       render();
     });
   }
+  const clienteClasificacionSelect = document.querySelector("#clienteClasificacionFilter");
+  if (clienteClasificacionSelect) {
+    clienteClasificacionSelect.addEventListener("change", (event) => {
+      clienteClasificacionFilter = event.target.value;
+      render();
+    });
+  }
   const servicioSearchInput = document.querySelector("#servicioSearch");
   if (servicioSearchInput) {
     servicioSearchInput.addEventListener("input", (event) => {
@@ -3028,6 +3135,13 @@ function bindApp() {
   if (servicioProductoSelect) {
     servicioProductoSelect.addEventListener("change", (event) => {
       servicioProductoFilter = event.target.value;
+      render();
+    });
+  }
+  const servicioClienteClasificacionSelect = document.querySelector("#servicioClienteClasificacionFilter");
+  if (servicioClienteClasificacionSelect) {
+    servicioClienteClasificacionSelect.addEventListener("change", (event) => {
+      servicioClienteClasificacionFilter = event.target.value;
       render();
     });
   }
@@ -3238,6 +3352,7 @@ function normalize(type, data) {
     if (field in data) data[field] = toNumber(data[field]);
   });
   if (type === "cliente") {
+    data.clasificacion = data.clasificacion || "Sin clasificar";
     data.domicilios = [0, 1, 2]
       .map((index) => ({
         alias: String(data[`domicilioAlias${index}`] || "").trim(),
