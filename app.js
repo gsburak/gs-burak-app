@@ -108,6 +108,7 @@ let clienteCiudadFilter = "";
 let clienteClasificacionFilter = "";
 let servicioSearch = "";
 let servicioPagoFilter = "Todos";
+const SERVICIO_PAGO_COBRADO_EN_POR_COBRAR = "Cobrado en Por cobrar";
 let servicioTipoFilter = "Todos";
 let servicioProductoFilter = "Todos";
 let servicioClienteClasificacionFilter = "Todos";
@@ -584,6 +585,9 @@ function serviciosFiltradosVista() {
       return nombreCliente(s.clienteId, s).toLowerCase().includes(term);
     })
     .filter((s) => {
+      if (servicioPagoFilter === SERVICIO_PAGO_COBRADO_EN_POR_COBRAR) {
+        return String(s.formaPago || "") === "Por cobrar" && toNumber(s.cobrado) > 0;
+      }
       if (servicioPagoFilter === "Por cobrar") return pendienteServicio(s) > 0;
       if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
       return true;
@@ -1346,7 +1350,7 @@ function programacionStatusFilterControl() {
 }
 
 function servicioPagoFilterControl() {
-  const options = ["Todos", "Por cobrar", "Cobrados"];
+  const options = ["Todos", "Por cobrar", "Cobrados", SERVICIO_PAGO_COBRADO_EN_POR_COBRAR];
   return `
     <div class="field compact-filter">
       <label>Pago</label>
