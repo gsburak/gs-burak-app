@@ -629,7 +629,14 @@ function clienteDeServicio(servicio) {
   if (exacto) return exacto;
   const nombre = normalizarTexto(nombreCliente(servicio.clienteId, servicio));
   if (!nombre || nombre === "sin cliente") return null;
-  return state.clientes.find((item) => normalizarTexto(item.nombre) === nombre) || null;
+  const exactoPorNombre = state.clientes.find((item) => normalizarTexto(item.nombre) === nombre);
+  if (exactoPorNombre) return exactoPorNombre;
+
+  const candidatos = state.clientes.filter((item) => {
+    const clienteNombre = normalizarTexto(item.nombre);
+    return clienteNombre.length >= 6 && (nombre.includes(clienteNombre) || clienteNombre.includes(nombre));
+  });
+  return candidatos.length === 1 ? candidatos[0] : null;
 }
 
 function clienteClasificacionOptions(includeTodos = false) {
