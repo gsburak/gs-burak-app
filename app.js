@@ -612,8 +612,24 @@ function clasificacionCliente(cliente) {
 }
 
 function clasificacionServicio(servicio) {
-  const cliente = state.clientes.find((item) => item.id === servicio.clienteId);
+  const cliente = clienteDeServicio(servicio);
   return clasificacionCliente(cliente);
+}
+
+function normalizarTexto(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function clienteDeServicio(servicio) {
+  const exacto = state.clientes.find((item) => item.id === servicio.clienteId);
+  if (exacto) return exacto;
+  const nombre = normalizarTexto(nombreCliente(servicio.clienteId, servicio));
+  if (!nombre || nombre === "sin cliente") return null;
+  return state.clientes.find((item) => normalizarTexto(item.nombre) === nombre) || null;
 }
 
 function clienteClasificacionOptions(includeTodos = false) {
