@@ -693,6 +693,7 @@ function exportDashboardExecutiveReport() {
   const utilidadCiudad = utilidadPorCiudad();
   const cobrosForma = cobrosPorFormaPago();
   const gastosMesPagador = gastosPorPagadorMes();
+  const gastosCiudadPagador = gastosPorCiudadYPagador();
   const totalPagador = Object.entries(totalInversionYGastoPorPagador()).sort((a, b) => b[1] - a[1]);
   const periodo = operacionFilter === "Todas" ? "Todas las operaciones" : operacionFilter;
   const generatedAt = new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
@@ -811,6 +812,21 @@ function exportDashboardExecutiveReport() {
         ["Mes", "VICTOR", "SISPROVISA", "Otros", "Total gastos"],
         gastosMesPagador.map((item) => row([
           `<strong>${escapeHtml(item.month)}</strong>`,
+          money(item.VICTOR),
+          money(item.SISPROVISA),
+          money(item.otros),
+          `<span class="money">${money(item.total)}</span>`,
+        ])),
+        "Aun no hay gastos registrados."
+      )}
+    </section>
+    <section>
+      <h2>Gastos por ciudad y pagador</h2>
+      <p class="note">Solo incluye gastos operativos capturados en la seccion Gastos, separados por ciudad de operacion y por quien los pago.</p>
+      ${table(
+        ["Ciudad", "VICTOR", "SISPROVISA", "Otros", "Total gastos"],
+        gastosCiudadPagador.map((item) => row([
+          `<strong>${escapeHtml(item.ciudad)}</strong>`,
           money(item.VICTOR),
           money(item.SISPROVISA),
           money(item.otros),
@@ -1147,6 +1163,30 @@ function gastosPorPagadorMes() {
     rows[idx].total += monto;
   });
   return rows.filter((row) => row.total > 0);
+}
+
+function gastosPorCiudadYPagador() {
+  const order = { Yucatan: 1, CDMX: 2, "Sin clasificar": 3 };
+  const rows = {};
+  const ensure = (ciudad) => {
+    const key = ciudad || "Sin clasificar";
+    if (!rows[key]) rows[key] = { ciudad: key, VICTOR: 0, SISPROVISA: 0, otros: 0, total: 0 };
+    return rows[key];
+  };
+
+  gastosFiltradosOperacion().forEach((gasto) => {
+    const row = ensure(operacionRegistro(gasto));
+    const monto = Number(gasto.monto || 0);
+    const pagador = String(gasto.pagadoPor || "Sin dato").toUpperCase();
+    if (pagador === "VICTOR") row.VICTOR += monto;
+    else if (pagador === "SISPROVISA") row.SISPROVISA += monto;
+    else row.otros += monto;
+    row.total += monto;
+  });
+
+  return Object.values(rows)
+    .filter((row) => row.total > 0)
+    .sort((a, b) => (order[a.ciudad] || 99) - (order[b.ciudad] || 99));
 }
 
 function comprasPorPagador() {
@@ -1645,6 +1685,7 @@ function renderDashboard() {
       ${showMoney ? renderEquiposPagadorResumen() : ""}
       ${showMoney ? renderTotalPagadorResumen() : ""}
       ${showMoney ? renderGastosPagadorMensualResumen() : ""}
+      ${showMoney ? renderGastosCiudadPagadorResumen() : ""}
       ${showMoney ? renderPendientesResumen() : ""}
     </section>
   `;
@@ -2150,6 +2191,29 @@ function renderGastosPagadorMensualResumen() {
             ${
               rows.length
                 ? rows.map((row) => `<tr><td data-label="Mes">${row.month}</td><td data-label="VICTOR">${money(row.VICTOR)}</td><td data-label="SISPROVISA">${money(row.SISPROVISA)}</td><td data-label="Otros">${money(row.otros)}</td><td data-label="Total gastos"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                : `<tr><td colspan="5">Aun no hay gastos registrados.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderGastosCiudadPagadorResumen() {
+  const rows = gastosPorCiudadYPagador();
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Gastos por ciudad y pagador (${money(total)})</h2>
+      <p class="readonly">Solo incluye gastos operativos capturados en la seccion Gastos, separados por ciudad de operacion y por quien los pago.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Ciudad</th><th>VICTOR</th><th>SISPROVISA</th><th>Otros</th><th>Total gastos</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Ciudad"><strong>${row.ciudad}</strong></td><td data-label="VICTOR">${money(row.VICTOR)}</td><td data-label="SISPROVISA">${money(row.SISPROVISA)}</td><td data-label="Otros">${money(row.otros)}</td><td data-label="Total gastos"><strong>${money(row.total)}</strong></td></tr>`).join("")
                 : `<tr><td colspan="5">Aun no hay gastos registrados.</td></tr>`
             }
           </tbody>
