@@ -613,6 +613,7 @@ function clasificacionCliente(cliente) {
 
 function clasificacionServicio(servicio) {
   const cliente = clienteDeServicio(servicio);
+  if (!cliente) return "Servicio por revisar";
   return clasificacionCliente(cliente);
 }
 
@@ -645,7 +646,7 @@ function clienteClasificacionOptions(includeTodos = false) {
     { value: "Antiguo", label: "Antiguo" },
     { value: "Sin clasificar", label: "Sin clasificar" },
   ];
-  return includeTodos ? [{ value: "Todos", label: "Todos" }, ...options] : options;
+  return includeTodos ? [{ value: "Todos", label: "Todos" }, ...options, { value: "Servicio por revisar", label: "Servicio por revisar" }] : options;
 }
 
 function exportClientesCsv() {
@@ -1184,7 +1185,7 @@ function resumenVentasPorClasificacionCliente() {
     row.porCobrar += pendienteServicio(servicio);
     row.productoUsado += costoServicio(servicio);
   });
-  return ["Nuevo", "Antiguo", "Sin clasificar"]
+  return ["Nuevo", "Antiguo", "Sin clasificar", "Servicio por revisar"]
     .map((clasificacion) => {
       const row = ensure(clasificacion);
       return {
@@ -1193,6 +1194,12 @@ function resumenVentasPorClasificacionCliente() {
       };
     })
     .filter((row) => row.servicios || row.ventas || row.cobrado || row.porCobrar || row.productoUsado);
+}
+
+function serviciosPorRevisarClasificacionCliente() {
+  return serviciosFiltradosOperacion()
+    .filter((servicio) => clasificacionServicio(servicio) === "Servicio por revisar")
+    .sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
 }
 
 function gastosPorPagador() {
@@ -1799,10 +1806,11 @@ function renderDashboard() {
 function renderVentasClasificacionClienteResumen() {
   const rows = resumenVentasPorClasificacionCliente();
   const totalCobrado = rows.reduce((sum, row) => sum + row.cobrado, 0);
+  const porRevisar = serviciosPorRevisarClasificacionCliente();
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Ventas por cliente nuevo / antiguo (${money(totalCobrado)} cobrado)</h2>
-      <p class="readonly">Separa servicios segun la clasificacion capturada en la ficha del cliente. La utilidad aqui es antes de gastos generales: cobrado - producto usado.</p>
+      <p class="readonly">Separa servicios segun la clasificacion capturada en la ficha del cliente. Si aparece "Servicio por revisar", son ventas que no encontraron una ficha de cliente ligada. La utilidad aqui es antes de gastos generales: cobrado - producto usado.</p>
       <div class="table-card">
         <table>
           <thead><tr><th>Clasificacion</th><th>Servicios</th><th>Ventas</th><th>Cobrado</th><th>Por cobrar</th><th>Producto usado</th><th>Utilidad antes de gastos</th></tr></thead>
@@ -1815,6 +1823,20 @@ function renderVentasClasificacionClienteResumen() {
           </tbody>
         </table>
       </div>
+      ${
+        porRevisar.length
+          ? `<div class="table-card" style="margin-top:12px">
+              <h3>Servicios por revisar</h3>
+              <p class="readonly">Estos servicios tienen venta capturada, pero no estan ligados claramente a un cliente del catalogo.</p>
+              <table>
+                <thead><tr><th>Fecha</th><th>Cliente en servicio</th><th>Ciudad</th><th>Total</th><th>Cobrado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  ${porRevisar.map((s) => `<tr><td data-label="Fecha">${s.fecha || ""}</td><td data-label="Cliente en servicio"><strong>${nombreCliente(s.clienteId, s)}</strong></td><td data-label="Ciudad">${s.ciudad || "Yucatan"}</td><td data-label="Total">${money(totalServicio(s))}</td><td data-label="Cobrado">${money(s.cobrado)}</td><td data-label="Acciones">${rowActions("servicio", s.id)}</td></tr>`).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : ""
+      }
     </section>
   `;
 }
