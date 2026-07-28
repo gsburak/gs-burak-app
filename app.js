@@ -2237,6 +2237,26 @@ function gastosPorCategoria(rowsSource = gastosFiltradosOperacion()) {
     .sort((a, b) => b.total - a.total);
 }
 
+function gastosPorMesYCategoria(rowsSource = gastosFiltradosOperacion()) {
+  const categorias = [...new Set(rowsSource.map((gasto) => gasto.categoria || "Sin categoria"))].sort();
+  const grouped = {};
+  rowsSource.forEach((gasto) => {
+    const key = monthKey(gasto.fecha);
+    if (!key) return;
+    const categoria = gasto.categoria || "Sin categoria";
+    if (!grouped[key]) {
+      grouped[key] = { key, mes: monthLabel(key), total: 0, gastos: 0, categorias: {} };
+    }
+    grouped[key].categorias[categoria] = (grouped[key].categorias[categoria] || 0) + Number(gasto.monto || 0);
+    grouped[key].total += Number(gasto.monto || 0);
+    grouped[key].gastos += 1;
+  });
+  return {
+    categorias,
+    rows: Object.values(grouped).sort((a, b) => String(a.key).localeCompare(String(b.key))),
+  };
+}
+
 function renderMiniServices() {
   const rows = serviciosFiltradosOperacion()
     .sort((a, b) => {
@@ -2366,16 +2386,44 @@ function renderGastosPagadorResumen() {
 function renderGastosCategoriaResumen(rowsSource = gastosFiltradosOperacion()) {
   const rows = gastosPorCategoria(rowsSource);
   const total = rows.reduce((sum, row) => sum + row.total, 0);
-  const max = Math.max(...rows.map((row) => row.total), 1);
   return `
     <section class="panel" style="margin-top:14px">
-      <h2>Gastos por tipo / categoria (${money(total)})</h2>
-      <div class="bars">
-        ${
-          rows.length
-            ? rows.map((row) => `${renderBar(row.categoria, row.total, max, true)}<span class="readonly">${number(row.gastos)} gasto${row.gastos === 1 ? "" : "s"}</span>`).join("")
-            : `<p class="readonly">Aun no hay gastos registrados.</p>`
-        }
+      <h2>Gastos historicos por tipo / categoria (${money(total)})</h2>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Categoria</th><th>Gastos</th><th>Total</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Categoria"><strong>${row.categoria}</strong></td><td data-label="Gastos">${number(row.gastos)}</td><td data-label="Total"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                : `<tr><td colspan="3">Aun no hay gastos registrados.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderGastosMensualesCategoriaResumen(rowsSource = gastosFiltradosOperacion()) {
+  const { categorias, rows } = gastosPorMesYCategoria(rowsSource);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Gastos mensuales por tipo / categoria</h2>
+      <p class="readonly">Muestra cuanto se gasto en cada rubro por mes. Respeta el filtro de ciudad de operacion.</p>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr><th>Mes</th>${categorias.map((categoria) => `<th>${categoria}</th>`).join("")}<th>Total</th></tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.gastos)} gasto${row.gastos === 1 ? "" : "s"}</span></td>${categorias.map((categoria) => `<td data-label="${categoria}">${money(row.categorias[categoria] || 0)}</td>`).join("")}<td data-label="Total"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                : `<tr><td colspan="${categorias.length + 2}">Aun no hay gastos registrados.</td></tr>`
+            }
+          </tbody>
+        </table>
       </div>
     </section>
   `;
@@ -2947,6 +2995,7 @@ function renderGastos() {
       </div>
     </section>
     ${renderGastosCategoriaResumen(gastosRows)}
+    ${renderGastosMensualesCategoriaResumen(gastosRows)}
     ${renderGastosPagadorResumen()}
     <section class="panel" style="margin-top:14px">
       <h2>Historial de gastos</h2>
