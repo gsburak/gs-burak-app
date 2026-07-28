@@ -1785,6 +1785,7 @@ function renderDashboard() {
     <section class="dashboard-insights">
       ${showMoney ? renderUtilidadCiudadResumen() : ""}
       ${showMoney ? renderResumenMensualFinanciero() : ""}
+      ${showMoney ? renderCostoLaboralPromedioResumen() : ""}
       ${showMoney ? renderCobrosFormaPagoResumen() : ""}
       ${showMoney ? renderVentasClasificacionClienteResumen() : ""}
       ${renderClientesTipoResumen()}
@@ -1988,6 +1989,58 @@ function resumenMensualFinanciero() {
     });
 }
 
+const LABOR_CATEGORIES = ["nomina", "imss", "impuesto sobre nomina", "impuesto sobre nominas"];
+
+function esGastoLaboral(gasto) {
+  const categoria = normalizarTexto(gasto.categoria);
+  return LABOR_CATEGORIES.some((item) => categoria === item || categoria.includes(item));
+}
+
+function currentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function costoLaboralPromedioPorServicio() {
+  const rows = {};
+  const ensure = (key, ciudad) => {
+    if (!key) return null;
+    const rowKey = `${key}|${ciudad || "Sin clasificar"}`;
+    if (!rows[rowKey]) {
+      rows[rowKey] = {
+        key,
+        mes: monthLabel(key),
+        ciudad: ciudad || "Sin clasificar",
+        servicios: 0,
+        costoLaboral: 0,
+        promedio: 0,
+        provisional: key === currentMonthKey(),
+      };
+    }
+    return rows[rowKey];
+  };
+
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    const row = ensure(monthKey(servicio.fecha), operacionRegistro(servicio, "Yucatan"));
+    if (!row) return;
+    row.servicios += 1;
+  });
+
+  gastosFiltradosOperacion().filter(esGastoLaboral).forEach((gasto) => {
+    const row = ensure(monthKey(gasto.fecha), operacionRegistro(gasto));
+    if (!row) return;
+    row.costoLaboral += Number(gasto.monto || 0);
+  });
+
+  return Object.values(rows)
+    .filter((row) => row.servicios || row.costoLaboral)
+    .sort((a, b) => String(a.key).localeCompare(String(b.key)) || String(a.ciudad).localeCompare(String(b.ciudad)))
+    .map((row) => ({
+      ...row,
+      promedio: row.servicios > 0 ? row.costoLaboral / row.servicios : 0,
+    }));
+}
+
 function renderResumenMensualFinanciero() {
   const rows = resumenMensualFinanciero();
   return `
@@ -2002,6 +2055,28 @@ function renderResumenMensualFinanciero() {
               rows.length
                 ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec.">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
                 : `<tr><td colspan="9">Aun no hay informacion mensual para mostrar.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderCostoLaboralPromedioResumen() {
+  const rows = costoLaboralPromedioPorServicio();
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Costo laboral promedio por servicio</h2>
+      <p class="readonly">Formula: gastos de Nomina + IMSS + Impuesto sobre nominas, dividido entre los servicios realizados del mismo mes y ciudad. El mes actual se muestra como provisional.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Mes</th><th>Ciudad</th><th>Servicios</th><th>Costo laboral</th><th>Promedio por servicio</th><th>Estatus</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong></td><td data-label="Ciudad">${row.ciudad}</td><td data-label="Servicios">${number(row.servicios)}</td><td data-label="Costo laboral">${money(row.costoLaboral)}</td><td data-label="Promedio por servicio"><strong>${row.servicios ? money(row.promedio) : "Sin servicios"}</strong></td><td data-label="Estatus">${row.provisional ? "Provisional" : "Cerrado"}</td></tr>`).join("")
+                : `<tr><td colspan="6">Aun no hay nomina, IMSS o impuesto sobre nominas capturados para calcular este costo.</td></tr>`
             }
           </tbody>
         </table>
