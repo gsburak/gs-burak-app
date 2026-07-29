@@ -161,6 +161,84 @@
         padding-right: 8px;
       }
 
+      @media (max-width: 760px) {
+        .client-list table,
+        .client-list thead,
+        .client-list tbody,
+        .client-list tr,
+        .client-list th,
+        .client-list td {
+          display: block;
+          width: 100% !important;
+        }
+
+        .client-list thead {
+          display: none;
+        }
+
+        .client-list tr {
+          border: 1px solid #d9e2e7;
+          border-radius: 8px;
+          margin: 0 0 14px;
+          overflow: hidden;
+          background: #fff;
+        }
+
+        .client-list td {
+          border-bottom: 1px solid #e6edf1;
+          padding: 12px 14px;
+          white-space: normal;
+          word-break: normal;
+          overflow-wrap: anywhere;
+        }
+
+        .client-list td::before {
+          content: attr(data-label);
+          display: block;
+          margin-bottom: 6px;
+          color: #667085;
+          font-weight: 800;
+          text-transform: uppercase;
+          font-size: 12px;
+          letter-spacing: 0;
+          white-space: normal;
+          word-break: normal;
+        }
+
+        .client-list td[data-label="Cliente"] {
+          font-size: 16px;
+          line-height: 1.35;
+        }
+
+        .client-list td[data-label="Servicios"],
+        .client-list td[data-label="Facturado"],
+        .client-list td[data-label="Por cobrar"] {
+          display: inline-block;
+          width: 33.333% !important;
+          min-height: 76px;
+        }
+
+        .client-list td[data-label="Acciones"] {
+          border-bottom: 0;
+        }
+
+        .client-list .actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .client-list .actions button {
+          width: auto;
+          min-width: 96px;
+          min-height: 44px;
+          white-space: nowrap;
+          word-break: normal;
+          overflow-wrap: normal;
+          writing-mode: horizontal-tb;
+        }
+      }
+
       .programacion-list {
         overflow-x: visible;
       }
@@ -322,6 +400,6 @@
   </head>
   <body>
     <div id="app"></div>
-  <script src="app.js?v=20260728c"></script>
+  <script src="app.js?v=20260729a"></script>
   </body>
 </html>
