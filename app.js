@@ -1370,7 +1370,6 @@ function utilidadPorCiudad() {
     const row = ensure(operacionRegistro(servicio, "Yucatan"));
     row.facturado += totalServicio(servicio);
     row.cobrado += Number(servicio.cobrado || 0);
-    row.porCobrar += pendienteServicio(servicio);
     row.productoUsado += costoServicio(servicio);
     row.servicios += 1;
   });
@@ -1390,6 +1389,7 @@ function utilidadPorCiudad() {
   return Object.values(rows)
     .map((row) => ({
       ...row,
+      porCobrar: Math.max(0, row.facturado - row.cobrado),
       utilidad: row.cobrado - row.productoUsado - row.gastos - row.depreciacion,
     }))
     .filter((row) => row.cobrado || row.porCobrar || row.productoUsado || row.gastos || row.depreciacion || row.comprasInventario)
@@ -1530,7 +1530,7 @@ function metrics() {
   const equiposRows = equiposFiltradosOperacion();
   const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
   const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
-  const porCobrar = servicios.reduce((sum, s) => sum + pendienteServicio(s), 0);
+  const porCobrar = Math.max(0, facturado - cobrado);
   const costoProductos = servicios.reduce((sum, s) => sum + costoServicio(s), 0);
   const gastos = gastosRows.reduce((sum, g) => sum + Number(g.monto || 0), 0);
   const comprasProductos = comprasRows.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0);
@@ -1960,7 +1960,6 @@ function resumenMensualFinanciero() {
     if (!row) return;
     row.ventas += totalServicio(servicio);
     row.cobrado += Number(servicio.cobrado || 0);
-    row.porCobrar += pendienteServicio(servicio);
     row.productoUsado += costoServicio(servicio);
     row.servicios += 1;
   });
@@ -1984,6 +1983,7 @@ function resumenMensualFinanciero() {
       return {
         ...row,
         depreciacion,
+        porCobrar: Math.max(0, row.ventas - row.cobrado),
         utilidad: row.cobrado - row.productoUsado - row.gastos - depreciacion,
       };
     });
