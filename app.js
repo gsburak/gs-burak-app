@@ -3298,14 +3298,20 @@ function formServicio(data) {
   const clienteOptions = [...state.clientes]
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
     .map((c) => ({ value: c.id, label: c.nombre }));
-  const clienteManualNombre = nombreCliente(data.clienteId, data);
-  const clienteOptionsFinal = data.clienteId
-    ? clienteOptions
-    : [{ value: "", label: clienteManualNombre || "Cliente manual" }, ...clienteOptions];
+  const clienteLigado = state.clientes.some((c) => String(c.id) === String(data.clienteId || ""));
+  const clienteManualNombre = clienteLigado ? "" : nombreCliente("", data);
+  const clienteOptionsFinal = [
+    { value: "", label: clienteLigado ? "Sin cliente ligado" : "Selecciona cliente del catalogo" },
+    ...clienteOptions,
+  ];
+  const avisoCliente = !clienteLigado
+    ? `<div class="notice full">Este servicio no esta ligado a un cliente del catalogo. Si corresponde, selecciona el cliente correcto antes de guardar.</div>`
+    : "";
   return `<div class="form-grid">
     ${input("fecha", "Fecha", data.fecha || today(), "date")}
-    ${select("clienteId", "Cliente", data.clienteId || "", clienteOptionsFinal, "wide")}
-    ${!data.clienteId ? input("cliente", "Cliente manual", clienteManualNombre, "text", "wide") : ""}
+    ${select("clienteId", "Cliente", clienteLigado ? data.clienteId : "", clienteOptionsFinal, "wide")}
+    ${!clienteLigado ? input("cliente", "Cliente manual / referencia anterior", clienteManualNombre === "Sin cliente" ? "" : clienteManualNombre, "text", "wide") : ""}
+    ${avisoCliente}
     ${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}
     ${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}
     ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((x) => ({ value: x, label: x })))}
@@ -3738,6 +3744,15 @@ function normalize(type, data) {
     data.ciudad = data.domicilios[0]?.ciudad || data.ciudad || "MERIDA";
   }
   if (type === "servicio") {
+    const clienteExiste = state.clientes.some((c) => String(c.id) === String(data.clienteId || ""));
+    if (data.clienteId && !clienteExiste) data.clienteId = "";
+    if (data.clienteId && clienteExiste) {
+      delete data.cliente;
+      delete data.clienteNombre;
+      delete data.nombreCliente;
+      delete data.razonSocial;
+      delete data.clienteManual;
+    }
     if (!data.clienteId && data.cliente) {
       data.clienteNombre = data.cliente;
       data.nombreCliente = data.cliente;
