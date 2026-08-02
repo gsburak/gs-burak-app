@@ -1202,6 +1202,13 @@ function serviciosPorRevisarClasificacionCliente() {
     .sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
 }
 
+function serviciosConClienteSinClasificar() {
+  return serviciosFiltradosOperacion()
+    .map((servicio) => ({ servicio, cliente: clienteDeServicio(servicio) }))
+    .filter((row) => row.cliente && clasificacionCliente(row.cliente) === "Sin clasificar")
+    .sort((a, b) => String(b.servicio.fecha || "").localeCompare(String(a.servicio.fecha || "")));
+}
+
 function gastosPorPagador() {
   return gastosFiltradosOperacion().reduce((rows, gasto) => {
     const pagador = gasto.pagadoPor || "Sin dato";
@@ -1808,10 +1815,11 @@ function renderVentasClasificacionClienteResumen() {
   const rows = resumenVentasPorClasificacionCliente();
   const totalCobrado = rows.reduce((sum, row) => sum + row.cobrado, 0);
   const porRevisar = serviciosPorRevisarClasificacionCliente();
+  const sinClasificar = serviciosConClienteSinClasificar();
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Ventas por cliente nuevo / antiguo (${money(totalCobrado)} cobrado)</h2>
-      <p class="readonly">Separa servicios segun la clasificacion capturada en la ficha del cliente. Si aparece "Servicio por revisar", son ventas que no encontraron una ficha de cliente ligada. La utilidad aqui es antes de gastos generales: cobrado - producto usado.</p>
+      <p class="readonly">Separa servicios segun la clasificacion capturada en la ficha del cliente. "Sin clasificar" significa que el cliente existe, pero falta marcarlo como Nuevo o Antiguo. "Servicio por revisar" significa que la venta no encontro una ficha de cliente ligada. La utilidad aqui es antes de gastos generales: cobrado - producto usado.</p>
       <div class="table-card">
         <table>
           <thead><tr><th>Clasificacion</th><th>Servicios</th><th>Ventas</th><th>Cobrado</th><th>Por cobrar</th><th>Producto usado</th><th>Utilidad antes de gastos</th></tr></thead>
@@ -1825,10 +1833,24 @@ function renderVentasClasificacionClienteResumen() {
         </table>
       </div>
       ${
+        sinClasificar.length
+          ? `<div class="table-card" style="margin-top:12px">
+              <h3>Servicios con cliente sin clasificar</h3>
+              <p class="readonly">Estos servicios si tienen cliente identificado. Solo falta abrir la ficha del cliente y marcarlo como Nuevo o Antiguo.</p>
+              <table>
+                <thead><tr><th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Total</th><th>Cobrado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  ${sinClasificar.map(({ servicio, cliente }) => `<tr><td data-label="Fecha">${servicio.fecha || ""}</td><td data-label="Cliente"><strong>${cliente.nombre || nombreCliente(servicio.clienteId, servicio)}</strong></td><td data-label="Ciudad">${servicio.ciudad || cliente.ciudad || "Yucatan"}</td><td data-label="Total">${money(totalServicio(servicio))}</td><td data-label="Cobrado">${money(servicio.cobrado)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="cliente" data-id="${cliente.id}">Editar cliente</button><button class="secondary" data-edit="servicio" data-id="${servicio.id}">Editar servicio</button></div></td></tr>`).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : ""
+      }
+      ${
         porRevisar.length
           ? `<div class="table-card" style="margin-top:12px">
               <h3>Servicios por revisar</h3>
-              <p class="readonly">Estos servicios tienen venta capturada, pero no estan ligados claramente a un cliente del catalogo.</p>
+              <p class="readonly">Estos servicios tienen venta capturada, pero no estan ligados claramente a un cliente del catalogo. Si el servicio es correcto, abre Editar y selecciona el cliente correcto; si fue una captura equivocada, corrigelo o borralo.</p>
               <table>
                 <thead><tr><th>Fecha</th><th>Cliente en servicio</th><th>Ciudad</th><th>Total</th><th>Cobrado</th><th>Acciones</th></tr></thead>
                 <tbody>
@@ -2668,7 +2690,7 @@ function renderProgramacion() {
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Borrar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Cancelar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2701,6 +2723,7 @@ function renderProgramacionAgenda(rows) {
                         <div class="agenda-actions">
                           <button class="secondary" data-edit="programacion" data-id="${programacion.id}">Editar</button>
                           <button class="primary" data-convert-programacion="${programacion.id}">Pasar a ventas</button>
+                          <button class="ghost" data-delete="programacion" data-id="${programacion.id}">Cancelar</button>
                         </div>
                       `}
                     </div>
@@ -3381,16 +3404,34 @@ function bindApp() {
     });
   });
   document.querySelectorAll("[data-delete]").forEach((button) => {
-    button.addEventListener("click", () => {
-      if (!confirm("Quieres borrar este registro?")) return;
+    button.addEventListener("click", async () => {
       const collection = typeToCollection(button.dataset.delete);
       const deletedEntity = state[collection].find((x) => x.id === button.dataset.id);
+      const isProgramacion = collection === "programaciones";
+      const message = isProgramacion
+        ? "Esto cancelara el servicio programado, lo borrara de la app y tambien intentara borrar el evento de Google Calendar. Quieres continuar?"
+        : "Quieres borrar este registro?";
+      if (!confirm(message)) return;
+      button.disabled = true;
+
+      if (isProgramacion && deletedEntity?.calendarEventId) {
+        try {
+          const calendarResult = await deleteRemoteCalendarEvent(deletedEntity);
+          if (calendarResult && calendarResult.ok === false) {
+            alert(`No se pudo borrar del calendario: ${calendarResult.error || "error desconocido"}. El servicio sigue en la app para que puedas intentarlo de nuevo.`);
+            render();
+            return;
+          }
+        } catch (error) {
+          alert("No se pudo conectar con Google Calendar. El servicio sigue en la app para que puedas intentarlo de nuevo.");
+          render();
+          return;
+        }
+      }
+
       state[collection] = state[collection].filter((x) => x.id !== button.dataset.id);
       saveLocalBackup();
       queueRemoteTask(async () => {
-        if (collection === "programaciones" && deletedEntity?.calendarEventId) {
-          await deleteRemoteCalendarEvent(deletedEntity);
-        }
         await deleteRemoteRecord(collection, button.dataset.id);
       });
       render();
