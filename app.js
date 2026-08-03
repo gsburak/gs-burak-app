@@ -560,6 +560,80 @@ function exportBackup() {
   URL.revokeObjectURL(url);
 }
 
+function exportBackupExcel() {
+  const sheets = [
+    ["Clientes", state.clientes],
+    ["Servicios", state.servicios],
+    ["Programacion", state.programaciones],
+    ["Gastos", state.gastos],
+    ["Compras", state.compras],
+    ["Equipos", state.equipos],
+    ["Productos", state.productos],
+    ["Tipos Servicio", state.tiposServicio],
+  ];
+  const worksheets = sheets
+    .filter(([, rows]) => Array.isArray(rows))
+    .map(([name, rows]) => excelWorksheet(name, rows))
+    .join("");
+  const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Respaldo GS Burak</Title><Author>GS Burak Control Operativo</Author><Created>${new Date().toISOString()}</Created></DocumentProperties><Styles><Style ss:ID="header"><Font ss:Bold="1"/><Interior ss:Color="#EAF0F2" ss:Pattern="Solid"/></Style></Styles>${worksheets}</Workbook>`;
+  const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+  downloadBlob(datedFileName("respaldo-gs-burak-consulta", "xls"), blob);
+}
+
+function downloadBlob(fileName, blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function excelWorksheet(name, rows) {
+  const headers = excelHeaders(rows);
+  const headerRow = `<Row>${headers.map((header) => `<Cell ss:StyleID="header"><Data ss:Type="String">${xmlEscape(header)}</Data></Cell>`).join("")}</Row>`;
+  const dataRows = rows
+    .map((row) => `<Row>${headers.map((header) => excelCell(row?.[header])).join("")}</Row>`)
+    .join("");
+  return `<Worksheet ss:Name="${xmlEscape(name).slice(0, 31)}"><Table>${headerRow}${dataRows}</Table></Worksheet>`;
+}
+
+function excelHeaders(rows) {
+  const headers = [];
+  rows.forEach((row) => {
+    if (!row || typeof row !== "object") return;
+    Object.keys(row).forEach((key) => {
+      if (!headers.includes(key)) headers.push(key);
+    });
+  });
+  return headers.length ? headers : ["sin_datos"];
+}
+
+function excelCell(value) {
+  const isNumber = typeof value === "number" && Number.isFinite(value);
+  const type = isNumber ? "Number" : "String";
+  return `<Cell><Data ss:Type="${type}">${xmlEscape(excelValue(value))}</Data></Cell>`;
+}
+
+function excelValue(value) {
+  if (value == null) return "";
+  if (Array.isArray(value)) {
+    return value.map((item) => (item && typeof item === "object" ? JSON.stringify(item) : String(item))).join(" | ");
+  }
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function xmlEscape(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function clientesFiltradosVista() {
   const term = clienteSearch.trim().toLowerCase();
   return state.clientes
@@ -1707,7 +1781,7 @@ function renderDashboard() {
   const utilidadRatio = m.cobrado > 0 ? Math.max(0, Math.min(100, Math.round((m.utilidad / m.cobrado) * 100))) : 0;
   const executiveReportButton = currentUser.id === "admin" ? `<button class="secondary" data-action="exportDashboardReport">Reporte ejecutivo</button>` : "";
   const backupControls = showMoney
-    ? `${operationFilterControl()}${executiveReportButton}<button class="secondary" data-action="exportBackup">Exportar respaldo</button><button class="secondary" data-action="importBackup">Importar respaldo</button><input id="backupImportInput" type="file" accept="application/json" hidden />`
+    ? `${operationFilterControl()}${executiveReportButton}<button class="secondary" data-action="exportBackupExcel">Exportar respaldo Excel</button><button class="secondary" data-action="exportBackup">Exportar respaldo JSON</button><button class="secondary" data-action="importBackup">Importar respaldo</button><input id="backupImportInput" type="file" accept="application/json" hidden />`
     : operationFilterControl();
   return `
     ${topbar("Dashboard", "Resumen automatico de la operacion y resultados.", backupControls)}
@@ -3457,6 +3531,9 @@ function bindApp() {
   });
   document.querySelectorAll("[data-action='exportBackup']").forEach((button) => {
     button.addEventListener("click", exportBackup);
+  });
+  document.querySelectorAll("[data-action='exportBackupExcel']").forEach((button) => {
+    button.addEventListener("click", exportBackupExcel);
   });
   document.querySelectorAll("[data-action='importBackup']").forEach((button) => {
     button.addEventListener("click", triggerBackupImport);
