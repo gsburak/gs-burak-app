@@ -299,6 +299,18 @@ function deleteRemoteCalendarEvent(programacion) {
   return sendRemoteCalendarEvent(programacion, "delete");
 }
 
+function isCalendarAlreadyDeleted(error) {
+  const text = String(error || "").toLowerCase();
+  return text.includes("does not exist")
+    || text.includes("already been deleted")
+    || text.includes("already deleted")
+    || text.includes("no existe")
+    || text.includes("ya fue borrado")
+    || text.includes("ya fue eliminado")
+    || text.includes("ya se elimino")
+    || text.includes("ya se eliminó");
+}
+
 function migrateState(data) {
   const oldVersion = !data.schemaVersion;
   const oldProducts = new Map((data.productos || []).map((producto) => [producto.id, producto]));
@@ -3834,14 +3846,21 @@ function bindApp() {
         try {
           const calendarResult = await deleteRemoteCalendarEvent(deletedEntity);
           if (calendarResult && calendarResult.ok === false) {
-            alert(`No se pudo borrar del calendario: ${calendarResult.error || "error desconocido"}. El servicio sigue en la app para que puedas intentarlo de nuevo.`);
+            const calendarError = calendarResult.error || "error desconocido";
+            if (!isCalendarAlreadyDeleted(calendarError)) {
+              const continueDelete = confirm(`No se pudo borrar del calendario: ${calendarError}. Quieres borrar de todos modos el servicio de la app?`);
+              if (!continueDelete) {
+                render();
+                return;
+              }
+            }
+          }
+        } catch (error) {
+          const continueDelete = confirm("No se pudo conectar con Google Calendar. Quieres borrar de todos modos el servicio de la app?");
+          if (!continueDelete) {
             render();
             return;
           }
-        } catch (error) {
-          alert("No se pudo conectar con Google Calendar. El servicio sigue en la app para que puedas intentarlo de nuevo.");
-          render();
-          return;
         }
       }
 
