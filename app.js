@@ -561,23 +561,365 @@ function exportBackup() {
 }
 
 function exportBackupExcel() {
-  const sheets = [
-    ["Clientes", state.clientes],
-    ["Servicios", state.servicios],
-    ["Programacion", state.programaciones],
-    ["Gastos", state.gastos],
-    ["Compras", state.compras],
-    ["Equipos", state.equipos],
-    ["Productos", state.productos],
-    ["Tipos Servicio", state.tiposServicio],
-  ];
-  const worksheets = sheets
-    .filter(([, rows]) => Array.isArray(rows))
-    .map(([name, rows]) => excelWorksheet(name, rows))
-    .join("");
-  const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Respaldo GS Burak</Title><Author>GS Burak Control Operativo</Author><Created>${new Date().toISOString()}</Created></DocumentProperties><Styles><Style ss:ID="header"><Font ss:Bold="1"/><Interior ss:Color="#EAF0F2" ss:Pattern="Solid"/></Style></Styles>${worksheets}</Workbook>`;
+  const workbook = buildProfessionalBackupWorkbook();
   const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
-  downloadBlob(datedFileName("respaldo-gs-burak-consulta", "xls"), blob);
+  downloadBlob(datedFileName("respaldo-gs-burak-profesional", "xls"), blob);
+}
+
+function buildProfessionalBackupWorkbook() {
+  const servicios = state.servicios || [];
+  const gastos = state.gastos || [];
+  const compras = state.compras || [];
+  const equipos = state.equipos || [];
+  const ventas = servicios.reduce((sum, item) => sum + totalServicio(item), 0);
+  const cobrado = servicios.reduce((sum, item) => sum + Number(item.cobrado || 0), 0);
+  const porCobrar = servicios.reduce((sum, item) => sum + pendienteServicio(item), 0);
+  const productoUsado = servicios.reduce((sum, item) => sum + costoServicio(item), 0);
+  const gastoTotal = gastos.reduce((sum, item) => sum + Number(item.monto || 0), 0);
+  const compraTotal = compras.reduce((sum, item) => sum + totalCompra(item), 0);
+  const depreciacionMensual = gastoDepreciacionMensual(equipos);
+  const utilidad = cobrado - productoUsado - gastoTotal - depreciacionMensual;
+
+  const sheets = [
+    {
+      name: "Resumen",
+      title: "Resumen ejecutivo",
+      subtitle: `Generado el ${new Date().toLocaleString("es-MX")}`,
+      columns: [
+        { header: "Concepto", key: "concepto", width: 210 },
+        { header: "Importe / cantidad", key: "valor", type: "currency", width: 150 },
+        { header: "Comentario", key: "comentario", width: 360 },
+      ],
+      rows: [
+        { concepto: "Ventas totales", valor: ventas, comentario: `${number(servicios.length)} servicios capturados` },
+        { concepto: "Ingresos cobrados", valor: cobrado, comentario: "Dinero ya cobrado" },
+        { concepto: "Por cobrar", valor: porCobrar, comentario: "Venta pendiente de cobro" },
+        { concepto: "Producto usado", valor: productoUsado, comentario: "Costo del producto aplicado en servicios" },
+        { concepto: "Gastos", valor: gastoTotal, comentario: "Gastos capturados en la seccion Gastos" },
+        { concepto: "Depreciacion mensual", valor: depreciacionMensual, comentario: "Depreciacion mensual de equipos" },
+        { concepto: "Utilidad neta", valor: utilidad, comentario: "Cobrado - producto usado - gastos - depreciacion mensual" },
+        { concepto: "Compras de inventario", valor: compraTotal, comentario: "Referencia: no se resta aqui para no duplicar producto" },
+        { concepto: "Inversion en equipos", valor: inversionEquipos(equipos), comentario: "Valor total de equipos capturados" },
+      ],
+    },
+    {
+      name: "Resumen por ciudad",
+      title: "Resumen por ciudad de operacion",
+      columns: [
+        { header: "Ciudad", key: "ciudad", width: 120 },
+        { header: "Ventas", key: "ventas", type: "currency" },
+        { header: "Cobrado", key: "cobrado", type: "currency" },
+        { header: "Por cobrar", key: "porCobrar", type: "currency" },
+        { header: "Producto usado", key: "productoUsado", type: "currency" },
+        { header: "Gastos", key: "gastos", type: "currency" },
+        { header: "Deprec. mensual", key: "depreciacion", type: "currency" },
+        { header: "Utilidad neta", key: "utilidad", type: "currency" },
+        { header: "Compras inventario", key: "compras", type: "currency" },
+        { header: "Equipos inversion", key: "equipos", type: "currency" },
+      ],
+      rows: resumenProfesionalPorCiudad(),
+    },
+    {
+      name: "Servicios",
+      title: "Servicios / ventas",
+      subtitle: `${number(servicios.length)} registros`,
+      columns: [
+        { header: "Fecha", key: "fecha", width: 85 },
+        { header: "Cliente", key: "cliente", width: 190 },
+        { header: "Ciudad", key: "ciudad", width: 85 },
+        { header: "Clasificacion cliente", key: "clasificacion", width: 130 },
+        { header: "Tipo de servicio", key: "tipo", width: 150 },
+        { header: "Tecnico", key: "tecnico", width: 95 },
+        { header: "Tecnico adicional", key: "tecnicoAdicional", width: 115 },
+        { header: "Zona / direccion", key: "direccion", width: 280 },
+        { header: "Total", key: "total", type: "currency" },
+        { header: "Cobrado", key: "cobrado", type: "currency" },
+        { header: "Pendiente", key: "pendiente", type: "currency" },
+        { header: "Forma de pago", key: "formaPago", width: 115 },
+        { header: "Costo producto", key: "costoProducto", type: "currency" },
+        { header: "% producto", key: "porcentajeProducto", type: "percent" },
+        { header: "Productos usados", key: "productos", width: 260 },
+      ],
+      rows: servicios
+        .slice()
+        .sort((a, b) => String(a.fecha || "").localeCompare(String(b.fecha || "")))
+        .map((servicio) => ({
+          fecha: servicio.fecha || "",
+          cliente: nombreCliente(servicio.clienteId, servicio),
+          ciudad: operacionRegistro(servicio, "Yucatan"),
+          clasificacion: clasificacionServicio(servicio),
+          tipo: servicio.tipo || servicio.servicio || "",
+          tecnico: servicio.tecnico || "",
+          tecnicoAdicional: servicio.tecnicoAdicional || "",
+          direccion: servicio.zona || servicio.direccion || "",
+          total: totalServicio(servicio),
+          cobrado: Number(servicio.cobrado || 0),
+          pendiente: pendienteServicio(servicio),
+          formaPago: servicio.formaPago || "",
+          costoProducto: costoServicio(servicio),
+          porcentajeProducto: porcentajeCostoProducto(servicio),
+          productos: productosUsadosTexto(servicio),
+        })),
+    },
+    {
+      name: "Clientes",
+      title: "Clientes",
+      subtitle: `${number((state.clientes || []).length)} registros`,
+      columns: [
+        { header: "Cliente", key: "cliente", width: 220 },
+        { header: "Clasificacion", key: "clasificacion", width: 110 },
+        { header: "Tipo", key: "tipo", width: 110 },
+        { header: "Ciudad principal", key: "ciudad", width: 115 },
+        { header: "Contacto", key: "contacto", width: 160 },
+        { header: "Telefono", key: "telefono", width: 120 },
+        { header: "Correo", key: "correo", width: 180 },
+        { header: "Direccion principal", key: "direccion", width: 290 },
+        { header: "Domicilios", key: "domicilios", width: 330 },
+        { header: "Observaciones", key: "observaciones", width: 240 },
+        { header: "Servicios", key: "servicios", type: "number" },
+        { header: "Facturado", key: "facturado", type: "currency" },
+        { header: "Cobrado", key: "cobrado", type: "currency" },
+        { header: "Por cobrar", key: "porCobrar", type: "currency" },
+      ],
+      rows: (state.clientes || [])
+        .slice()
+        .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
+        .map((cliente) => {
+          const delCliente = servicios.filter((servicio) => clienteDeServicio(servicio)?.id === cliente.id);
+          const facturado = delCliente.reduce((sum, servicio) => sum + totalServicio(servicio), 0);
+          const clienteCobrado = delCliente.reduce((sum, servicio) => sum + Number(servicio.cobrado || 0), 0);
+          return {
+            cliente: cliente.nombre || "",
+            clasificacion: clasificacionCliente(cliente),
+            tipo: cliente.tipo || "",
+            ciudad: cliente.ciudad || "MERIDA",
+            contacto: cliente.contacto || "",
+            telefono: cliente.telefono || "",
+            correo: cliente.correo || "",
+            direccion: direccionPrincipalTexto(cliente),
+            domicilios: domiciliosTexto(cliente),
+            observaciones: cliente.observaciones || "",
+            servicios: delCliente.length,
+            facturado,
+            cobrado: clienteCobrado,
+            porCobrar: Math.max(0, facturado - clienteCobrado),
+          };
+        }),
+    },
+    {
+      name: "Programacion",
+      title: "Programacion",
+      columns: [
+        { header: "Fecha", key: "fecha", width: 85 },
+        { header: "Hora", key: "hora", width: 70 },
+        { header: "Cliente", key: "cliente", width: 200 },
+        { header: "Ciudad", key: "ciudad", width: 90 },
+        { header: "Tipo de servicio", key: "tipo", width: 150 },
+        { header: "Tecnico", key: "tecnico", width: 110 },
+        { header: "Tecnico adicional", key: "tecnicoAdicional", width: 125 },
+        { header: "Estatus", key: "estatus", width: 110 },
+        { header: "Calendario", key: "calendario", width: 110 },
+        { header: "Direccion", key: "direccion", width: 290 },
+        { header: "Notas", key: "notas", width: 330 },
+      ],
+      rows: (state.programaciones || []).map((item) => ({
+        fecha: item.fecha || "",
+        hora: item.hora || "",
+        cliente: nombreCliente(item.clienteId, item),
+        ciudad: operacionRegistro(item, "Yucatan"),
+        tipo: item.tipo || item.servicio || "",
+        tecnico: item.tecnico || "",
+        tecnicoAdicional: item.tecnicoAdicional || "",
+        estatus: item.estatus || "",
+        calendario: item.calendarStatus || (item.calendarEventId ? "Calendario" : "Sin calendario"),
+        direccion: item.direccion || item.zona || "",
+        notas: item.notas || item.descripcion || "",
+      })),
+    },
+    {
+      name: "Gastos",
+      title: "Gastos",
+      columns: [
+        { header: "Fecha", key: "fecha", width: 85 },
+        { header: "Ciudad", key: "ciudad", width: 90 },
+        { header: "Categoria", key: "categoria", width: 150 },
+        { header: "Descripcion", key: "descripcion", width: 320 },
+        { header: "Monto", key: "monto", type: "currency" },
+        { header: "Pagado por", key: "pagadoPor", width: 110 },
+      ],
+      rows: gastos.map((item) => ({
+        fecha: item.fecha || "",
+        ciudad: operacionRegistro(item, "Sin clasificar"),
+        categoria: item.categoria || "",
+        descripcion: item.descripcion || "",
+        monto: Number(item.monto || 0),
+        pagadoPor: item.pagadoPor || "",
+      })),
+    },
+    {
+      name: "Compras",
+      title: "Compras de inventario",
+      columns: [
+        { header: "Fecha", key: "fecha", width: 85 },
+        { header: "Ciudad", key: "ciudad", width: 90 },
+        { header: "Producto", key: "producto", width: 220 },
+        { header: "Cantidad", key: "cantidad", type: "number" },
+        { header: "Unidad compra", key: "unidad", width: 100 },
+        { header: "Costo unitario", key: "costoUnitario", type: "currency" },
+        { header: "Total", key: "total", type: "currency" },
+        { header: "Pagado por", key: "pagadoPor", width: 110 },
+      ],
+      rows: compras.map((item) => ({
+        fecha: item.fecha || "",
+        ciudad: operacionRegistro(item, "Sin clasificar"),
+        producto: nombreProducto(item.productoId),
+        cantidad: Number(item.cantidad || 0),
+        unidad: unidadCompraProducto(item.productoId),
+        costoUnitario: Number(item.costoUnitario || 0),
+        total: totalCompra(item),
+        pagadoPor: item.pagadoPor || "",
+      })),
+    },
+    {
+      name: "Equipos",
+      title: "Equipos",
+      columns: [
+        { header: "Equipo", key: "equipo", width: 250 },
+        { header: "Ciudad", key: "ciudad", width: 90 },
+        { header: "Cantidad", key: "cantidad", type: "number" },
+        { header: "Costo unitario", key: "costo", type: "currency" },
+        { header: "Total", key: "total", type: "currency" },
+        { header: "Fecha compra", key: "fecha", width: 90 },
+        { header: "Vida util anos", key: "vida", type: "number" },
+        { header: "Valor residual", key: "residual", type: "currency" },
+        { header: "Deprec. mensual", key: "depreciacionMensual", type: "currency" },
+        { header: "Deprec. acumulada", key: "depreciacionAcumulada", type: "currency" },
+        { header: "Valor neto", key: "valorNeto", type: "currency" },
+        { header: "Pagado por", key: "pagadoPor", width: 110 },
+      ],
+      rows: equipos.map((item) => {
+        const total = costoTotalEquipo(item);
+        const base = total - Number(item.residual || 0);
+        const vida = Number(item.vida || 0);
+        const depMensual = vida > 0 ? base / vida / 12 : 0;
+        const depAcum = depreciacionAcumulada(item);
+        return {
+          equipo: item.equipo || item.descripcion || "",
+          ciudad: operacionRegistro(item, "Sin clasificar"),
+          cantidad: Number(item.unidad || 1) || 1,
+          costo: Number(item.costo || 0),
+          total,
+          fecha: item.fecha || "",
+          vida,
+          residual: Number(item.residual || 0),
+          depreciacionMensual: depMensual,
+          depreciacionAcumulada: depAcum,
+          valorNeto: Math.max(Number(item.residual || 0), total - depAcum),
+          pagadoPor: item.pagadoPor || "",
+        };
+      }),
+    },
+    {
+      name: "Productos",
+      title: "Productos",
+      columns: [
+        { header: "Producto", key: "producto", width: 240 },
+        { header: "Unidad compra", key: "unidadCompra", width: 110 },
+        { header: "Unidad uso", key: "unidadUso", width: 100 },
+        { header: "Factor", key: "factor", type: "number" },
+        { header: "Costo referencia", key: "costo", type: "currency" },
+      ],
+      rows: (state.productos || []).map((item) => ({
+        producto: item.producto || "",
+        unidadCompra: item.unidadCompra || "",
+        unidadUso: item.unidadUso || "",
+        factor: Number(item.factor || 0),
+        costo: Number(item.costo || 0),
+      })),
+    },
+  ];
+
+  const worksheets = sheets.map((sheet) => professionalWorksheet(sheet)).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Respaldo profesional GS Burak</Title><Author>GS Burak Control Operativo</Author><Created>${new Date().toISOString()}</Created></DocumentProperties><Styles><Style ss:ID="title"><Font ss:Bold="1" ss:Size="16" ss:Color="#0B2A35"/></Style><Style ss:ID="subtitle"><Font ss:Color="#5E6A7D"/></Style><Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style><Style ss:ID="text"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style><Style ss:ID="money"><NumberFormat ss:Format="$#,##0.00"/></Style><Style ss:ID="number"><NumberFormat ss:Format="#,##0"/></Style><Style ss:ID="percent"><NumberFormat ss:Format="0.0%"/></Style></Styles>${worksheets}</Workbook>`;
+}
+
+function resumenProfesionalPorCiudad() {
+  return ["Yucatan", "CDMX"].map((ciudad) => {
+    const servicios = (state.servicios || []).filter((item) => operacionRegistro(item, "Yucatan") === ciudad);
+    const gastos = (state.gastos || []).filter((item) => operacionRegistro(item, "Sin clasificar") === ciudad);
+    const compras = (state.compras || []).filter((item) => operacionRegistro(item, "Sin clasificar") === ciudad);
+    const equipos = (state.equipos || []).filter((item) => operacionRegistro(item, "Sin clasificar") === ciudad);
+    const ventas = servicios.reduce((sum, item) => sum + totalServicio(item), 0);
+    const cobrado = servicios.reduce((sum, item) => sum + Number(item.cobrado || 0), 0);
+    const productoUsado = servicios.reduce((sum, item) => sum + costoServicio(item), 0);
+    const gastoTotal = gastos.reduce((sum, item) => sum + Number(item.monto || 0), 0);
+    const depreciacion = gastoDepreciacionMensual(equipos);
+    return {
+      ciudad,
+      ventas,
+      cobrado,
+      porCobrar: servicios.reduce((sum, item) => sum + pendienteServicio(item), 0),
+      productoUsado,
+      gastos: gastoTotal,
+      depreciacion,
+      utilidad: cobrado - productoUsado - gastoTotal - depreciacion,
+      compras: compras.reduce((sum, item) => sum + totalCompra(item), 0),
+      equipos: inversionEquipos(equipos),
+    };
+  });
+}
+
+function professionalWorksheet(sheet) {
+  const columns = sheet.columns || [];
+  const rows = sheet.rows || [];
+  const columnXml = columns.map((column) => `<Column ss:Width="${Number(column.width || 115)}"/>`).join("");
+  const titleRow = `<Row ss:Height="24"><Cell ss:MergeAcross="${Math.max(columns.length - 1, 0)}" ss:StyleID="title"><Data ss:Type="String">${xmlEscape(sheet.title || sheet.name)}</Data></Cell></Row>`;
+  const subtitleRow = sheet.subtitle
+    ? `<Row><Cell ss:MergeAcross="${Math.max(columns.length - 1, 0)}" ss:StyleID="subtitle"><Data ss:Type="String">${xmlEscape(sheet.subtitle)}</Data></Cell></Row>`
+    : "";
+  const spacerRow = "<Row></Row>";
+  const headerRow = `<Row>${columns.map((column) => `<Cell ss:StyleID="header"><Data ss:Type="String">${xmlEscape(column.header)}</Data></Cell>`).join("")}</Row>`;
+  const dataRows = rows.map((row) => `<Row>${columns.map((column) => professionalCell(row?.[column.key], column.type)).join("")}</Row>`).join("");
+  return `<Worksheet ss:Name="${xmlEscape(sheet.name).slice(0, 31)}"><Table>${columnXml}${titleRow}${subtitleRow}${spacerRow}${headerRow}${dataRows}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>4</SplitHorizontal><TopRowBottomPane>4</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions></Worksheet>`;
+}
+
+function professionalCell(value, type = "text") {
+  if (type === "currency" || type === "number" || type === "percent") {
+    const numberValue = Number(value || 0);
+    const style = type === "currency" ? "money" : type;
+    return `<Cell ss:StyleID="${style}"><Data ss:Type="Number">${Number.isFinite(numberValue) ? numberValue : 0}</Data></Cell>`;
+  }
+  return `<Cell ss:StyleID="text"><Data ss:Type="String">${xmlEscape(value ?? "")}</Data></Cell>`;
+}
+
+function totalCompra(compra) {
+  return Number(compra?.total || 0) || (Number(compra?.cantidad || 0) * Number(compra?.costoUnitario || 0));
+}
+
+function direccionPrincipalTexto(cliente) {
+  const principal = domiciliosCliente(cliente)[0];
+  return principal?.direccion || cliente?.direccion || "";
+}
+
+function domiciliosTexto(cliente) {
+  return domiciliosCliente(cliente)
+    .map((domicilio, index) => {
+      const alias = domicilio.alias || `Domicilio ${index + 1}`;
+      return [alias, domicilio.direccion, domicilio.ciudad, domicilio.contacto, domicilio.referencia]
+        .filter(Boolean)
+        .join(" - ");
+    })
+    .join(" | ");
+}
+
+function productosUsadosTexto(servicio) {
+  return (servicio.productos || [])
+    .filter((item) => item?.productoId)
+    .map((item) => {
+      const unidad = unidadUsoProducto(item.productoId);
+      return `${nombreProducto(item.productoId)}: ${number(Number(item.cantidad || 0))}${unidad ? ` ${unidad}` : ""}`;
+    })
+    .join(" | ");
 }
 
 function downloadBlob(fileName, blob) {
