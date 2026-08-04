@@ -3193,6 +3193,84 @@ function renderServiciosAnterior() {
   `;
 }
 
+function renderResumenServiciosPorCliente(servicios) {
+  if (!servicioSearch.trim()) return "";
+
+  const resumen = new Map();
+  servicios.forEach((servicio) => {
+    const cliente = nombreCliente(servicio.clienteId, servicio);
+    const key = normalizarTexto(cliente);
+    const actual = resumen.get(key) || {
+      cliente,
+      servicios: 0,
+      ventas: 0,
+      cobrado: 0,
+      pendiente: 0,
+      costoProducto: 0,
+    };
+    actual.servicios += 1;
+    actual.ventas += totalServicio(servicio);
+    actual.cobrado += Number(servicio.cobrado || 0);
+    actual.pendiente += pendienteServicio(servicio);
+    actual.costoProducto += costoServicio(servicio);
+    resumen.set(key, actual);
+  });
+
+  const clientes = [...resumen.values()].sort((a, b) => b.ventas - a.ventas || a.cliente.localeCompare(b.cliente));
+  if (!clientes.length) return "";
+
+  const total = clientes.reduce((acc, item) => {
+    acc.servicios += item.servicios;
+    acc.ventas += item.ventas;
+    acc.cobrado += item.cobrado;
+    acc.pendiente += item.pendiente;
+    acc.costoProducto += item.costoProducto;
+    return acc;
+  }, { servicios: 0, ventas: 0, cobrado: 0, pendiente: 0, costoProducto: 0 });
+
+  const canSeeCosts = currentUser.role === "admin";
+  const moneyIfAllowed = (value) => canSeeCosts ? money(value) : "Restringido";
+  const utilidadAntesGastos = (item) => item.cobrado - item.costoProducto;
+  const rows = clientes.map((item) => `
+    <tr>
+      <td data-label="Cliente">${item.cliente}</td>
+      <td data-label="Servicios">${number(item.servicios)}</td>
+      <td data-label="Vendido">${money(item.ventas)}</td>
+      <td data-label="Cobrado">${money(item.cobrado)}</td>
+      <td data-label="Pendiente">${money(item.pendiente)}</td>
+      <td data-label="Costo prod.">${moneyIfAllowed(item.costoProducto)}</td>
+      <td data-label="Utilidad antes gastos"><strong>${moneyIfAllowed(utilidadAntesGastos(item))}</strong></td>
+    </tr>
+  `).join("");
+
+  return `
+    <section class="table-card service-client-summary">
+      <div class="section-heading">
+        <div>
+          <h3>Resumen por cliente encontrado</h3>
+          <p>Consolida los servicios visibles para revisar lo vendido, cobrado, pendiente y costo de producto por cliente.</p>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Cliente</th><th>Servicios</th><th>Vendido</th><th>Cobrado</th><th>Pendiente</th><th>Costo prod.</th><th>Utilidad antes gastos</th></tr></thead>
+        <tbody>
+          ${rows}
+          <tr>
+            <td data-label="Cliente"><strong>Total encontrado</strong></td>
+            <td data-label="Servicios"><strong>${number(total.servicios)}</strong></td>
+            <td data-label="Vendido"><strong>${money(total.ventas)}</strong></td>
+            <td data-label="Cobrado"><strong>${money(total.cobrado)}</strong></td>
+            <td data-label="Pendiente"><strong>${money(total.pendiente)}</strong></td>
+            <td data-label="Costo prod."><strong>${moneyIfAllowed(total.costoProducto)}</strong></td>
+            <td data-label="Utilidad antes gastos"><strong>${moneyIfAllowed(utilidadAntesGastos(total))}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="readonly">El costo por cliente considera producto usado en servicios. No incluye nomina, gasolina u otros gastos generales porque esos gastos no estan ligados a un cliente especifico.</p>
+    </section>
+  `;
+}
+
 function renderServicios() {
   const term = servicioSearch.trim().toLowerCase();
   const servicios = serviciosFiltradosVista();
@@ -3243,6 +3321,7 @@ function renderServicios() {
         ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos" || servicioClienteClasificacionFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
       </div>
     </section>
+    ${renderResumenServiciosPorCliente(servicios)}
     <div class="table-card service-list sales-list">
       <table>
         <thead><tr><th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Total</th><th>Cobrado</th><th>Pendiente</th><th>Costo prod.</th><th>% producto</th><th>Estatus</th><th></th></tr></thead>
