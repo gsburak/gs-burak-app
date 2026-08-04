@@ -2220,6 +2220,7 @@ function renderDashboard() {
     <section class="dashboard-insights">
       ${showMoney ? renderUtilidadCiudadResumen() : ""}
       ${showMoney ? renderResumenMensualFinanciero() : ""}
+      ${showMoney ? renderCobrosMayoresVentaResumen() : ""}
       ${showMoney ? renderCostoLaboralPromedioResumen() : ""}
       ${showMoney ? renderCobrosFormaPagoResumen() : ""}
       ${showMoney ? renderVentasClasificacionClienteResumen() : ""}
@@ -2506,6 +2507,53 @@ function renderResumenMensualFinanciero() {
                 ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec.">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
                 : `<tr><td colspan="9">Aun no hay informacion mensual para mostrar.</td></tr>`
             }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function cobrosMayoresVenta() {
+  return serviciosFiltradosOperacion()
+    .map((servicio) => {
+      const venta = totalServicio(servicio);
+      const cobrado = Number(servicio.cobrado || 0);
+      return {
+        servicio,
+        venta,
+        cobrado,
+        diferencia: cobrado - venta,
+      };
+    })
+    .filter((row) => row.diferencia > 0.009)
+    .sort((a, b) => String(a.servicio.fecha || "").localeCompare(String(b.servicio.fecha || ""))
+      || nombreCliente(a.servicio.clienteId, a.servicio).localeCompare(nombreCliente(b.servicio.clienteId, b.servicio)));
+}
+
+function renderCobrosMayoresVentaResumen() {
+  const rows = cobrosMayoresVenta();
+  if (!rows.length) return "";
+  const totalDiferencia = rows.reduce((sum, row) => sum + row.diferencia, 0);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Cobros por revisar (${money(totalDiferencia)} de diferencia)</h2>
+      <p class="readonly">Estos servicios tienen el campo Cobrado mayor que el Importe del servicio. Corrigelos para que Ventas, Cobrado y Por cobrar cuadren.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Fecha</th><th>Cliente</th><th>Ciudad</th><th>Venta</th><th>Cobrado</th><th>Diferencia</th><th>Acciones</th></tr></thead>
+          <tbody>
+            ${rows.map(({ servicio, venta, cobrado, diferencia }) => `
+              <tr>
+                <td data-label="Fecha">${servicio.fecha || ""}</td>
+                <td data-label="Cliente"><strong>${nombreCliente(servicio.clienteId, servicio)}</strong></td>
+                <td data-label="Ciudad">${operacionRegistro(servicio, "Yucatan")}</td>
+                <td data-label="Venta">${money(venta)}</td>
+                <td data-label="Cobrado">${money(cobrado)}</td>
+                <td data-label="Diferencia"><strong>${money(diferencia)}</strong></td>
+                <td data-label="Acciones">${rowActions("servicio", servicio.id)}</td>
+              </tr>
+            `).join("")}
           </tbody>
         </table>
       </div>
