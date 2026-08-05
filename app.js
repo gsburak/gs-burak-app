@@ -1151,7 +1151,7 @@ function exportDashboardExecutiveReport() {
   const gastosCiudadPagador = gastosPorCiudadYPagador();
   const comprasCiudadPagador = comprasPorCiudadYPagador();
   const equiposCiudadPagador = equiposPorCiudadYPagador();
-  const totalPagador = Object.entries(totalInversionYGastoPorPagador()).sort((a, b) => b[1] - a[1]);
+  const inversionSocios = inversionYGastoDetallePorPagador();
   const periodo = operacionFilter === "Todas" ? "Todas las operaciones" : operacionFilter;
   const generatedAt = new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
   const row = (cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
@@ -1323,12 +1323,20 @@ function exportDashboardExecutiveReport() {
       )}
     </section>
     <section>
-      <h2>Total pagado por socio</h2>
-      <p class="note">Incluye gastos operativos, compras de inventario y equipos.</p>
+      <h2>Inversion y gasto total por socio</h2>
+      <p class="note">Incluye nomina y cargas laborales, otros gastos operativos, compras de inventario y equipos. Respeta el filtro de operacion del dashboard.</p>
       ${table(
-        ["Pagador", "Total"],
-        totalPagador.map(([pagador, total]) => row([`<strong>${escapeHtml(pagador)}</strong>`, `<span class="money">${money(total)}</span>`])),
-        "Aun no hay informacion de pagos por socio."
+        ["Socio", "Nomina y cargas", "Otros gastos", "Total gastos", "Compras inventario", "Equipos", "Total invertido"],
+        inversionSocios.map((item) => row([
+          `<strong>${escapeHtml(item.pagador)}</strong>`,
+          `<span class="money">${money(item.nomina)}</span>`,
+          `<span class="money">${money(item.otrosGastos)}</span>`,
+          `<span class="money">${money(item.totalGastos)}</span>`,
+          `<span class="money">${money(item.compras)}</span>`,
+          `<span class="money">${money(item.equipos)}</span>`,
+          `<strong>${money(item.total)}</strong>`,
+        ])),
+        "Aun no hay informacion de inversion por socio."
       )}
     </section>
     <p class="footer">Reporte generado desde GS Burak Control Operativo. Este archivo es informativo y no da acceso a la aplicacion.</p>
@@ -1758,18 +1766,69 @@ function equiposPorPagador() {
   }, {});
 }
 
-function totalInversionYGastoPorPagador() {
+function pagadorKey(value) {
+  const key = String(value || "").trim();
+  return key || "Sin dato";
+}
+
+function esCategoriaNomina(categoria) {
+  const text = String(categoria || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  return text.includes("nomina") || text.includes("imss") || text.includes("impuesto sobre nomina");
+}
+
+function inversionYGastoDetallePorPagador() {
   const rows = {};
-  const add = (pagador, value) => {
-    const key = pagador || "Sin dato";
-    rows[key] = (rows[key] || 0) + Number(value || 0);
+  const ensure = (pagador) => {
+    const key = pagadorKey(pagador);
+    if (!rows[key]) {
+      rows[key] = {
+        pagador: key,
+        nomina: 0,
+        otrosGastos: 0,
+        totalGastos: 0,
+        compras: 0,
+        equipos: 0,
+        total: 0,
+      };
+    }
+    return rows[key];
   };
 
-  gastosFiltradosOperacion().forEach((gasto) => add(gasto.pagadoPor, gasto.monto));
-  comprasFiltradasOperacion().forEach((compra) => add(compra.pagadoPor, Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0)));
-  equiposFiltradosOperacion().forEach((equipo) => add(equipo.pagadoPor, costoTotalEquipo(equipo)));
+  gastosFiltradosOperacion().forEach((gasto) => {
+    const row = ensure(gasto.pagadoPor);
+    const monto = Number(gasto.monto || 0);
+    row.totalGastos += monto;
+    if (esCategoriaNomina(gasto.categoria)) row.nomina += monto;
+    else row.otrosGastos += monto;
+  });
 
-  return rows;
+  comprasFiltradasOperacion().forEach((compra) => {
+    ensure(compra.pagadoPor).compras += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
+  });
+
+  equiposFiltradosOperacion().forEach((equipo) => {
+    ensure(equipo.pagadoPor).equipos += costoTotalEquipo(equipo);
+  });
+
+  return Object.values(rows)
+    .map((row) => ({ ...row, total: row.totalGastos + row.compras + row.equipos }))
+    .filter((row) => row.total)
+    .sort((a, b) => {
+      const order = { SISPROVISA: 0, VICTOR: 1 };
+      const aOrder = order[String(a.pagador).toUpperCase()] ?? 9;
+      const bOrder = order[String(b.pagador).toUpperCase()] ?? 9;
+      return aOrder - bOrder || b.total - a.total || a.pagador.localeCompare(b.pagador);
+    });
+}
+
+function totalInversionYGastoPorPagador() {
+  return inversionYGastoDetallePorPagador().reduce((rows, row) => {
+    rows[row.pagador] = row.total;
+    return rows;
+  }, {});
 }
 
 function ventasPorCiudad() {
@@ -3101,18 +3160,71 @@ function renderEquiposPagadorResumen() {
 }
 
 function renderTotalPagadorResumen() {
-  const rows = Object.entries(totalInversionYGastoPorPagador()).sort((a, b) => b[1] - a[1]);
-  const totalGeneral = rows.reduce((sum, row) => sum + row[1], 0);
+  const rows = inversionYGastoDetallePorPagador();
+  const totalGeneral = rows.reduce((sum, row) => sum + row.total, 0);
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.nomina += row.nomina;
+      acc.otrosGastos += row.otrosGastos;
+      acc.totalGastos += row.totalGastos;
+      acc.compras += row.compras;
+      acc.equipos += row.equipos;
+      acc.total += row.total;
+      return acc;
+    },
+    { nomina: 0, otrosGastos: 0, totalGastos: 0, compras: 0, equipos: 0, total: 0 }
+  );
+
   return `
     <section class="panel" style="margin-top:14px">
-      <h2>Total pagado por socio: gastos + compras + equipos (${money(totalGeneral)})</h2>
-      <p class="readonly">Este total suma gastos operativos, compras de inventario y equipos. Para ver solo gastos usa la seccion "Gastos pagados por" o "Gastos por mes y pagador".</p>
-      <div class="bars">
-        ${
-          rows.length
-            ? rows.map(([pagador, total]) => renderBar(pagador, total, Math.max(...rows.map((row) => row[1]), 1), true)).join("")
-            : `<p class="readonly">Aun no hay compras, gastos o equipos registrados.</p>`
-        }
+      <h2>Inversion y gasto total por socio (${money(totalGeneral)})</h2>
+      <p class="readonly">Incluye todo lo capturado como pagado por cada socio: nomina y cargas laborales, otros gastos operativos, compras de inventario y equipos. Respeta el filtro de operacion seleccionado.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Socio</th>
+              <th>Nomina y cargas</th>
+              <th>Otros gastos</th>
+              <th>Total gastos</th>
+              <th>Compras inventario</th>
+              <th>Equipos</th>
+              <th>Total invertido</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((item) => `
+                  <tr>
+                    <td data-label="Socio"><strong>${escapeHtml(item.pagador)}</strong></td>
+                    <td data-label="Nomina y cargas">${money(item.nomina)}</td>
+                    <td data-label="Otros gastos">${money(item.otrosGastos)}</td>
+                    <td data-label="Total gastos">${money(item.totalGastos)}</td>
+                    <td data-label="Compras inventario">${money(item.compras)}</td>
+                    <td data-label="Equipos">${money(item.equipos)}</td>
+                    <td data-label="Total invertido"><strong>${money(item.total)}</strong></td>
+                  </tr>
+                `).join("")
+                : `<tr><td colspan="7">Aun no hay compras, gastos o equipos registrados.</td></tr>`
+            }
+          </tbody>
+          ${
+            rows.length
+              ? `<tfoot>
+                  <tr>
+                    <td data-label="Socio"><strong>Total</strong></td>
+                    <td data-label="Nomina y cargas"><strong>${money(totals.nomina)}</strong></td>
+                    <td data-label="Otros gastos"><strong>${money(totals.otrosGastos)}</strong></td>
+                    <td data-label="Total gastos"><strong>${money(totals.totalGastos)}</strong></td>
+                    <td data-label="Compras inventario"><strong>${money(totals.compras)}</strong></td>
+                    <td data-label="Equipos"><strong>${money(totals.equipos)}</strong></td>
+                    <td data-label="Total invertido"><strong>${money(totals.total)}</strong></td>
+                  </tr>
+                </tfoot>`
+              : ""
+          }
+        </table>
       </div>
     </section>
   `;
