@@ -1776,7 +1776,7 @@ function esCategoriaNomina(categoria) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-  return text.includes("nomina") || text.includes("imss") || text.includes("impuesto sobre nomina");
+  return text.includes("nomina") || text.includes("imss") || text.includes("infonavit") || text.includes("impuesto sobre nomina");
 }
 
 function inversionYGastoDetallePorPagador() {
@@ -2503,7 +2503,7 @@ function resumenMensualFinanciero() {
     });
 }
 
-const LABOR_CATEGORIES = ["nomina", "imss", "impuesto sobre nomina", "impuesto sobre nominas"];
+const LABOR_CATEGORIES = ["nomina", "imss", "infonavit", "impuesto sobre nomina", "impuesto sobre nominas"];
 
 function esGastoLaboral(gasto) {
   const categoria = normalizarTexto(gasto.categoria);
@@ -2629,7 +2629,7 @@ function renderCostoLaboralPromedioResumen() {
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Costo laboral promedio por servicio</h2>
-      <p class="readonly">Formula: gastos de Nomina + IMSS + Impuesto sobre nominas, dividido entre los servicios realizados del mismo mes y ciudad. El mes actual se muestra como provisional.</p>
+      <p class="readonly">Formula: gastos de Nomina + IMSS + INFONAVIT + Impuesto sobre nominas, dividido entre los servicios realizados del mismo mes y ciudad. El mes actual se muestra como provisional.</p>
       <div class="table-card">
         <table>
           <thead><tr><th>Mes</th><th>Ciudad</th><th>Servicios</th><th>Costo laboral</th><th>Promedio por servicio</th><th>Estatus</th></tr></thead>
@@ -2637,7 +2637,7 @@ function renderCostoLaboralPromedioResumen() {
             ${
               rows.length
                 ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong></td><td data-label="Ciudad">${row.ciudad}</td><td data-label="Servicios">${number(row.servicios)}</td><td data-label="Costo laboral">${money(row.costoLaboral)}</td><td data-label="Promedio por servicio"><strong>${row.servicios ? money(row.promedio) : "Sin servicios"}</strong></td><td data-label="Estatus">${row.provisional ? "Provisional" : "Cerrado"}</td></tr>`).join("")
-                : `<tr><td colspan="6">Aun no hay nomina, IMSS o impuesto sobre nominas capturados para calcular este costo.</td></tr>`
+                : `<tr><td colspan="6">Aun no hay nomina, IMSS, INFONAVIT o impuesto sobre nominas capturados para calcular este costo.</td></tr>`
             }
           </tbody>
         </table>
