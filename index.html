@@ -396,6 +396,139 @@
       .compact-hero {
         margin-bottom: 10px;
       }
+
+      @media (max-width: 720px) {
+        .sales-list {
+          overflow-x: visible !important;
+        }
+
+        .sales-list table {
+          width: 100% !important;
+          min-width: 0 !important;
+          table-layout: auto !important;
+          border-collapse: separate !important;
+          border-spacing: 0 12px !important;
+        }
+
+        .sales-list thead {
+          display: none !important;
+        }
+
+        .sales-list tbody,
+        .sales-list tr,
+        .sales-list td {
+          display: block !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        .sales-list tr {
+          border: 1px solid #d9e2ea !important;
+          border-radius: 14px !important;
+          overflow: hidden !important;
+          background: #fff !important;
+          margin-bottom: 14px !important;
+        }
+
+        .sales-list td {
+          padding: 12px 14px !important;
+          border: 0 !important;
+          border-bottom: 1px solid #e5e7eb !important;
+          white-space: normal !important;
+          overflow-wrap: normal !important;
+          word-break: normal !important;
+          line-height: 1.35 !important;
+        }
+
+        .sales-list td:last-child {
+          border-bottom: 0 !important;
+        }
+
+        .sales-list td::before {
+          content: attr(data-label);
+          display: block !important;
+          margin-bottom: 6px !important;
+          color: #667085 !important;
+          font-size: 0.74rem !important;
+          line-height: 1.2 !important;
+          font-weight: 800 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0 !important;
+          white-space: normal !important;
+          overflow-wrap: normal !important;
+          word-break: keep-all !important;
+        }
+
+        .sales-list td[data-label="Fecha"]::before {
+          content: "FECHA";
+        }
+
+        .sales-list td[data-label="Pendiente"]::before {
+          content: "PENDIENTE";
+        }
+
+        .sales-list td[data-label="Costo prod."]::before {
+          content: "COSTO PROD.";
+        }
+
+        .sales-list td[data-label="% producto"]::before {
+          content: "% PRODUCTO";
+        }
+
+        .sales-list td[data-label="Acciones"]::before {
+          content: "ACCIONES";
+        }
+
+        .sales-list td[data-label="Total"],
+        .sales-list td[data-label="Cobrado"],
+        .sales-list td[data-label="Pendiente"],
+        .sales-list td[data-label="Costo prod."],
+        .sales-list td[data-label="% producto"] {
+          font-variant-numeric: tabular-nums;
+        }
+
+        .sales-list td[data-label="Total"],
+        .sales-list td[data-label="Cobrado"],
+        .sales-list td[data-label="Pendiente"],
+        .sales-list td[data-label="Costo prod."] {
+          white-space: nowrap !important;
+        }
+
+        .sales-list td[data-label="Total"]::before,
+        .sales-list td[data-label="Cobrado"]::before,
+        .sales-list td[data-label="Pendiente"]::before,
+        .sales-list td[data-label="Costo prod."]::before {
+          white-space: normal !important;
+        }
+
+        .sales-list .pill {
+          display: inline-flex !important;
+          width: auto !important;
+          max-width: 100% !important;
+          white-space: normal !important;
+          overflow-wrap: normal !important;
+          word-break: normal !important;
+        }
+
+        .sales-list td[data-label="Acciones"] .actions {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 10px !important;
+          align-items: stretch !important;
+        }
+
+        .sales-list td[data-label="Acciones"] button,
+        .sales-list td[data-label="Acciones"] .btn {
+          width: 100% !important;
+          min-height: 46px !important;
+          padding: 12px 14px !important;
+          white-space: normal !important;
+          overflow-wrap: normal !important;
+          word-break: normal !important;
+        }
+      }
     </style>
   </head>
   <body>
