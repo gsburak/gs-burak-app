@@ -756,7 +756,7 @@ function buildProfessionalBackupWorkbook() {
       columns: [
         { header: "Fecha", key: "fecha", width: 85 },
         { header: "Ciudad", key: "ciudad", width: 90 },
-        { header: "Categoria", key: "categoria", width: 150 },
+        { header: "Rubro", key: "categoria", width: 150 },
         { header: "Descripcion", key: "descripcion", width: 320 },
         { header: "Monto", key: "monto", type: "currency" },
         { header: "Pagado por", key: "pagadoPor", width: 110 },
@@ -2999,11 +2999,11 @@ function renderGastosCategoriaResumen(rowsSource = gastosFiltradosOperacion()) {
       <h2>Gastos historicos por tipo / categoria (${money(total)})</h2>
       <div class="table-card">
         <table>
-          <thead><tr><th>Categoria</th><th>Gastos</th><th>Total</th></tr></thead>
+          <thead><tr><th>Rubro</th><th>Gastos</th><th>Total</th></tr></thead>
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Categoria"><strong>${row.categoria}</strong></td><td data-label="Gastos">${number(row.gastos)}</td><td data-label="Total"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Rubro"><strong>${row.categoria || "Sin rubro"}</strong></td><td data-label="Gastos">${number(row.gastos)}</td><td data-label="Total"><strong>${money(row.total)}</strong></td></tr>`).join("")
                 : `<tr><td colspan="3">Aun no hay gastos registrados.</td></tr>`
             }
           </tbody>
@@ -3742,21 +3742,21 @@ function renderGastos() {
       <h2>Historial de gastos</h2>
       <section class="filters" style="margin-bottom:0">
         <div class="field">
-          <label>Tipo de gasto / Categoria</label>
+          <label>Rubro</label>
           <select id="gastoCategoriaFilter">
             <option value="">Todas</option>
             ${categorias.map((categoria) => `<option value="${categoria}" ${categoria === gastoCategoriaFilter ? "selected" : ""}>${categoria}</option>`).join("")}
           </select>
         </div>
         <div class="filter-count">
-          ${number(gastosFiltrados.length)} de ${number(gastosRows.length)} gastos · ${money(totalCategoria)}
+          ${number(gastosFiltrados.length)} de ${number(gastosRows.length)} gastos · ${gastoCategoriaFilter ? `Total del rubro ${gastoCategoriaFilter}: ${money(totalCategoria)}` : `Total de gastos: ${money(totalCategoria)}`}
         </div>
       </section>
     </section>
     <div class="table-card">
       <table>
-        <thead><tr><th>Fecha</th><th>Operacion</th><th>Categoria</th><th>Descripcion</th><th>Monto</th><th>Pagado por</th><th></th></tr></thead>
-        <tbody>${gastosOrdenados.length ? gastosOrdenados.map((g) => `<tr><td data-label="Fecha">${g.fecha}</td><td data-label="Operacion">${operacionRegistro(g)}</td><td data-label="Categoria">${g.categoria}</td><td data-label="Descripcion">${g.descripcion || ""}<br><span class="readonly">${g.comprobante || ""}</span></td><td data-label="Monto">${money(g.monto)}</td><td data-label="Pagado por">${g.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("gasto", g.id)}</td></tr>`).join("") : `<tr><td colspan="7">No hay gastos que coincidan con este filtro.</td></tr>`}</tbody>
+        <thead><tr><th>Fecha</th><th>Operacion</th><th>Rubro</th><th>Descripcion</th><th>Monto</th><th>Pagado por</th><th></th></tr></thead>
+        <tbody>${gastosOrdenados.length ? gastosOrdenados.map((g) => `<tr><td data-label="Fecha">${g.fecha}</td><td data-label="Operacion">${operacionRegistro(g)}</td><td data-label="Rubro">${g.categoria || "Sin rubro"}</td><td data-label="Descripcion">${g.descripcion || ""}<br><span class="readonly">${g.comprobante || ""}</span></td><td data-label="Monto">${money(g.monto)}</td><td data-label="Pagado por">${g.pagadoPor || ""}</td><td data-label="Acciones">${rowActions("gasto", g.id)}</td></tr>`).join("") : `<tr><td colspan="7">No hay gastos que coincidan con este filtro.</td></tr>`}</tbody>
       </table>
     </div>
   `;
@@ -4023,7 +4023,7 @@ function formFor(type, data) {
   }
   if (type === "gasto") {
     const categorias = ["Nomina", "Gasolina / Combustible", "IMSS", "INFONAVIT", "Impuesto sobre nominas", "Impuestos / ISR", "Telefonia Celular", "Internet", "Renta / Local", "Papeleria / Oficina", "Equipo / Herramientas", "Publicidad / Marketing", "Mantenimiento Vehiculo", "Uniforme / EPP", "Capacitacion", "Otros Gastos"];
-    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("categoria", "Categoria", data.categoria, categorias.map((x) => ({ value: x, label: x })), "wide")}${input("monto", "Monto", data.monto, "number")}${input("comprobante", "Comprobante / ref.", data.comprobante)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${text("descripcion", "Descripcion", data.descripcion, "full")}</div>`;
+    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("categoria", "Rubro", data.categoria, categorias.map((x) => ({ value: x, label: x })), "wide")}${input("monto", "Monto", data.monto, "number")}${input("comprobante", "Comprobante / ref.", data.comprobante)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${text("descripcion", "Descripcion", data.descripcion, "full")}</div>`;
   }
   if (type === "equipo") {
     return `<div class="form-grid">${input("equipo", "Equipo / descripcion", data.equipo, "text", "wide")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${input("unidad", "Cantidad", data.unidad || 1, "number")}${input("costo", "Costo unitario", data.costo, "number")}${input("fecha", "Fecha compra", data.fecha || today(), "date")}${input("vida", "Vida util anos", data.vida, "number")}${input("residual", "Valor residual total", data.residual, "number")}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}</div>`;
