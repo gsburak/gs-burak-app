@@ -648,6 +648,7 @@ function buildProfessionalBackupWorkbook() {
         { header: "Cobrado", key: "cobrado", type: "currency" },
         { header: "Pendiente", key: "pendiente", type: "currency" },
         { header: "Forma de pago", key: "formaPago", width: 115 },
+        { header: "Cobrado por", key: "cobradoPor", width: 115 },
         { header: "Costo producto", key: "costoProducto", type: "currency" },
         { header: "% producto", key: "porcentajeProducto", type: "percent" },
         { header: "Productos usados", key: "productos", width: 260 },
@@ -666,9 +667,10 @@ function buildProfessionalBackupWorkbook() {
           direccion: servicio.zona || servicio.direccion || "",
           total: totalServicio(servicio),
           cobrado: Number(servicio.cobrado || 0),
-          pendiente: pendienteServicio(servicio),
-          formaPago: servicio.formaPago || "",
-          costoProducto: costoServicio(servicio),
+      pendiente: pendienteServicio(servicio),
+      formaPago: servicio.formaPago || "",
+      cobradoPor: cobradorServicio(servicio),
+      costoProducto: costoServicio(servicio),
           porcentajeProducto: porcentajeCostoProducto(servicio),
           productos: productosUsadosTexto(servicio),
         })),
@@ -1126,10 +1128,11 @@ function exportServiciosCsv() {
     `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%`,
     pendienteServicio(s) > 0 ? "Por cobrar" : "Cobrado",
     s.formaPago || "",
+    cobradorServicio(s),
   ]);
   downloadCsv(
     datedFileName("ventas-servicios-gs-burak", "csv"),
-    ["Fecha", "Cliente", "Ciudad", "Clasificacion cliente", "Servicio", "Tecnico", "Zona / direccion", "Observaciones", "Total", "Cobrado", "Pendiente", "Costo producto", "% producto", "Estatus", "Forma de pago"],
+    ["Fecha", "Cliente", "Ciudad", "Clasificacion cliente", "Servicio", "Tecnico", "Zona / direccion", "Observaciones", "Total", "Cobrado", "Pendiente", "Costo producto", "% producto", "Estatus", "Forma de pago", "Cobrado por"],
     rows
   );
 }
@@ -2223,6 +2226,7 @@ function renderDashboard() {
       ${showMoney ? renderCobrosMayoresVentaResumen() : ""}
       ${showMoney ? renderCostoLaboralPromedioResumen() : ""}
       ${showMoney ? renderCobrosFormaPagoResumen() : ""}
+      ${showMoney ? renderCobrosPorCobradorResumen() : ""}
       ${showMoney ? renderVentasClasificacionClienteResumen() : ""}
       ${renderClientesTipoResumen()}
       ${renderServiciosTecnicoResumen()}
@@ -2627,6 +2631,53 @@ function renderCobrosFormaPagoResumen() {
             ${
               rows.length
                 ? rows.map((row) => `<tr><td data-label="Forma de pago"><strong>${row.forma}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Servicios">${number(row.servicios)}</td></tr>`).join("")
+                : `<tr><td colspan="3">Aun no hay cobros registrados.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function cobradorServicio(servicio) {
+  const valor = String((servicio && (servicio.cobradoPor || servicio.cobrador)) || "").trim().toUpperCase();
+  if (valor === "VICTOR" || valor === "SISPROVISA") return valor;
+  return "Sin clasificar";
+}
+
+function cobrosPorCobrador() {
+  const rows = {
+    VICTOR: { cobrador: "VICTOR", cobrado: 0, servicios: 0 },
+    SISPROVISA: { cobrador: "SISPROVISA", cobrado: 0, servicios: 0 },
+    "Sin clasificar": { cobrador: "Sin clasificar", cobrado: 0, servicios: 0 },
+  };
+
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    const cobrado = toNumber(servicio.cobrado);
+    if (cobrado <= 0) return;
+    const cobrador = cobradorServicio(servicio);
+    rows[cobrador].cobrado += cobrado;
+    rows[cobrador].servicios += 1;
+  });
+
+  return Object.values(rows).filter((row) => row.cobrado || row.servicios || row.cobrador !== "Sin clasificar");
+}
+
+function renderCobrosPorCobradorResumen() {
+  const rows = cobrosPorCobrador();
+  const total = rows.reduce((sum, row) => sum + row.cobrado, 0);
+  return `
+    <section class="panel" style="margin-top:14px">
+      <h2>Cobros por quien recibio (${money(total)})</h2>
+      <p class="readonly">Suma solo el dinero cobrado, separado por quien recibio el pago. Los servicios anteriores apareceran como sin clasificar hasta que se editen.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Cobrado por</th><th>Monto cobrado</th><th>Servicios cobrados</th></tr></thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map((row) => `<tr><td data-label="Cobrado por"><strong>${row.cobrador}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Servicios cobrados">${number(row.servicios)}</td></tr>`).join("")
                 : `<tr><td colspan="3">Aun no hay cobros registrados.</td></tr>`
             }
           </tbody>
@@ -3752,6 +3803,7 @@ function renderServicioConsultaModal(id) {
           ${readField("Cobrado", money(servicio.cobrado))}
           ${readField("Pendiente", money(pendienteServicio(servicio)))}
           ${readField("Forma de pago", servicio.formaPago)}
+          ${readField("Cobrado por", cobradorServicio(servicio))}
           ${readField("Costo producto", costo)}
           ${readField("% producto", porcentaje)}
           ${readField("Observaciones", servicio.observaciones, "full")}
@@ -3897,6 +3949,7 @@ function formServicio(data) {
     ${input("subtotal", "Importe del servicio", data.subtotal, "number")}
     ${input("cobrado", "Cobrado", data.cobrado, "number")}
     ${select("formaPago", "Forma de pago", data.formaPago, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesia", "Refuerzo"].map((x) => ({ value: x, label: x })))}
+    ${select("cobradoPor", "Cobrado por", data.cobradoPor || "Sin clasificar", ["Sin clasificar", "VICTOR", "SISPROVISA"].map((x) => ({ value: x, label: x })))}
     ${data.programacionId ? `<input type="hidden" name="programacionId" value="${data.programacionId}" />` : ""}
     <div class="full panel"><h2>Productos usados</h2><div class="form-grid">${productRows}</div></div>
     ${text("observaciones", "Observaciones", data.observaciones, "full")}
