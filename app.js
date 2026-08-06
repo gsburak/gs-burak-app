@@ -1152,11 +1152,34 @@ function exportDashboardExecutiveReport() {
   const comprasCiudadPagador = comprasPorCiudadYPagador();
   const equiposCiudadPagador = equiposPorCiudadYPagador();
   const inversionSocios = inversionYGastoDetallePorPagador();
+  const sociosPrincipales = ["SISPROVISA", "VICTOR"];
+  const inversionSociosReporte = [
+    ...sociosPrincipales.map((pagador) => {
+      const found = inversionSocios.find((item) => pagadorKey(item.pagador) === pagador);
+      return found || {
+        pagador,
+        nomina: 0,
+        otrosGastos: 0,
+        totalGastos: 0,
+        compras: 0,
+        equipos: 0,
+        total: 0,
+      };
+    }),
+    ...inversionSocios.filter((item) => !sociosPrincipales.includes(pagadorKey(item.pagador))),
+  ];
   const periodo = operacionFilter === "Todas" ? "Todas las operaciones" : operacionFilter;
   const generatedAt = new Date().toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
   const row = (cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
   const header = (cells) => `<tr>${cells.map((cell) => `<th>${escapeHtml(cell)}</th>`).join("")}</tr>`;
   const emptyRow = (colspan, text) => `<tr><td colspan="${colspan}">${escapeHtml(text)}</td></tr>`;
+  const inversionCard = (item) => `
+    <div class="investment-card">
+      <span>${escapeHtml(item.pagador)}</span>
+      <strong>${money(item.total)}</strong>
+      <small>Gastos ${money(item.totalGastos)} - Compras ${money(item.compras)} - Equipos ${money(item.equipos)}</small>
+    </div>
+  `;
   const table = (headers, rows, emptyText) => `
     <table>
       <thead>${header(headers)}</thead>
@@ -1184,6 +1207,11 @@ function exportDashboardExecutiveReport() {
     .card { background: white; border: 1px solid #d7e1e4; border-radius: 8px; padding: 14px; }
     .card span { display: block; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
     .card strong { display: block; font-size: 20px; color: #0f766e; }
+    .investment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+    .investment-card { border: 1px solid #d6e1e4; border-radius: 10px; background: #f8fbfb; padding: 16px; }
+    .investment-card span { display: block; color: #5f6b7a; font-weight: 800; font-size: 12px; text-transform: uppercase; }
+    .investment-card strong { display: block; margin-top: 8px; font-size: 26px; color: #0f766e; }
+    .investment-card small { display: block; margin-top: 8px; color: #5f6b7a; font-weight: 700; }
     section { background: white; border: 1px solid #d7e1e4; border-radius: 8px; padding: 18px; margin: 14px 0; break-inside: avoid; }
     h2 { margin: 0 0 12px; font-size: 18px; color: #0b2230; }
     .note { color: #64748b; margin: 0 0 12px; line-height: 1.45; }
@@ -1193,6 +1221,9 @@ function exportDashboardExecutiveReport() {
     td strong { color: #0b2230; }
     .money { font-weight: 700; color: #0f766e; }
     .footer { color: #64748b; font-size: 11px; margin-top: 18px; }
+    @media (max-width: 720px) {
+      .cards, .investment-grid { grid-template-columns: 1fr; }
+    }
     @media print {
       body { background: white; }
       .page { padding: 0; max-width: none; }
@@ -1215,6 +1246,13 @@ function exportDashboardExecutiveReport() {
       <div class="card"><span>Por cobrar</span><strong>${money(m.porCobrar)}</strong></div>
       <div class="card"><span>Utilidad real</span><strong>${money(m.utilidad)}</strong></div>
     </div>
+    <section>
+      <h2>Inversion total por socio</h2>
+      <p class="note">Suma todo lo pagado o invertido por cada socio: nomina y cargas laborales, otros gastos, compras de inventario y equipos.</p>
+      <div class="investment-grid">
+        ${inversionSociosReporte.map(inversionCard).join("")}
+      </div>
+    </section>
     <section>
       <h2>Resumen mensual financiero</h2>
       <p class="note">Utilidad real = cobrado - producto usado - gastos - depreciacion mensual. Las compras de inventario se muestran como referencia y no se restan otra vez.</p>
@@ -1323,11 +1361,11 @@ function exportDashboardExecutiveReport() {
       )}
     </section>
     <section>
-      <h2>Inversion y gasto total por socio</h2>
+      <h2>Detalle de inversion y gasto por socio</h2>
       <p class="note">Incluye nomina y cargas laborales, otros gastos operativos, compras de inventario y equipos. Respeta el filtro de operacion del dashboard.</p>
       ${table(
         ["Socio", "Nomina y cargas", "Otros gastos", "Total gastos", "Compras inventario", "Equipos", "Total invertido"],
-        inversionSocios.map((item) => row([
+        inversionSociosReporte.map((item) => row([
           `<strong>${escapeHtml(item.pagador)}</strong>`,
           `<span class="money">${money(item.nomina)}</span>`,
           `<span class="money">${money(item.otrosGastos)}</span>`,
