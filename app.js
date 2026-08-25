@@ -43,6 +43,7 @@ const seed = {
     { id: uid(), nombre: "Nebulizacion", precio: 0 },
     { id: uid(), nombre: "Inspeccion", precio: 0 },
     { id: uid(), nombre: "Control de Roedores", precio: 0 },
+    { id: uid(), nombre: "Refuerzo", precio: 0 },
     { id: uid(), nombre: "Solo exteriores", precio: 0 },
     { id: uid(), nombre: "Presupuesto", precio: 0 },
     { id: uid(), nombre: "Otro", precio: 0 },
@@ -325,6 +326,9 @@ function migrateState(data) {
   }
   if (!data.tiposServicio.some((tipo) => String(tipo.nombre || "").toLowerCase() === "presupuesto")) {
     data.tiposServicio.push({ id: uid(), nombre: "Presupuesto", precio: 0 });
+  }
+  if (!data.tiposServicio.some((tipo) => String(tipo.nombre || "").trim().toLowerCase() === "refuerzo")) {
+    data.tiposServicio.push({ id: uid(), nombre: "Refuerzo", precio: 0 });
   }
   data.clientes = (data.clientes || []).map((cliente) => ({
     ciudad: "MERIDA",
