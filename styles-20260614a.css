@@ -1121,6 +1121,33 @@ th {
   }
 }
 
+.pending-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pending-count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.pending-count span { color: var(--muted); font-weight: 700; }
+.pending-count strong { font-size: 24px; }
+.pending-overdue { background: #fff7ed; }
+.pending-list a { color: var(--primary); font-weight: 700; }
+
+@media (max-width: 760px) {
+  .pending-summary { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width: 560px) {
   .login-shell {
     min-height: 100svh;

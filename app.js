@@ -12,6 +12,7 @@ const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
+  { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
   { id: "productos", label: "Productos", icon: "Stock", roles: ["admin"] },
@@ -50,6 +51,7 @@ const seed = {
   ],
   servicios: [],
   programaciones: [],
+  pendientes: [],
   compras: [],
   gastos: [
     { id: uid(), fecha: today(-6), categoria: "Gasolina / Combustible", descripcion: "Carga semanal", monto: 850, comprobante: "Ticket", pagadoPor: "VICTOR" },
@@ -116,6 +118,7 @@ let servicioClienteClasificacionFilter = "Todos";
 let compraSearch = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
+let pendienteStatusFilter = "Activos";
 let gastoCategoriaFilter = "";
 let remoteSaveQueue = Promise.resolve();
 
@@ -204,18 +207,18 @@ function bestLocalRecoveryState(remoteState) {
 }
 
 function totalRecords(data) {
-  return ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"]
+  return ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "pendientes", "compras", "gastos", "equipos"]
     .reduce((sum, key) => sum + (Array.isArray(data[key]) ? data[key].length : 0), 0);
 }
 
 function hasMoreRecords(candidate, remoteState) {
-  return ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"]
+  return ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "pendientes", "compras", "gastos", "equipos"]
     .some((key) => (candidate[key] || []).length > (remoteState[key] || []).length);
 }
 
 function mergeStatesById(remoteState, localState) {
   const merged = structuredClone(remoteState);
-  ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"].forEach((key) => {
+  ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "pendientes", "compras", "gastos", "equipos"].forEach((key) => {
     const rows = [...(remoteState[key] || [])];
     const seen = new Set(rows.map((row) => row.id || row.nombre).filter(Boolean));
     (localState[key] || []).forEach((row) => {
@@ -426,6 +429,14 @@ function migrateState(data) {
     tecnico: programacion.tecnico === "SISPROVISA" ? "SANTOS" : programacion.tecnico || "",
     tecnicoAdicional: programacion.tecnicoAdicional || "",
     estatus: programacion.estatus || "Programado",
+  }));
+  data.pendientes = (data.pendientes || []).map((pendiente) => ({
+    tipo: "Pendiente general",
+    prioridad: "Normal",
+    estatus: "Pendiente",
+    fechaRecordatorio: today(),
+    horaRecordatorio: "09:00",
+    ...pendiente,
   }));
   data.schemaVersion = 2;
   return data;
@@ -2219,6 +2230,7 @@ function renderModule() {
     dashboard: renderDashboard,
     clientes: renderClientes,
     programacion: renderProgramacion,
+    pendientes: renderPendientes,
     servicios: renderServicios,
     tiposServicio: renderTiposServicio,
     productos: renderProductos,
@@ -3420,6 +3432,56 @@ function renderProgramacionAgenda(rows) {
   `;
 }
 
+function pendienteDateTime(pendiente) {
+  return `${pendiente.fechaRecordatorio || "9999-12-31"}T${pendiente.horaRecordatorio || "23:59"}`;
+}
+
+function pendienteGrupo(pendiente) {
+  if (["Completado", "Cancelado", "Confirmado"].includes(pendiente.estatus)) return "Cerrados";
+  const fecha = pendiente.fechaRecordatorio || "";
+  if (!fecha) return "Sin fecha";
+  if (fecha < today()) return "Vencidos";
+  if (fecha === today()) return "Para hoy";
+  return "Proximos";
+}
+
+function pendientePill(value, kind = "status") {
+  const textValue = value || (kind === "priority" ? "Normal" : "Pendiente");
+  const className = ["Completado", "Confirmado"].includes(textValue)
+    ? "good"
+    : ["Urgente", "Vencido", "Cancelado"].includes(textValue) ? "pending" : "";
+  return `<span class="pill ${className}">${escapeHtml(textValue)}</span>`;
+}
+
+function renderPendientes() {
+  const rows = [...state.pendientes]
+    .filter((item) => pendienteStatusFilter === "Todos"
+      || (pendienteStatusFilter === "Activos" && !["Completado", "Cancelado", "Confirmado"].includes(item.estatus))
+      || item.estatus === pendienteStatusFilter)
+    .sort((a, b) => pendienteDateTime(a).localeCompare(pendienteDateTime(b)));
+  const groups = ["Vencidos", "Para hoy", "Proximos", "Sin fecha"];
+  const active = state.pendientes.filter((item) => !["Completado", "Cancelado", "Confirmado"].includes(item.estatus));
+  const filter = `<select id="pendienteStatusFilter"><option value="Activos" ${pendienteStatusFilter === "Activos" ? "selected" : ""}>Activos</option><option value="Todos" ${pendienteStatusFilter === "Todos" ? "selected" : ""}>Todos</option><option value="Completado" ${pendienteStatusFilter === "Completado" ? "selected" : ""}>Completados</option><option value="Confirmado" ${pendienteStatusFilter === "Confirmado" ? "selected" : ""}>Confirmados</option><option value="Cancelado" ${pendienteStatusFilter === "Cancelado" ? "selected" : ""}>Cancelados</option></select>`;
+  return `
+    ${topbar("Pendientes y recordatorios", `${number(active.length)} pendientes activos. Los apartados provisionales no ocupan la agenda confirmada.`, `${filter}<button class="primary" data-open="pendiente">Nuevo pendiente</button>`)}
+    <section class="pending-summary">
+      ${groups.map((group) => `<div class="pending-count"><span>${group}</span><strong>${number(active.filter((item) => pendienteGrupo(item) === group).length)}</strong></div>`).join("")}
+    </section>
+    <section class="panel">
+      <h2>${pendienteStatusFilter === "Activos" ? "Pendientes activos" : `Pendientes: ${pendienteStatusFilter}`}</h2>
+      <div class="table-card service-list pending-list"><table>
+        <thead><tr><th>Recordatorio</th><th>Pendiente</th><th>Cliente / contacto</th><th>Fecha tentativa</th><th>Tipo</th><th>Prioridad</th><th>Estatus</th><th></th></tr></thead>
+        <tbody>${rows.length ? rows.map((item) => {
+          const cliente = state.clientes.find((c) => c.id === item.clienteId);
+          const clientText = cliente?.nombre || item.cliente || "-";
+          const phone = item.telefono || cliente?.telefono || "";
+          const overdue = pendienteGrupo(item) === "Vencidos";
+          return `<tr class="${overdue ? "pending-overdue" : ""}"><td data-label="Recordatorio"><strong>${item.fechaRecordatorio || "Sin fecha"}</strong><br>${item.horaRecordatorio || ""}</td><td data-label="Pendiente"><strong>${escapeHtml(item.asunto || "")}</strong><br><span class="readonly">${escapeHtml(item.notas || "")}</span></td><td data-label="Cliente / contacto">${escapeHtml(clientText)}${phone ? `<br><a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>` : ""}</td><td data-label="Fecha tentativa">${item.fechaTentativa || "-"}${item.horaTentativa ? `<br>${item.horaTentativa}` : ""}</td><td data-label="Tipo">${escapeHtml(item.tipo || "")}</td><td data-label="Prioridad">${pendientePill(item.prioridad, "priority")}</td><td data-label="Estatus">${pendientePill(overdue ? "Vencido" : item.estatus)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-edit="pendiente" data-id="${item.id}">Editar</button>${item.tipo === "Apartado provisional" && !["Confirmado", "Cancelado"].includes(item.estatus) ? `<button class="primary" data-confirm-pending="${item.id}">Confirmar en agenda</button>` : ""}${!["Completado", "Confirmado"].includes(item.estatus) ? `<button class="secondary" data-complete-pending="${item.id}">Completar</button>` : ""}<button class="ghost" data-delete="pendiente" data-id="${item.id}">Borrar</button></div></td></tr>`;
+        }).join("") : `<tr><td colspan="8">No hay pendientes en este filtro.</td></tr>`}</tbody>
+      </table></div>
+    </section>`;
+}
+
 function programacionPill(estatus) {
   const value = estatus || "Programado";
   const className = value === "Realizado" ? "good" : value === "Cancelado" ? "pending" : "";
@@ -3981,11 +4043,11 @@ function renderServicioConsultaModal(id) {
 }
 
 function modalTitle(type) {
-  return { cliente: "cliente", programacion: "programado", servicio: "servicio", tipoServicio: "tipo de servicio", producto: "producto", compra: "compra", gasto: "gasto", equipo: "equipo" }[type];
+  return { cliente: "cliente", programacion: "programado", pendiente: "pendiente", servicio: "servicio", tipoServicio: "tipo de servicio", producto: "producto", compra: "compra", gasto: "gasto", equipo: "equipo" }[type];
 }
 
 function typeToCollection(type) {
-  return { cliente: "clientes", programacion: "programaciones", servicio: "servicios", tipoServicio: "tiposServicio", producto: "productos", compra: "compras", gasto: "gastos", equipo: "equipos" }[type];
+  return { cliente: "clientes", programacion: "programaciones", pendiente: "pendientes", servicio: "servicios", tipoServicio: "tiposServicio", producto: "productos", compra: "compras", gasto: "gastos", equipo: "equipos" }[type];
 }
 
 function input(name, label, value = "", type = "text", extra = "") {
@@ -4059,7 +4121,14 @@ function formFor(type, data) {
   }
   if (type === "programacion") {
     const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
-    return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${programacionClienteFields(data.clienteId)}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "", tecnicosProgramacionOptions(true))}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${text("direccion", "Direccion / referencia", data.direccion, "full")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
+    return `<div class="form-grid">${data.pendienteId ? `<input type="hidden" name="pendienteId" value="${data.pendienteId}" />` : ""}${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${programacionClienteFields(data.clienteId)}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "", tecnicosProgramacionOptions(true))}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${text("direccion", "Direccion / referencia", data.direccion, "full")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
+  }
+  if (type === "pendiente") {
+    const clienteOptions = [{ value: "", label: "Sin cliente ligado" }, ...[...state.clientes]
+      .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
+      .map((cliente) => ({ value: cliente.id, label: cliente.nombre }))];
+    const tipos = ["Pendiente general", "Apartado provisional", "Llamada / seguimiento", "Compra", "Cobro", "Cotizacion", "Otro"];
+    return `<div class="form-grid">${select("tipo", "Tipo de pendiente", data.tipo || "Pendiente general", tipos.map((x) => ({ value: x, label: x })))}${select("prioridad", "Prioridad", data.prioridad || "Normal", ["Baja", "Normal", "Urgente"].map((x) => ({ value: x, label: x })))}${input("asunto", "Que necesitas recordar", data.asunto, "text", "full")}${select("clienteId", "Cliente registrado (opcional)", data.clienteId || "", clienteOptions, "wide")}${input("cliente", "Nombre si aun no esta registrado", data.cliente, "text", "wide")}${input("telefono", "Telefono", data.telefono, "tel")}${input("fechaRecordatorio", "Recordarme el dia", data.fechaRecordatorio || today(), "date")}${input("horaRecordatorio", "Hora del recordatorio", data.horaRecordatorio || "09:00", "time")}${input("fechaTentativa", "Fecha tentativa del servicio", data.fechaTentativa, "date")}${input("horaTentativa", "Hora tentativa", data.horaTentativa, "time")}${select("estatus", "Estatus", data.estatus || "Pendiente", ["Pendiente", "En seguimiento", "Completado", "Confirmado", "Cancelado"].map((x) => ({ value: x, label: x })))}${text("notas", "Notas", data.notas, "full")}</div>`;
   }
   if (type === "compra") {
     return `<div class="form-grid">${input("fecha", "Fecha", data.fecha || today(), "date")}${select("operacion", "Operacion", data.operacion || "Yucatan", ["Yucatan", "CDMX", "Sin clasificar"].map((x) => ({ value: x, label: x })))}${select("productoId", "Producto", data.productoId, state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadCompra || "unidad"})` })), "wide")}${input("cantidad", "Cantidad comprada", data.cantidad, "number")}${input("costoUnitario", "Costo por unidad comprada", data.costoUnitario, "number")}${input("proveedor", "Proveedor", data.proveedor)}${select("pagadoPor", "Pagado por", data.pagadoPor, ["SISPROVISA", "VICTOR"].map((x) => ({ value: x, label: x })))}${input("factura", "Factura / ref.", data.factura)}${text("notas", "Notas", data.notas, "full")}</div>`;
@@ -4166,6 +4235,28 @@ function bindApp() {
       render();
     });
   });
+  document.querySelectorAll("[data-confirm-pending]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const pendiente = state.pendientes.find((item) => item.id === button.dataset.confirmPending);
+      if (!pendiente) return;
+      if (!pendiente.clienteId) {
+        alert("Antes de confirmar, edita el pendiente y selecciona un cliente registrado. Si es nuevo, primero crealo en Clientes.");
+        return;
+      }
+      modal = { type: "programacion", data: { fecha: pendiente.fechaTentativa || today(), hora: pendiente.horaTentativa || "09:00", clienteId: pendiente.clienteId, ciudad: "Yucatan", tipo: "Otro", estatus: "Confirmado", direccion: "", notas: [pendiente.asunto, pendiente.notas].filter(Boolean).join(" - "), pendienteId: pendiente.id } };
+      render();
+    });
+  });
+  document.querySelectorAll("[data-complete-pending]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = state.pendientes.find((pending) => pending.id === button.dataset.completePending);
+      if (!item || !confirm("Marcar este pendiente como completado?")) return;
+      item.estatus = "Completado";
+      saveLocalBackup();
+      queueRemoteTask(() => saveRemoteState(state));
+      render();
+    });
+  });
   document.querySelectorAll("[data-delete]").forEach((button) => {
     button.addEventListener("click", async () => {
       const collection = typeToCollection(button.dataset.delete);
@@ -4202,7 +4293,8 @@ function bindApp() {
       state[collection] = state[collection].filter((x) => x.id !== button.dataset.id);
       saveLocalBackup();
       queueRemoteTask(async () => {
-        await deleteRemoteRecord(collection, button.dataset.id);
+        if (collection === "pendientes") await saveRemoteState(state);
+        else await deleteRemoteRecord(collection, button.dataset.id);
       });
       render();
     });
@@ -4349,6 +4441,13 @@ function bindApp() {
       render();
     });
   }
+  const pendienteStatusSelect = document.querySelector("#pendienteStatusFilter");
+  if (pendienteStatusSelect) {
+    pendienteStatusSelect.addEventListener("change", (event) => {
+      pendienteStatusFilter = event.target.value;
+      render();
+    });
+  }
   const gastoCategoriaSelect = document.querySelector("#gastoCategoriaFilter");
   if (gastoCategoriaSelect) {
     gastoCategoriaSelect.addEventListener("change", (event) => {
@@ -4472,6 +4571,10 @@ function saveEntity(event) {
     document.querySelector("#programacionClienteSearch")?.focus();
     return;
   }
+  if (type === "pendiente" && !String(data.asunto || "").trim()) {
+    alert("Escribe que necesitas recordar.");
+    return;
+  }
   const entity = normalize(type, data);
   const collection = typeToCollection(type);
   let savedEntity = null;
@@ -4495,9 +4598,15 @@ function saveEntity(event) {
     );
     activeModule = "servicios";
   }
+  if (type === "programacion" && entity.pendienteId) {
+    state.pendientes = state.pendientes.map((pendiente) => pendiente.id === entity.pendienteId ? { ...pendiente, estatus: "Confirmado" } : pendiente);
+  }
   saveLocalBackup();
   queueRemoteTask(async () => {
-    if (savedEntity) await saveRemoteRecord(collection, savedEntity);
+    if (savedEntity) {
+      if (collection === "pendientes") await saveRemoteState(state);
+      else await saveRemoteRecord(collection, savedEntity);
+    }
     if (type === "programacion" && savedEntity) {
       let calendarResult = null;
       if (savedEntity.estatus === "Cancelado" && savedEntity.calendarEventId) {
@@ -4526,6 +4635,7 @@ function saveEntity(event) {
       }
     }
     if (updatedProgramacion) await saveRemoteRecord("programaciones", updatedProgramacion);
+    if (type === "programacion" && entity.pendienteId) await saveRemoteState(state);
   });
   modal = null;
   render();
@@ -4585,6 +4695,12 @@ function normalize(type, data) {
     data.tecnico = data.tecnico || "";
     data.tecnicoAdicional = data.tecnicoAdicional || "";
     if (data.tecnico && data.tecnicoAdicional === data.tecnico) data.tecnicoAdicional = "";
+  }
+  if (type === "pendiente") {
+    data.asunto = String(data.asunto || "").trim();
+    data.cliente = String(data.cliente || "").trim();
+    data.telefono = String(data.telefono || "").trim();
+    data.notas = String(data.notas || "").trim();
   }
   return data;
 }

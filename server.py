@@ -12,7 +12,7 @@ from datetime import datetime
 ROOT = Path(__file__).resolve().parent
 DATA_FILE = ROOT / "gs_burak_data.json"
 BACKUP_DIR = ROOT / "backups"
-COLLECTIONS = ("clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos")
+COLLECTIONS = ("clientes", "productos", "tiposServicio", "servicios", "programaciones", "pendientes", "compras", "gastos", "equipos")
 COLLECTION_TABLES = {
     "clientes": "app_clientes",
     "productos": "app_productos",
@@ -92,6 +92,8 @@ def load_table_state():
         items = [row.get("data") for row in (rows or []) if isinstance(row, dict) and row.get("data")]
         data[collection] = items
         total_rows += len(items)
+    cloud_state = load_cloud_state()
+    data["pendientes"] = cloud_state.get("pendientes") or []
     return data if total_rows else {}
 
 
