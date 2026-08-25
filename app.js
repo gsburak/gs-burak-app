@@ -2117,6 +2117,26 @@ function isProgramacionReadOnly() {
   return currentUser?.role === "consulta";
 }
 
+function pendientesQueRequierenAtencion() {
+  return (state?.pendientes || []).filter((pendiente) => {
+    if (["Completado", "Cancelado", "Confirmado"].includes(pendiente.estatus)) return false;
+    return pendiente.fechaRecordatorio && pendiente.fechaRecordatorio <= today();
+  });
+}
+
+function renderPendientesAlert() {
+  if (!can("pendientes") || activeModule === "pendientes") return "";
+  const attention = pendientesQueRequierenAtencion();
+  if (!attention.length) return "";
+  const overdue = attention.filter((item) => item.fechaRecordatorio < today()).length;
+  const dueToday = attention.length - overdue;
+  const details = [
+    overdue ? `${number(overdue)} vencido${overdue === 1 ? "" : "s"}` : "",
+    dueToday ? `${number(dueToday)} para hoy` : "",
+  ].filter(Boolean).join(" y ");
+  return `<section class="pending-alert" role="alert"><div><strong>Tienes pendientes que requieren atencion</strong><span>${details}. Revísalos para que no se te olviden.</span></div><button class="primary" data-module="pendientes">Ver pendientes</button></section>`;
+}
+
 function render() {
   const app = document.querySelector("#app");
   if (!state) {
@@ -2136,6 +2156,7 @@ function render() {
     <div class="shell">
       ${renderSidebar()}
       <main class="main">
+        ${renderPendientesAlert()}
         ${renderModule()}
       </main>
     </div>
@@ -2193,6 +2214,7 @@ function bindLogin() {
 }
 
 function renderSidebar() {
+  const pendingAttentionCount = pendientesQueRequierenAtencion().length;
   return `
     <aside class="sidebar">
       <div class="brand">
@@ -2201,7 +2223,7 @@ function renderSidebar() {
       <nav class="nav">
         ${modules
           .filter((m) => m.roles.includes(currentUser.role))
-          .map((m) => `<button data-module="${m.id}" class="${activeModule === m.id ? "active" : ""}"><span>${m.icon}</span>${m.label}</button>`)
+          .map((m) => `<button data-module="${m.id}" class="${activeModule === m.id ? "active" : ""}"><span>${m.icon}</span>${m.label}${m.id === "pendientes" && pendingAttentionCount ? `<strong class="nav-badge" aria-label="${pendingAttentionCount} pendientes que requieren atencion">${pendingAttentionCount}</strong>` : ""}</button>`)
           .join("")}
       </nav>
       <div class="user-box">

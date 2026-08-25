@@ -1128,6 +1128,39 @@ th {
   margin-bottom: 16px;
 }
 
+.pending-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  color: #7c2d12;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-left: 5px solid #ea580c;
+  border-radius: 10px;
+}
+
+.pending-alert div { display: grid; gap: 4px; }
+.pending-alert strong { font-size: 16px; }
+.pending-alert span { color: #9a3412; }
+.nav button { position: relative; }
+.nav-badge {
+  min-width: 23px;
+  height: 23px;
+  margin-left: auto;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  background: #dc2626;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .pending-count {
   display: flex;
   align-items: center;
@@ -1146,6 +1179,7 @@ th {
 
 @media (max-width: 760px) {
   .pending-summary { grid-template-columns: 1fr 1fr; }
+  .pending-alert { align-items: stretch; flex-direction: column; }
 }
 
 @media (max-width: 560px) {
