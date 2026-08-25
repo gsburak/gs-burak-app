@@ -241,6 +241,16 @@ async function saveRemoteState(nextState) {
   });
 }
 
+async function saveRemotePendientes(pendientes) {
+  if (!SERVER_MODE) return;
+  const response = await fetch("/api/pendientes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pendientes }),
+  });
+  if (!response.ok) throw new Error("No se pudieron sincronizar los pendientes");
+}
+
 async function restoreRemoteState(nextState) {
   if (!SERVER_MODE) return;
   const response = await fetch("/api/restore", {
@@ -4275,7 +4285,7 @@ function bindApp() {
       if (!item || !confirm("Marcar este pendiente como completado?")) return;
       item.estatus = "Completado";
       saveLocalBackup();
-      queueRemoteTask(() => saveRemoteState(state));
+      queueRemoteTask(() => saveRemotePendientes(state.pendientes));
       render();
     });
   });
@@ -4315,7 +4325,7 @@ function bindApp() {
       state[collection] = state[collection].filter((x) => x.id !== button.dataset.id);
       saveLocalBackup();
       queueRemoteTask(async () => {
-        if (collection === "pendientes") await saveRemoteState(state);
+        if (collection === "pendientes") await saveRemotePendientes(state.pendientes);
         else await deleteRemoteRecord(collection, button.dataset.id);
       });
       render();
@@ -4626,7 +4636,7 @@ function saveEntity(event) {
   saveLocalBackup();
   queueRemoteTask(async () => {
     if (savedEntity) {
-      if (collection === "pendientes") await saveRemoteState(state);
+      if (collection === "pendientes") await saveRemotePendientes(state.pendientes);
       else await saveRemoteRecord(collection, savedEntity);
     }
     if (type === "programacion" && savedEntity) {
@@ -4657,7 +4667,7 @@ function saveEntity(event) {
       }
     }
     if (updatedProgramacion) await saveRemoteRecord("programaciones", updatedProgramacion);
-    if (type === "programacion" && entity.pendienteId) await saveRemoteState(state);
+    if (type === "programacion" && entity.pendienteId) await saveRemotePendientes(state.pendientes);
   });
   modal = null;
   render();

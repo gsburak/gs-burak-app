@@ -198,6 +198,35 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        if self.path == "/api/pendientes":
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length)
+            try:
+                payload = json.loads(body.decode("utf-8"))
+                pendientes = payload.get("pendientes")
+                if not isinstance(pendientes, list):
+                    raise ValueError("pendientes must be a list")
+            except (json.JSONDecodeError, ValueError) as error:
+                self.send_error(400, f"Invalid pending records: {error}")
+                return
+
+            existing = load_local_state()
+            existing["pendientes"] = pendientes
+            backup_current_state()
+            DATA_FILE.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
+            try:
+                cloud = load_cloud_state()
+                cloud["pendientes"] = pendientes
+                save_cloud_state(cloud)
+            except Exception as error:
+                self.send_error(500, f"Pending sync failed: {error}")
+                return
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b'{"ok": true}')
+            return
         if self.path == "/api/state":
             length = int(self.headers.get("Content-Length", "0"))
             body = self.rfile.read(length)
