@@ -3034,7 +3034,8 @@ function renderGastosCategoriaResumen(rowsSource = gastosFiltradosOperacion()) {
   const total = rows.reduce((sum, row) => sum + row.total, 0);
   return `
     <section class="panel" style="margin-top:14px">
-      <h2>Gastos historicos por tipo / categoria (${money(total)})</h2>
+      <h2>Resumen de gastos por rubro (${money(total)})</h2>
+      <p class="readonly">Total acumulado por cada rubro. Respeta el filtro de operacion seleccionado.</p>
       <div class="table-card">
         <table>
           <thead><tr><th>Rubro</th><th>Gastos</th><th>Total</th></tr></thead>
