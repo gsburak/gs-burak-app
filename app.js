@@ -12,7 +12,7 @@ const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
-  { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo"] },
+  { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
