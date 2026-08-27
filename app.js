@@ -12,6 +12,7 @@ const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
+  { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
@@ -2262,6 +2263,7 @@ function renderModule() {
     dashboard: renderDashboard,
     clientes: renderClientes,
     programacion: renderProgramacion,
+    certificados: renderCertificados,
     pendientes: renderPendientes,
     servicios: renderServicios,
     tiposServicio: renderTiposServicio,
@@ -2271,6 +2273,29 @@ function renderModule() {
     equipos: renderEquipos,
   };
   return map[activeModule]();
+}
+
+function renderCertificados() {
+  const certificadoUrl = "https://stirring-semolina-e8a9e3.netlify.app/";
+  return `
+    ${topbar(
+      "Certificado de servicio",
+      "Llena, firma y genera el certificado sin salir de GS BURAK.",
+      `<a class="secondary certificate-external-link" href="${certificadoUrl}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`
+    )}
+    <div class="certificate-notice">
+      Esta vista utiliza el mismo formato de siempre. También puedes abrirlo directamente con el botón de pantalla completa.
+    </div>
+    <section class="certificate-frame-card">
+      <iframe
+        class="certificate-frame"
+        src="${certificadoUrl}"
+        title="Certificado de servicio GS BURAK"
+        loading="eager"
+        allow="clipboard-write"
+      ></iframe>
+    </section>
+  `;
 }
 
 function renderDashboard() {
