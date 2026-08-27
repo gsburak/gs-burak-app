@@ -244,6 +244,52 @@ textarea {
   padding: 22px;
 }
 
+.certificate-external-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.certificate-notice {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--brand-dark);
+  line-height: 1.45;
+}
+
+.certificate-frame-card {
+  overflow: hidden;
+  min-height: 760px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+}
+
+.certificate-frame {
+  display: block;
+  width: 100%;
+  min-height: 760px;
+  height: calc(100vh - 185px);
+  border: 0;
+  background: white;
+}
+
+@media (max-width: 760px) {
+  .certificate-frame-card,
+  .certificate-frame {
+    min-height: 720px;
+  }
+
+  .certificate-frame {
+    height: calc(100vh - 235px);
+  }
+}
+
 .topbar {
   display: flex;
   align-items: center;
