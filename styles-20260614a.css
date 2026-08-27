@@ -168,6 +168,8 @@ textarea {
   top: 0;
   height: 100vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .brand {
@@ -195,6 +197,11 @@ textarea {
   display: grid;
   gap: 6px;
   margin-top: 18px;
+  flex: 1 1 auto;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .nav button {
@@ -220,10 +227,8 @@ textarea {
 }
 
 .user-box {
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 18px;
+  flex: 0 0 auto;
+  margin-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   padding-top: 14px;
   color: #d5e0e5;
@@ -919,6 +924,7 @@ th {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     margin-top: 10px;
+    flex: none;
     overflow: visible;
     padding: 0;
   }
