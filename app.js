@@ -11,6 +11,7 @@ const users = [
 const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
+  { id: "presupuestos", label: "Presupuestos", icon: "Presupuestos", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
   { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
@@ -2262,6 +2263,7 @@ function renderModule() {
   const map = {
     dashboard: renderDashboard,
     clientes: renderClientes,
+    presupuestos: renderPresupuestos,
     programacion: renderProgramacion,
     certificados: renderCertificados,
     pendientes: renderPendientes,
@@ -2291,6 +2293,29 @@ function renderCertificados() {
         class="certificate-frame"
         src="${certificadoUrl}"
         title="Certificado de servicio GS BURAK"
+        loading="eager"
+        allow="clipboard-write"
+      ></iframe>
+    </section>
+  `;
+}
+
+function renderPresupuestos() {
+  const presupuestoUrl = "https://magnificent-ganache-f9c37a.netlify.app/";
+  return `
+    ${topbar(
+      "Presupuestos",
+      "Elabora, revisa y genera propuestas comerciales sin salir de GS BURAK.",
+      `<a class="secondary certificate-external-link" href="${presupuestoUrl}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`
+    )}
+    <div class="certificate-notice">
+      Esta vista utiliza el formato de presupuesto de GS BURAK. El enlace directo de Netlify continúa funcionando como respaldo.
+    </div>
+    <section class="certificate-frame-card">
+      <iframe
+        class="certificate-frame"
+        src="${presupuestoUrl}"
+        title="Presupuesto GS BURAK"
         loading="eager"
         allow="clipboard-write"
       ></iframe>
