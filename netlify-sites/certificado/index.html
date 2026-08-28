@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Certificado / Reporte de servicio</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">GS Burak</p>
+          <h1>Certificado / Reporte de servicio</h1>
+        </div>
+        <button class="ghost-button" type="button" id="resetForm">Limpiar</button>
+      </header>
+
+      <form id="serviceForm" class="form-grid">
+        <section class="panel wide-panel">
+          <h2>Servicio programado</h2>
+          <div class="grid two">
+            <label class="wide">Elegir de agenda
+              <select name="programacionId" id="programacionSelect">
+                <option value="">Cargando servicios programados...</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Datos generales</h2>
+          <div class="grid two">
+            <label>Fecha
+              <input name="fecha" type="date" required>
+            </label>
+            <label>Hora
+              <input name="hora" type="time" required>
+            </label>
+            <label>Folio
+              <input name="folio" id="folio" type="text" required>
+            </label>
+            <label>Tecnico aplicador
+              <select name="tecnico" required>
+                <option value="">Seleccionar</option>
+                <option>SANTOS</option>
+                <option>VICTOR</option>
+                <option>FREDDY</option>
+              </select>
+            </label>
+            <label>Ciudad / operacion
+              <select name="ciudad" required>
+                <option>Yucatan</option>
+                <option>CDMX</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Cliente</h2>
+          <div class="grid two">
+            <label>Cliente registrado
+              <input id="clienteSearchInput" list="clienteOptions" type="text" placeholder="Escribe las primeras letras">
+              <input name="clienteId" id="clienteSelect" type="hidden">
+              <datalist id="clienteOptions"></datalist>
+            </label>
+            <label>Cliente / Razon social
+              <input name="cliente" id="clienteNombre" type="text" required>
+            </label>
+            <label>Contacto
+              <input name="contacto" id="clienteContacto" type="text">
+            </label>
+            <label class="wide">Domicilio del servicio
+              <textarea name="domicilio" id="clienteDomicilio" rows="2" required></textarea>
+            </label>
+            <label>Telefono
+              <input name="telefono" id="clienteTelefono" type="tel">
+            </label>
+            <label>Email cliente
+              <input name="email" id="clienteEmail" type="email">
+            </label>
+            <label>Giro / sector
+              <select name="giro" id="clienteGiro">
+                <option value="">Seleccionar</option>
+                <option>Residencial</option>
+                <option>Comercial</option>
+                <option>Industrial</option>
+                <option>Oficinas</option>
+              </select>
+            </label>
+            <label>Tiempo de reentrada
+              <input name="tiempoReentrada" type="text" placeholder="Ej. 4 horas" required>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Servicio</h2>
+          <div class="grid two">
+            <div class="wide">
+              <p class="field-label">Tipo de servicio</p>
+              <div class="check-grid compact" id="serviceTypeGrid"></div>
+            </div>
+            <div class="wide">
+              <p class="field-label">Metodo aplicado</p>
+              <div class="check-grid compact" id="methodGrid"></div>
+              <label class="wide stacked">Otros metodos
+                <textarea name="metodoOtros" rows="3" placeholder="Escribe aqui otros metodos aplicados"></textarea>
+              </label>
+            </div>
+            <label>Forma de pago
+              <select name="formaPago">
+                <option value="">Seleccionar</option>
+                <option>Efectivo</option>
+                <option>Transferencia</option>
+                <option>Tarjeta</option>
+                <option>Credito</option>
+                <option>Incluido en poliza</option>
+              </select>
+            </label>
+            <label>Proximo servicio
+              <select name="proximoServicioTipo" id="proximoServicioTipo">
+                <option>No aplica</option>
+                <option>Por definir</option>
+                <option>Fecha programada</option>
+              </select>
+            </label>
+            <label id="proximoServicioFechaWrap">Fecha proximo servicio
+              <input name="proximoServicio" id="proximoServicioFecha" type="date">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Plagas detectadas</h2>
+          <div class="check-grid" id="pestGrid"></div>
+          <label class="wide stacked">Si marcaste "Otros", indica cual
+            <textarea name="plaga_otros_detalle" rows="3" placeholder="Ej. pulgas, avispas, carcoma u otras plagas encontradas"></textarea>
+          </label>
+        </section>
+
+        <section class="panel">
+          <h2>Areas tratadas</h2>
+          <div class="check-grid compact" id="areaGrid"></div>
+          <label class="wide stacked">Otras areas
+            <textarea name="otrasAreas" rows="4" placeholder="Escribe aqui todas las areas extras tratadas"></textarea>
+          </label>
+        </section>
+
+        <section class="panel wide-panel">
+          <div class="section-action">
+            <h2>Productos aplicados</h2>
+            <button type="button" class="secondary-button" id="addProduct">Agregar producto</button>
+          </div>
+          <div id="products"></div>
+        </section>
+
+        <section class="panel wide-panel">
+          <h2>Observaciones y recomendaciones</h2>
+          <textarea name="observaciones" rows="4" placeholder="Indicaciones, hallazgos, recomendaciones o comentarios del cliente"></textarea>
+        </section>
+
+        <section class="panel wide-panel">
+          <h2>Firmas</h2>
+          <div class="signature-grid three">
+            <div>
+              <label>Nombre del responsable sanitario
+                <input name="responsableSanitario" type="text" value="ANTUAN KARAM CHAIN">
+              </label>
+              <div class="fixed-signature">
+                <img src="assets/firma-antuan-karam.png" alt="Firma responsable sanitario">
+              </div>
+            </div>
+            <div>
+              <label>Nombre del tecnico
+                <input name="nombreTecnicoFirma" type="text" placeholder="Si es distinto al tecnico aplicador">
+              </label>
+              <canvas class="signature-pad" id="firmaTecnico"></canvas>
+              <button type="button" class="ghost-button small" data-clear="firmaTecnico">Borrar firma</button>
+            </div>
+            <div>
+              <label>Nombre del cliente
+                <input name="nombreClienteFirma" type="text" placeholder="Si firma otra persona">
+              </label>
+              <canvas class="signature-pad" id="firmaCliente"></canvas>
+              <button type="button" class="ghost-button small" data-clear="firmaCliente">Borrar firma</button>
+            </div>
+          </div>
+        </section>
+
+        <footer class="action-bar">
+          <button type="button" class="secondary-button" id="saveDraft">Guardar borrador</button>
+          <button type="submit" class="primary-button" id="generateReport">Guardar servicio y generar PDF</button>
+        </footer>
+        <section class="report-result hidden" id="reportResult" aria-live="polite">
+          <strong id="reportStatus">Reporte listo.</strong>
+          <div class="report-result-actions">
+            <button type="button" class="secondary-button" id="downloadPdf">Generar PDF otra vez</button>
+            <button type="button" class="primary-button hidden" id="sharePdf">Compartir PDF</button>
+          </div>
+        </section>
+      </form>
+    </main>
+
+    <section id="certificatePreview" class="certificate hidden"></section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
