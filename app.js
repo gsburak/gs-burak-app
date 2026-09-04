@@ -1281,20 +1281,20 @@ function exportDashboardExecutiveReport() {
       </div>
     </section>
     <section>
-      <h2>Resumen mensual financiero</h2>
-      <p class="note">Utilidad real = cobrado - producto usado - gastos - depreciacion mensual. Las compras de inventario se muestran como referencia y no se restan otra vez.</p>
+      <h2>Reporte financiero mensual</h2>
+      <p class="note">Ganancia generada = ventas realizadas - producto usado - gastos - depreciacion. El resultado de caja considera solo lo cobrado y no representa el saldo bancario.</p>
       ${table(
-        ["Mes", "Ventas", "Cobrado", "Por cobrar", "Producto usado", "Gastos", "Deprec.", "Utilidad real", "Compras inventario"],
+        ["Mes", "Ventas", "Cobrado", "Pendiente", "Costos y gastos", "Ganancia generada", "Ganancia acumulada", "Resultado de caja", "Estado"],
         monthly.map((item) => row([
           `<strong>${escapeHtml(item.mes)}</strong><br>${number(item.servicios)} servicios`,
           money(item.ventas),
           money(item.cobrado),
           money(item.porCobrar),
-          money(item.productoUsado),
-          money(item.gastos),
-          money(item.depreciacion),
-          `<span class="money">${money(item.utilidad)}</span>`,
-          money(item.comprasInventario),
+          money(item.costosYGastos),
+          `<span class="money">${money(item.gananciaGenerada)}</span>`,
+          `<span class="money">${money(item.gananciaGeneradaAcumulada)}</span>`,
+          `<span class="money">${money(item.resultadoCaja)}</span>`,
+          escapeHtml(item.estado),
         ])),
         "Aun no hay informacion mensual para mostrar."
       )}
@@ -2622,6 +2622,11 @@ function resumenMensualFinanciero() {
         depreciacion: 0,
         comprasInventario: 0,
         utilidad: 0,
+        costosYGastos: 0,
+        gananciaGenerada: 0,
+        gananciaGeneradaAcumulada: 0,
+        resultadoCaja: 0,
+        estado: "Cerrado",
         servicios: 0,
       };
     }
@@ -2649,15 +2654,33 @@ function resumenMensualFinanciero() {
     row.comprasInventario += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
   });
 
+  let cumulativeYear = "";
+  let cumulativeProfit = 0;
+  const currentMonth = monthKey(today());
+
   return Object.values(rows)
     .sort((a, b) => String(a.key).localeCompare(String(b.key)))
     .map((row) => {
       const depreciacion = depreciacionMensualParaMes(row.key);
+      const costosYGastos = row.productoUsado + row.gastos + depreciacion;
+      const gananciaGenerada = row.ventas - costosYGastos;
+      const year = String(row.key).slice(0, 4);
+      if (year !== cumulativeYear) {
+        cumulativeYear = year;
+        cumulativeProfit = 0;
+      }
+      cumulativeProfit += gananciaGenerada;
+      const resultadoCaja = row.cobrado - costosYGastos;
       return {
         ...row,
         depreciacion,
         porCobrar: Math.max(0, row.ventas - row.cobrado),
-        utilidad: row.cobrado - row.productoUsado - row.gastos - depreciacion,
+        utilidad: resultadoCaja,
+        costosYGastos,
+        gananciaGenerada,
+        gananciaGeneradaAcumulada: cumulativeProfit,
+        resultadoCaja,
+        estado: row.key === currentMonth ? "Mes en curso" : "Cerrado",
       };
     });
 }
@@ -2666,15 +2689,15 @@ function renderResumenMensualFinanciero() {
   const rows = resumenMensualFinanciero();
   return `
     <section class="panel" style="margin-top:14px">
-      <h2>Resumen mensual financiero</h2>
-      <p class="readonly">Formula de utilidad real: cobrado - producto usado - gastos - depreciacion mensual. Las compras de inventario se muestran como referencia, no se restan otra vez.</p>
+      <h2>Reporte financiero mensual</h2>
+      <p class="readonly">Ganancia generada = ventas realizadas - producto usado - gastos - depreciacion. La ganancia acumulada se reinicia cada enero. El resultado de caja considera solo lo cobrado y no representa el saldo bancario.</p>
       <div class="table-card">
         <table>
-          <thead><tr><th>Mes</th><th>Ventas</th><th>Cobrado</th><th>Por cobrar</th><th>Producto usado</th><th>Gastos</th><th>Deprec.</th><th>Utilidad real</th><th>Compras inventario</th></tr></thead>
+          <thead><tr><th>Mes</th><th>Ventas</th><th>Cobrado</th><th>Pendiente</th><th>Costos y gastos</th><th>Ganancia generada</th><th>Ganancia acumulada</th><th>Resultado de caja</th><th>Estado</th></tr></thead>
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Por cobrar">${money(row.porCobrar)}</td><td data-label="Producto usado">${money(row.productoUsado)}</td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Deprec.">${money(row.depreciacion)}</td><td data-label="Utilidad real"><strong>${money(row.utilidad)}</strong></td><td data-label="Compras inventario">${money(row.comprasInventario)}</td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Pendiente">${money(row.porCobrar)}</td><td data-label="Costos y gastos">${money(row.costosYGastos)}</td><td data-label="Ganancia generada"><strong>${money(row.gananciaGenerada)}</strong></td><td data-label="Ganancia acumulada"><strong>${money(row.gananciaGeneradaAcumulada)}</strong></td><td data-label="Resultado de caja">${money(row.resultadoCaja)}</td><td data-label="Estado">${row.estado}</td></tr>`).join("")
                 : `<tr><td colspan="9">Aun no hay informacion mensual para mostrar.</td></tr>`
             }
           </tbody>
