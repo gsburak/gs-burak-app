@@ -1174,7 +1174,7 @@ function exportDashboardExecutiveReport() {
   const monthly = resumenMensualFinanciero();
   const utilidadCiudad = utilidadPorCiudad();
   const cobrosForma = cobrosPorFormaPago();
-  const gastosMesPagador = gastosPorPagadorMes();
+  const inversionMesPagador = inversionPorMesYPagador();
   const gastosCiudadPagador = gastosPorCiudadYPagador();
   const comprasCiudadPagador = comprasPorCiudadYPagador();
   const equiposCiudadPagador = equiposPorCiudadYPagador();
@@ -1329,17 +1329,19 @@ function exportDashboardExecutiveReport() {
       )}
     </section>
     <section>
-      <h2>Gastos por mes y pagador</h2>
+      <h2>Inversion y gastos por mes y empresa</h2>
+      <p class="note">Incluye los gastos operativos, las compras de inventario y los equipos pagados por cada empresa o socio durante cada mes.</p>
       ${table(
-        ["Mes", "VICTOR", "SISPROVISA", "Otros", "Total gastos"],
-        gastosMesPagador.map((item) => row([
-          `<strong>${escapeHtml(item.month)}</strong>`,
-          money(item.VICTOR),
-          money(item.SISPROVISA),
-          money(item.otros),
+        ["Mes", "Empresa / socio", "Gastos", "Compras inventario", "Equipos", "Total invertido"],
+        inversionMesPagador.map((item) => row([
+          `<strong>${escapeHtml(item.mes)}</strong>`,
+          `<strong>${escapeHtml(item.pagador)}</strong>`,
+          money(item.gastos),
+          money(item.compras),
+          money(item.equipos),
           `<span class="money">${money(item.total)}</span>`,
         ])),
-        "Aun no hay gastos registrados."
+        "Aun no hay gastos, compras o equipos registrados."
       )}
     </section>
     <section>
@@ -1721,21 +1723,46 @@ function gastosPorPagador() {
   }, {});
 }
 
-function gastosPorPagadorMes() {
-  const labels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  const rows = labels.map((month) => ({ month, VICTOR: 0, SISPROVISA: 0, otros: 0, total: 0 }));
+function inversionPorMesYPagador() {
+  const rows = {};
+  const ensure = (fecha, pagador) => {
+    const mesKey = monthKey(fecha);
+    if (!mesKey) return null;
+    const pagadorNombre = pagadorKey(pagador);
+    const key = `${mesKey}|${pagadorNombre}`;
+    if (!rows[key]) {
+      rows[key] = {
+        key: mesKey,
+        mes: monthLabel(mesKey),
+        pagador: pagadorNombre,
+        gastos: 0,
+        compras: 0,
+        equipos: 0,
+        total: 0,
+      };
+    }
+    return rows[key];
+  };
+
   gastosFiltradosOperacion().forEach((gasto) => {
-    if (!gasto.fecha) return;
-    const idx = new Date(`${gasto.fecha}T00:00:00`).getMonth();
-    if (Number.isNaN(idx)) return;
-    const monto = Number(gasto.monto || 0);
-    const pagador = String(gasto.pagadoPor || "Sin dato").toUpperCase();
-    if (pagador === "VICTOR") rows[idx].VICTOR += monto;
-    else if (pagador === "SISPROVISA") rows[idx].SISPROVISA += monto;
-    else rows[idx].otros += monto;
-    rows[idx].total += monto;
+    const row = ensure(gasto.fecha, gasto.pagadoPor);
+    if (row) row.gastos += Number(gasto.monto || 0);
   });
-  return rows.filter((row) => row.total > 0);
+
+  comprasFiltradasOperacion().forEach((compra) => {
+    const row = ensure(compra.fecha, compra.pagadoPor);
+    if (row) row.compras += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
+  });
+
+  equiposFiltradosOperacion().forEach((equipo) => {
+    const row = ensure(equipo.fecha, equipo.pagadoPor);
+    if (row) row.equipos += costoTotalEquipo(equipo);
+  });
+
+  return Object.values(rows)
+    .map((row) => ({ ...row, total: row.gastos + row.compras + row.equipos }))
+    .filter((row) => row.total)
+    .sort((a, b) => String(a.key).localeCompare(String(b.key)) || String(a.pagador).localeCompare(String(b.pagador)));
 }
 
 function gastosPorCiudadYPagador() {
@@ -2425,11 +2452,8 @@ function renderDashboard() {
       ${renderClientesTipoResumen()}
       ${renderServiciosTecnicoResumen()}
       ${showMoney ? renderVentasCiudadResumen() : ""}
-      ${showMoney ? renderGastosPagadorResumen() : ""}
-      ${showMoney ? renderComprasPagadorResumen() : ""}
-      ${showMoney ? renderEquiposPagadorResumen() : ""}
       ${showMoney ? renderTotalPagadorResumen() : ""}
-      ${showMoney ? renderGastosPagadorMensualResumen() : ""}
+      ${showMoney ? renderInversionMensualPagadorResumen() : ""}
       ${showMoney ? renderGastosCiudadPagadorResumen() : ""}
       ${showMoney ? renderComprasCiudadPagadorResumen() : ""}
       ${showMoney ? renderEquiposCiudadPagadorResumen() : ""}
@@ -3099,19 +3123,21 @@ function renderGastosMensualesCategoriaResumen(rowsSource = gastosFiltradosOpera
   `;
 }
 
-function renderGastosPagadorMensualResumen() {
-  const rows = gastosPorPagadorMes();
+function renderInversionMensualPagadorResumen() {
+  const rows = inversionPorMesYPagador();
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
   return `
     <section class="panel" style="margin-top:14px">
-      <h2>Gastos por mes y pagador</h2>
+      <h2>Inversion y gastos por mes y empresa (${money(total)})</h2>
+      <p class="readonly">Incluye gastos operativos, compras de inventario y equipos, separados por mes y por la empresa o socio que realizo el pago. Respeta el filtro de operacion seleccionado.</p>
       <div class="table-card">
         <table>
-          <thead><tr><th>Mes</th><th>VICTOR</th><th>SISPROVISA</th><th>Otros</th><th>Total gastos</th></tr></thead>
+          <thead><tr><th>Mes</th><th>Empresa / socio</th><th>Gastos</th><th>Compras inventario</th><th>Equipos</th><th>Total invertido</th></tr></thead>
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Mes">${row.month}</td><td data-label="VICTOR">${money(row.VICTOR)}</td><td data-label="SISPROVISA">${money(row.SISPROVISA)}</td><td data-label="Otros">${money(row.otros)}</td><td data-label="Total gastos"><strong>${money(row.total)}</strong></td></tr>`).join("")
-                : `<tr><td colspan="5">Aun no hay gastos registrados.</td></tr>`
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong></td><td data-label="Empresa / socio"><strong>${escapeHtml(row.pagador)}</strong></td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Compras inventario">${money(row.compras)}</td><td data-label="Equipos">${money(row.equipos)}</td><td data-label="Total invertido"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                : `<tr><td colspan="6">Aun no hay gastos, compras o equipos registrados.</td></tr>`
             }
           </tbody>
         </table>
