@@ -113,6 +113,7 @@ let clienteCiudadFilter = "";
 let clienteClasificacionFilter = "";
 let servicioSearch = "";
 let servicioPagoFilter = "Todos";
+let servicioMonthFilter = "";
 const SERVICIO_PAGO_COBRADO_EN_POR_COBRAR = "Cobrado en Por cobrar";
 let servicioTipoFilter = "Todos";
 let servicioProductoFilter = "Todos";
@@ -1070,6 +1071,7 @@ function clientesFiltradosVista() {
 function serviciosFiltradosVista() {
   const term = servicioSearch.trim().toLowerCase();
   return serviciosFiltradosOperacion()
+    .filter((s) => !servicioMonthFilter || monthKey(s.fecha) === servicioMonthFilter)
     .filter((s) => {
       if (!term) return true;
       return nombreCliente(s.clienteId, s).toLowerCase().includes(term);
@@ -2758,7 +2760,7 @@ function renderResumenMensualFinanciero() {
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Pendiente">${money(row.porCobrar)}</td><td data-label="Costos y gastos">${money(row.costosYGastos)}</td><td data-label="Ganancia generada"><strong>${money(row.gananciaGenerada)}</strong></td><td data-label="Ganancia acumulada"><strong>${money(row.gananciaGeneradaAcumulada)}</strong></td><td data-label="Resultado de caja">${money(row.resultadoCaja)}</td><td data-label="Estado">${row.estado}</td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong><br><span class="readonly">${number(row.servicios)} servicios</span></td><td data-label="Ventas">${money(row.ventas)}</td><td data-label="Cobrado">${money(row.cobrado)}</td><td data-label="Pendiente">${row.porCobrar > 0 ? `<button class="table-detail-link" data-pending-detail-month="${escapeHtml(row.key)}" title="Ver los servicios pendientes de pago de ${escapeHtml(row.mes)}">${money(row.porCobrar)}</button>` : money(0)}</td><td data-label="Costos y gastos">${money(row.costosYGastos)}</td><td data-label="Ganancia generada"><strong>${money(row.gananciaGenerada)}</strong></td><td data-label="Ganancia acumulada"><strong>${money(row.gananciaGeneradaAcumulada)}</strong></td><td data-label="Resultado de caja">${money(row.resultadoCaja)}</td><td data-label="Estado">${row.estado}</td></tr>`).join("")
                 : `<tr><td colspan="9">Aun no hay informacion mensual para mostrar.</td></tr>`
             }
           </tbody>
@@ -3758,10 +3760,12 @@ function renderServicios() {
       <div class="filter-count">
         ${number(servicios.length)} de ${number(serviciosFiltradosOperacion().length)} servicios en ${operacionFilter}
         ${servicioPagoFilter !== "Todos" ? `<br>${servicioPagoFilter}` : ""}
+        ${servicioMonthFilter ? `<br>Periodo: ${monthLabel(servicioMonthFilter)}` : ""}
         ${servicioTipoFilter !== "Todos" ? `<br>${servicioTipoFilter}` : ""}
         ${servicioProductoFilter !== "Todos" ? `<br>Producto: ${nombreProducto(servicioProductoFilter)}` : ""}
         ${servicioClienteClasificacionFilter !== "Todos" ? `<br>Cliente: ${servicioClienteClasificacionFilter}` : ""}
         ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos" || servicioClienteClasificacionFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
+        ${servicioMonthFilter ? `<br><button class="secondary" type="button" data-action="clearServicePeriodFilter">Quitar filtro del periodo</button>` : ""}
       </div>
     </section>
     ${renderResumenServiciosPorCliente(servicios)}
@@ -4518,6 +4522,25 @@ function bindApp() {
   });
   document.querySelectorAll("[data-action='exportDashboardReport']").forEach((button) => {
     button.addEventListener("click", exportDashboardExecutiveReport);
+  });
+  document.querySelectorAll("[data-pending-detail-month]").forEach((button) => {
+    button.addEventListener("click", () => {
+      servicioMonthFilter = button.dataset.pendingDetailMonth || "";
+      servicioPagoFilter = "Por cobrar";
+      servicioSearch = "";
+      servicioTipoFilter = "Todos";
+      servicioProductoFilter = "Todos";
+      servicioClienteClasificacionFilter = "Todos";
+      activeModule = "servicios";
+      render();
+    });
+  });
+  document.querySelectorAll("[data-action='clearServicePeriodFilter']").forEach((button) => {
+    button.addEventListener("click", () => {
+      servicioMonthFilter = "";
+      servicioPagoFilter = "Todos";
+      render();
+    });
   });
   document.querySelectorAll("[data-gasto-detail-month]").forEach((button) => {
     button.addEventListener("click", () => {
