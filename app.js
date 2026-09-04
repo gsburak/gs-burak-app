@@ -122,6 +122,8 @@ let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
 let pendienteStatusFilter = "Activos";
 let gastoCategoriaFilter = "";
+let gastoMonthFilter = "";
+let gastoPagadorFilter = "";
 let remoteSaveQueue = Promise.resolve();
 
 function uid() {
@@ -3159,7 +3161,7 @@ function renderInversionMensualPagadorResumen() {
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong></td><td data-label="Empresa / socio"><strong>${escapeHtml(row.pagador)}</strong></td><td data-label="Gastos">${money(row.gastos)}</td><td data-label="Compras inventario">${money(row.compras)}</td><td data-label="Equipos">${money(row.equipos)}</td><td data-label="Total invertido"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Mes"><strong>${row.mes}</strong></td><td data-label="Empresa / socio"><strong>${escapeHtml(row.pagador)}</strong></td><td data-label="Gastos">${row.gastos > 0 ? `<button class="table-detail-link" data-gasto-detail-month="${escapeHtml(row.key)}" data-gasto-detail-pagador="${escapeHtml(row.pagador)}" title="Ver los gastos que forman este importe">${money(row.gastos)}</button>` : money(0)}</td><td data-label="Compras inventario">${money(row.compras)}</td><td data-label="Equipos">${money(row.equipos)}</td><td data-label="Total invertido"><strong>${money(row.total)}</strong></td></tr>`).join("")
                 : `<tr><td colspan="6">Aun no hay gastos, compras o equipos registrados.</td></tr>`
             }
           </tbody>
@@ -3875,7 +3877,14 @@ function renderCompras() {
 function renderGastos() {
   const gastosRows = gastosFiltradosOperacion();
   const categorias = [...new Set(gastosRows.map((g) => g.categoria || "Sin categoria"))].sort();
-  const gastosFiltrados = gastosRows.filter((g) => !gastoCategoriaFilter || (g.categoria || "Sin categoria") === gastoCategoriaFilter);
+  const meses = [...new Set(gastosRows.map((g) => monthKey(g.fecha)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+  const pagadores = [...new Set(gastosRows.map((g) => pagadorKey(g.pagadoPor)))].sort();
+  const gastosFiltrados = gastosRows.filter((g) => {
+    const coincideCategoria = !gastoCategoriaFilter || (g.categoria || "Sin categoria") === gastoCategoriaFilter;
+    const coincideMes = !gastoMonthFilter || monthKey(g.fecha) === gastoMonthFilter;
+    const coincidePagador = !gastoPagadorFilter || pagadorKey(g.pagadoPor) === gastoPagadorFilter;
+    return coincideCategoria && coincideMes && coincidePagador;
+  });
   const gastosMensuales = gastosPorMes(gastosFiltrados);
   const maxGastoMensual = Math.max(...gastosMensuales.map((row) => row.total), 1);
   const gastosOrdenados = [...gastosFiltrados].sort((a, b) => {
@@ -3899,9 +3908,23 @@ function renderGastos() {
     ${renderGastosCategoriaResumen(gastosRows)}
     ${renderGastosMensualesCategoriaResumen(gastosRows)}
     ${renderGastosPagadorResumen()}
-    <section class="panel" style="margin-top:14px">
+    <section class="panel" id="gastosHistorial" style="margin-top:14px">
       <h2>Historial de gastos</h2>
-      <section class="filters" style="margin-bottom:0">
+      <section class="filters expense-filters" style="margin-bottom:0">
+        <div class="field">
+          <label>Mes</label>
+          <select id="gastoMonthFilter">
+            <option value="">Todos</option>
+            ${meses.map((mes) => `<option value="${mes}" ${mes === gastoMonthFilter ? "selected" : ""}>${monthLabel(mes)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label>Pagado por</label>
+          <select id="gastoPagadorFilter">
+            <option value="">Todos</option>
+            ${pagadores.map((pagador) => `<option value="${escapeHtml(pagador)}" ${pagador === gastoPagadorFilter ? "selected" : ""}>${escapeHtml(pagador)}</option>`).join("")}
+          </select>
+        </div>
         <div class="field">
           <label>Rubro</label>
           <select id="gastoCategoriaFilter">
@@ -3910,8 +3933,9 @@ function renderGastos() {
           </select>
         </div>
         <div class="filter-count">
-          ${number(gastosFiltrados.length)} de ${number(gastosRows.length)} gastos · ${gastoCategoriaFilter ? `Total del rubro ${gastoCategoriaFilter}: ${money(totalCategoria)}` : `Total de gastos: ${money(totalCategoria)}`}
+          ${number(gastosFiltrados.length)} de ${number(gastosRows.length)} gastos<br><strong>Total mostrado: ${money(totalCategoria)}</strong>
         </div>
+        <button class="secondary" type="button" data-action="clearExpenseFilters">Limpiar filtros</button>
       </section>
     </section>
     <div class="table-card">
@@ -4391,6 +4415,24 @@ function bindApp() {
   document.querySelectorAll("[data-action='exportDashboardReport']").forEach((button) => {
     button.addEventListener("click", exportDashboardExecutiveReport);
   });
+  document.querySelectorAll("[data-gasto-detail-month]").forEach((button) => {
+    button.addEventListener("click", () => {
+      gastoMonthFilter = button.dataset.gastoDetailMonth || "";
+      gastoPagadorFilter = button.dataset.gastoDetailPagador || "";
+      gastoCategoriaFilter = "";
+      activeModule = "gastos";
+      render();
+      document.querySelector("#gastosHistorial")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  document.querySelectorAll("[data-action='clearExpenseFilters']").forEach((button) => {
+    button.addEventListener("click", () => {
+      gastoMonthFilter = "";
+      gastoPagadorFilter = "";
+      gastoCategoriaFilter = "";
+      render();
+    });
+  });
   const backupImportInput = document.querySelector("#backupImportInput");
   if (backupImportInput) {
     backupImportInput.addEventListener("change", (event) => {
@@ -4626,6 +4668,20 @@ function saveEntity(event) {
     alert("Escribe el nombre y toca un cliente de la lista antes de guardar.");
     document.querySelector("#programacionClienteSearch")?.focus();
     return;
+  }
+  const gastoMonthSelect = document.querySelector("#gastoMonthFilter");
+  if (gastoMonthSelect) {
+    gastoMonthSelect.addEventListener("change", (event) => {
+      gastoMonthFilter = event.target.value;
+      render();
+    });
+  }
+  const gastoPagadorSelect = document.querySelector("#gastoPagadorFilter");
+  if (gastoPagadorSelect) {
+    gastoPagadorSelect.addEventListener("change", (event) => {
+      gastoPagadorFilter = event.target.value;
+      render();
+    });
   }
   if (type === "pendiente" && !String(data.asunto || "").trim()) {
     alert("Escribe que necesitas recordar.");
