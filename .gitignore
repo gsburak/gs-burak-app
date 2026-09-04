@@ -1,3 +1,4 @@
 .backup-test/
 GS_BURAK_RESPALDOS/
 *.backup.zip
+/tmp/

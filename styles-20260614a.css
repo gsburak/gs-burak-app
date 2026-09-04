@@ -870,6 +870,47 @@ th {
   grid-template-columns: repeat(3, minmax(160px, 1fr)) minmax(190px, auto) auto;
 }
 
+.payments-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.payment-entry {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 10px 12px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbfb;
+}
+
+.payment-entry .field {
+  margin-top: 0;
+}
+
+.payment-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+}
+
+.payment-check input {
+  width: auto;
+}
+
+.payment-legacy {
+  color: #9a6700;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.danger-check {
+  color: #b42318;
+}
+
 .filter-count {
   color: var(--muted);
   font-size: 13px;
@@ -989,7 +1030,8 @@ th {
   .dashboard-grid,
   .two,
   .form-grid,
-  .filters {
+  .filters,
+  .payment-entry {
     grid-template-columns: 1fr;
   }
 

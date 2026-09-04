@@ -426,12 +426,43 @@ function migrateState(data) {
     pagadoPor: equipo.pagadoPor === "SANTOS" ? "SISPROVISA" : equipo.pagadoPor || "SISPROVISA",
     operacion: equipo.operacion || "Sin clasificar",
   }));
-  data.servicios = (data.servicios || []).map((servicio) => ({
-    ciudad: "Yucatan",
-    ...servicio,
-    ciudad: servicio.ciudad || "Yucatan",
-    tecnico: servicio.tecnico === "SISPROVISA" ? "SANTOS" : servicio.tecnico,
-  }));
+  data.servicios = (data.servicios || []).map((servicio, index) => {
+    const pagos = Array.isArray(servicio.pagos)
+      ? servicio.pagos
+          .map((pago, pagoIndex) => ({
+            id: pago.id || `pago-${servicio.id || index}-${pagoIndex}`,
+            fecha: pago.fecha || servicio.fecha || "",
+            importe: Number(pago.importe || 0),
+            formaPago: pago.formaPago || "Sin dato",
+            cobradoPor: pago.cobradoPor || pago.cobrador || "Sin clasificar",
+            referencia: pago.referencia || "",
+            fechaHeredada: Boolean(pago.fechaHeredada),
+          }))
+          .filter((pago) => pago.importe > 0)
+      : Number(servicio.cobrado || 0) > 0
+        ? [{
+            id: `pago-historico-${servicio.id || index}`,
+            fecha: servicio.fecha || "",
+            importe: Number(servicio.cobrado || 0),
+            formaPago: servicio.formaPago || "Sin dato",
+            cobradoPor: servicio.cobradoPor || servicio.cobrador || "Sin clasificar",
+            referencia: "Pago migrado del registro anterior",
+            fechaHeredada: true,
+          }]
+        : [];
+    const cobrado = pagos.reduce((sum, pago) => sum + Number(pago.importe || 0), 0);
+    const ultimoPago = pagos[pagos.length - 1];
+    return {
+      ciudad: "Yucatan",
+      ...servicio,
+      ciudad: servicio.ciudad || "Yucatan",
+      tecnico: servicio.tecnico === "SISPROVISA" ? "SANTOS" : servicio.tecnico,
+      pagos,
+      cobrado,
+      formaPago: ultimoPago?.formaPago || servicio.formaPago || "Por cobrar",
+      cobradoPor: ultimoPago?.cobradoPor || servicio.cobradoPor || "Sin clasificar",
+    };
+  });
   data.programaciones = (data.programaciones || []).map((programacion) => ({
     fecha: today(),
     hora: "09:00",
@@ -452,7 +483,7 @@ function migrateState(data) {
     horaRecordatorio: "09:00",
     ...pendiente,
   }));
-  data.schemaVersion = 2;
+  data.schemaVersion = 3;
   return data;
 }
 
@@ -695,11 +726,11 @@ function buildProfessionalBackupWorkbook() {
           tecnicoAdicional: servicio.tecnicoAdicional || "",
           direccion: servicio.zona || servicio.direccion || "",
           total: totalServicio(servicio),
-          cobrado: Number(servicio.cobrado || 0),
-      pendiente: pendienteServicio(servicio),
-      formaPago: servicio.formaPago || "",
-      cobradoPor: cobradorServicio(servicio),
-      costoProducto: costoServicio(servicio),
+          cobrado: totalCobradoServicio(servicio),
+          pendiente: pendienteServicio(servicio),
+          formaPago: formasPagoServicio(servicio),
+          cobradoPor: cobradorServicio(servicio),
+          costoProducto: costoServicio(servicio),
           porcentajeProducto: porcentajeCostoProducto(servicio),
           productos: productosUsadosTexto(servicio),
         })),
@@ -1045,7 +1076,7 @@ function serviciosFiltradosVista() {
     })
     .filter((s) => {
       if (servicioPagoFilter === SERVICIO_PAGO_COBRADO_EN_POR_COBRAR) {
-        return String(s.formaPago || "") === "Por cobrar" && toNumber(s.cobrado) > 0;
+        return pendienteServicio(s) > 0 && totalCobradoServicio(s) > 0;
       }
       if (servicioPagoFilter === "Por cobrar") return pendienteServicio(s) > 0;
       if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
@@ -1112,7 +1143,7 @@ function exportClientesCsv() {
   const rows = clientesFiltradosVista().map((c) => {
     const servicios = state.servicios.filter((s) => s.clienteId === c.id);
     const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
-    const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
+    const cobrado = servicios.reduce((sum, s) => sum + totalCobradoServicio(s), 0);
     const domicilios = domiciliosCliente(c)
       .map((domicilio) => `${domicilio.alias || "Domicilio"}: ${domicilio.direccion || ""} ${domicilio.referencia ? `(${domicilio.referencia})` : ""}`)
       .join(" | ");
@@ -1151,12 +1182,12 @@ function exportServiciosCsv() {
     s.zona || "",
     s.observaciones || "",
     totalServicio(s),
-    Number(s.cobrado || 0),
+    totalCobradoServicio(s),
     pendienteServicio(s),
     costoServicio(s),
     `${(porcentajeCostoProducto(s) * 100).toFixed(1)}%`,
     pendienteServicio(s) > 0 ? "Por cobrar" : "Cobrado",
-    s.formaPago || "",
+    formasPagoServicio(s),
     cobradorServicio(s),
   ]);
   downloadCsv(
@@ -1321,11 +1352,11 @@ function exportDashboardExecutiveReport() {
     <section>
       <h2>Cobros por forma de pago</h2>
       ${table(
-        ["Forma de pago", "Monto cobrado", "Servicios"],
+        ["Forma de pago", "Monto cobrado", "Pagos"],
         cobrosForma.map((item) => row([
           `<strong>${escapeHtml(item.forma)}</strong>`,
           money(item.cobrado),
-          number(item.servicios),
+          number(item.pagos),
         ])),
         "Aun no hay cobros registrados."
       )}
@@ -1648,12 +1679,33 @@ function costoServicioPorLotes(targetService) {
   return targetCost;
 }
 
+function pagosServicio(servicio) {
+  if (Array.isArray(servicio?.pagos)) return servicio.pagos.filter((pago) => Number(pago.importe || 0) > 0);
+  if (Number(servicio?.cobrado || 0) <= 0) return [];
+  return [{
+    fecha: servicio.fecha || "",
+    importe: Number(servicio.cobrado || 0),
+    formaPago: servicio.formaPago || "Sin dato",
+    cobradoPor: servicio.cobradoPor || servicio.cobrador || "Sin clasificar",
+    fechaHeredada: true,
+  }];
+}
+
+function totalCobradoServicio(servicio) {
+  return pagosServicio(servicio).reduce((sum, pago) => sum + Number(pago.importe || 0), 0);
+}
+
+function formasPagoServicio(servicio) {
+  const formas = [...new Set(pagosServicio(servicio).map((pago) => pago.formaPago || "Sin dato"))];
+  return formas.length > 1 ? "Varias" : formas[0] || servicio.formaPago || "Por cobrar";
+}
+
 function pendienteServicio(servicio) {
-  return Math.max(0, totalServicio(servicio) - Number(servicio.cobrado || 0));
+  return Math.max(0, totalServicio(servicio) - totalCobradoServicio(servicio));
 }
 
 function porcentajeCostoProducto(servicio) {
-  const base = Number(servicio.cobrado || 0) || totalServicio(servicio);
+  const base = totalCobradoServicio(servicio) || totalServicio(servicio);
   return base > 0 ? costoServicio(servicio) / base : 0;
 }
 
@@ -2639,9 +2691,16 @@ function resumenMensualFinanciero() {
     const row = ensure(monthKey(servicio.fecha));
     if (!row) return;
     row.ventas += totalServicio(servicio);
-    row.cobrado += Number(servicio.cobrado || 0);
+    row.porCobrar += pendienteServicio(servicio);
     row.productoUsado += costoServicio(servicio);
     row.servicios += 1;
+  });
+
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    pagosServicio(servicio).forEach((pago) => {
+      const row = ensure(monthKey(pago.fecha));
+      if (row) row.cobrado += Number(pago.importe || 0);
+    });
   });
 
   gastosFiltradosOperacion().forEach((gasto) => {
@@ -2676,7 +2735,7 @@ function resumenMensualFinanciero() {
       return {
         ...row,
         depreciacion,
-        porCobrar: Math.max(0, row.ventas - row.cobrado),
+        porCobrar: row.porCobrar,
         utilidad: resultadoCaja,
         costosYGastos,
         gananciaGenerada,
@@ -2757,23 +2816,22 @@ function renderCobrosMayoresVentaResumen() {
 }
 
 function cobrosPorFormaPago() {
-  const order = ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesias / refuerzos sin cobro", "Sin dato"];
+  const order = ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Sin dato"];
   const rows = {};
   const ensure = (forma) => {
     if (!rows[forma]) {
-      rows[forma] = { forma, cobrado: 0, servicios: 0 };
+      rows[forma] = { forma, cobrado: 0, pagos: 0 };
     }
     return rows[forma];
   };
 
   serviciosFiltradosOperacion().forEach((servicio) => {
-    const rawForma = String(servicio.formaPago || "").trim();
-    const forma = ["Cortesia", "Refuerzo"].includes(rawForma)
-      ? "Cortesias / refuerzos sin cobro"
-      : rawForma || "Sin dato";
-    const row = ensure(forma);
-    row.cobrado += Number(servicio.cobrado || 0);
-    row.servicios += 1;
+    pagosServicio(servicio).forEach((pago) => {
+      const forma = String(pago.formaPago || "").trim() || "Sin dato";
+      const row = ensure(forma);
+      row.cobrado += Number(pago.importe || 0);
+      row.pagos += 1;
+    });
   });
 
   return Object.values(rows).sort((a, b) => {
@@ -2795,11 +2853,11 @@ function renderCobrosFormaPagoResumen() {
       <p class="readonly">Suma el importe cobrado de cada servicio segun la forma de pago capturada. Las cortesias y refuerzos se muestran aparte como servicios sin cobro.</p>
       <div class="table-card">
         <table>
-          <thead><tr><th>Forma de pago</th><th>Monto cobrado</th><th>Servicios</th></tr></thead>
+          <thead><tr><th>Forma de pago</th><th>Monto cobrado</th><th>Pagos</th></tr></thead>
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Forma de pago"><strong>${row.forma}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Servicios">${number(row.servicios)}</td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Forma de pago"><strong>${row.forma}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Pagos">${number(row.pagos)}</td></tr>`).join("")
                 : `<tr><td colspan="3">Aun no hay cobros registrados.</td></tr>`
             }
           </tbody>
@@ -2810,27 +2868,32 @@ function renderCobrosFormaPagoResumen() {
 }
 
 function cobradorServicio(servicio) {
-  const valor = String((servicio && (servicio.cobradoPor || servicio.cobrador)) || "").trim().toUpperCase();
-  if (valor === "VICTOR" || valor === "SISPROVISA") return valor;
-  return "Sin clasificar";
+  const cobradores = [...new Set(pagosServicio(servicio).map((pago) => {
+    const valor = String(pago.cobradoPor || pago.cobrador || "").trim().toUpperCase();
+    return valor === "VICTOR" || valor === "SISPROVISA" ? valor : "Sin clasificar";
+  }))];
+  return cobradores.length > 1 ? "Varios" : cobradores[0] || "Sin clasificar";
 }
 
 function cobrosPorCobrador() {
   const rows = {
-    VICTOR: { cobrador: "VICTOR", cobrado: 0, servicios: 0 },
-    SISPROVISA: { cobrador: "SISPROVISA", cobrado: 0, servicios: 0 },
-    "Sin clasificar": { cobrador: "Sin clasificar", cobrado: 0, servicios: 0 },
+    VICTOR: { cobrador: "VICTOR", cobrado: 0, pagos: 0 },
+    SISPROVISA: { cobrador: "SISPROVISA", cobrado: 0, pagos: 0 },
+    "Sin clasificar": { cobrador: "Sin clasificar", cobrado: 0, pagos: 0 },
   };
 
   serviciosFiltradosOperacion().forEach((servicio) => {
-    const cobrado = toNumber(servicio.cobrado);
-    if (cobrado <= 0) return;
-    const cobrador = cobradorServicio(servicio);
-    rows[cobrador].cobrado += cobrado;
-    rows[cobrador].servicios += 1;
+    pagosServicio(servicio).forEach((pago) => {
+      const cobrado = toNumber(pago.importe);
+      if (cobrado <= 0) return;
+      const valor = String(pago.cobradoPor || pago.cobrador || "").trim().toUpperCase();
+      const cobrador = valor === "VICTOR" || valor === "SISPROVISA" ? valor : "Sin clasificar";
+      rows[cobrador].cobrado += cobrado;
+      rows[cobrador].pagos += 1;
+    });
   });
 
-  return Object.values(rows).filter((row) => row.cobrado || row.servicios || row.cobrador !== "Sin clasificar");
+  return Object.values(rows).filter((row) => row.cobrado || row.pagos || row.cobrador !== "Sin clasificar");
 }
 
 function renderCobrosPorCobradorResumen() {
@@ -2842,11 +2905,11 @@ function renderCobrosPorCobradorResumen() {
       <p class="readonly">Suma solo el dinero cobrado, separado por quien recibio el pago. Los servicios anteriores apareceran como sin clasificar hasta que se editen.</p>
       <div class="table-card">
         <table>
-          <thead><tr><th>Cobrado por</th><th>Monto cobrado</th><th>Servicios cobrados</th></tr></thead>
+          <thead><tr><th>Cobrado por</th><th>Monto cobrado</th><th>Pagos registrados</th></tr></thead>
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Cobrado por"><strong>${row.cobrador}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Servicios cobrados">${number(row.servicios)}</td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Cobrado por"><strong>${row.cobrador}</strong></td><td data-label="Monto cobrado">${money(row.cobrado)}</td><td data-label="Pagos registrados">${number(row.pagos)}</td></tr>`).join("")
                 : `<tr><td colspan="3">Aun no hay cobros registrados.</td></tr>`
             }
           </tbody>
@@ -2911,8 +2974,14 @@ function groupByMonth() {
   serviciosFiltradosOperacion().forEach((s) => {
     const idx = new Date(s.fecha + "T00:00:00").getMonth();
     rows[idx].facturado += totalServicio(s);
-    rows[idx].cobrado += Number(s.cobrado || 0);
     rows[idx].servicios += 1;
+  });
+  serviciosFiltradosOperacion().forEach((servicio) => {
+    pagosServicio(servicio).forEach((pago) => {
+      if (!pago.fecha) return;
+      const idx = new Date(`${pago.fecha}T00:00:00`).getMonth();
+      if (!Number.isNaN(idx)) rows[idx].cobrado += Number(pago.importe || 0);
+    });
   });
   return rows.filter((row) => row.facturado || row.cobrado || row.servicios).length ? rows : [{ month: "Sin datos", facturado: 0, cobrado: 0, servicios: 0 }];
 }
@@ -4076,6 +4145,9 @@ function renderServicioConsultaModal(id) {
   const productosRows = productos.length
     ? productos.map((producto) => `<tr><td data-label="Producto">${nombreProducto(producto.productoId)}</td><td data-label="Cantidad">${number(producto.cantidad)} ${unidadUsoProducto(producto.productoId)}</td></tr>`).join("")
     : `<tr><td colspan="2">Sin productos registrados.</td></tr>`;
+  const pagosRows = pagosServicio(servicio).length
+    ? pagosServicio(servicio).map((pago) => `<tr><td data-label="Fecha">${pago.fecha || ""}${pago.fechaHeredada ? `<br><span class="payment-legacy">Fecha heredada</span>` : ""}</td><td data-label="Importe"><strong>${money(pago.importe)}</strong></td><td data-label="Forma">${pago.formaPago || "Sin dato"}</td><td data-label="Cobrado por">${pago.cobradoPor || "Sin clasificar"}</td><td data-label="Referencia">${escapeHtml(pago.referencia || "")}</td></tr>`).join("")
+    : `<tr><td colspan="5">Sin pagos registrados.</td></tr>`;
   const costo = currentUser.role === "admin" ? money(costoServicio(servicio)) : "Restringido";
   const porcentaje = currentUser.role === "admin" ? `${(porcentajeCostoProducto(servicio) * 100).toFixed(1)}%` : "Restringido";
 
@@ -4097,13 +4169,20 @@ function renderServicioConsultaModal(id) {
           ${readField("Tecnico", servicio.tecnico)}
           ${readField("Direccion / zona", servicio.zona, "wide")}
           ${readField("Total", money(totalServicio(servicio)))}
-          ${readField("Cobrado", money(servicio.cobrado))}
+          ${readField("Cobrado", money(totalCobradoServicio(servicio)))}
           ${readField("Pendiente", money(pendienteServicio(servicio)))}
-          ${readField("Forma de pago", servicio.formaPago)}
-          ${readField("Cobrado por", cobradorServicio(servicio))}
           ${readField("Costo producto", costo)}
           ${readField("% producto", porcentaje)}
           ${readField("Observaciones", servicio.observaciones, "full")}
+          <div class="full panel">
+            <h2>Pagos registrados</h2>
+            <div class="table-card">
+              <table>
+                <thead><tr><th>Fecha</th><th>Importe</th><th>Forma</th><th>Cobrado por</th><th>Referencia</th></tr></thead>
+                <tbody>${pagosRows}</tbody>
+              </table>
+            </div>
+          </div>
           <div class="full panel">
             <h2>Productos usados</h2>
             <div class="table-card">
@@ -4241,6 +4320,29 @@ function formServicio(data) {
   const avisoCliente = !clienteLigado
     ? `<div class="notice full">Este servicio no esta ligado a un cliente del catalogo. Si corresponde, selecciona el cliente correcto antes de guardar.</div>`
     : "";
+  const pagos = pagosServicio(data);
+  const paymentRows = [...pagos, {
+    id: "",
+    fecha: today(),
+    importe: "",
+    formaPago: "Transferencia",
+    cobradoPor: "VICTOR",
+    referencia: "",
+    fechaHeredada: false,
+  }].map((pago, index) => `
+    <div class="payment-entry">
+      <input type="hidden" name="pagoId${index}" value="${escapeHtml(pago.id || "")}" />
+      <input type="hidden" name="pagoFechaHeredada${index}" value="${pago.fechaHeredada ? "true" : "false"}" />
+      ${input(`pagoFecha${index}`, "Fecha del pago", pago.fecha || today(), "date")}
+      ${input(`pagoImporte${index}`, "Importe pagado", pago.importe, "number")}
+      ${select(`pagoForma${index}`, "Forma de pago", pago.formaPago || "Transferencia", ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Otro"].map((x) => ({ value: x, label: x })))}
+      ${select(`pagoCobrador${index}`, "Cobrado por", pago.cobradoPor || "Sin clasificar", ["Sin clasificar", "VICTOR", "SISPROVISA"].map((x) => ({ value: x, label: x })))}
+      ${input(`pagoReferencia${index}`, "Referencia / nota", pago.referencia || "", "text", "wide")}
+      ${pago.fechaHeredada ? `<label class="payment-check"><input type="checkbox" name="pagoFechaConfirmada${index}" /> Confirmo que esta es la fecha real del pago</label><span class="payment-legacy">Fecha heredada del servicio. Corrigela y marca la confirmacion si conoces la fecha real.</span>` : ""}
+      ${pago.id ? `<label class="payment-check danger-check"><input type="checkbox" name="pagoEliminar${index}" /> Eliminar este pago</label>` : ""}
+    </div>
+  `).join("");
+  const totalPagado = totalCobradoServicio(data);
   return `<div class="form-grid">
     ${input("fecha", "Fecha", data.fecha || today(), "date")}
     ${select("clienteId", "Cliente", clienteLigado ? data.clienteId : "", clienteOptionsFinal, "wide")}
@@ -4251,10 +4353,12 @@ function formServicio(data) {
     ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((x) => ({ value: x, label: x })))}
     ${input("zona", "Zona / direccion", data.zona, "text", "wide")}
     ${input("subtotal", "Importe del servicio", data.subtotal, "number")}
-    ${input("cobrado", "Cobrado", data.cobrado, "number")}
-    ${select("formaPago", "Forma de pago", data.formaPago, ["Efectivo", "Transferencia", "Tarjeta", "Cheque", "Por cobrar", "Cortesia", "Refuerzo"].map((x) => ({ value: x, label: x })))}
-    ${select("cobradoPor", "Cobrado por", data.cobradoPor || "Sin clasificar", ["Sin clasificar", "VICTOR", "SISPROVISA"].map((x) => ({ value: x, label: x })))}
     ${data.programacionId ? `<input type="hidden" name="programacionId" value="${data.programacionId}" />` : ""}
+    <div class="full panel payments-panel">
+      <h2>Pagos registrados</h2>
+      <p class="readonly">Total pagado: <strong>${money(totalPagado)}</strong> · Pendiente actual: <strong>${money(Math.max(0, totalServicio(data) - totalPagado))}</strong>. Usa la ultima fila para agregar un pago nuevo.</p>
+      ${paymentRows}
+    </div>
     <div class="full panel"><h2>Productos usados</h2><div class="form-grid">${productRows}</div></div>
     ${text("observaciones", "Observaciones", data.observaciones, "full")}
   </div>`;
@@ -4553,6 +4657,20 @@ function bindApp() {
       render();
     });
   }
+  const gastoMonthSelect = document.querySelector("#gastoMonthFilter");
+  if (gastoMonthSelect) {
+    gastoMonthSelect.addEventListener("change", (event) => {
+      gastoMonthFilter = event.target.value;
+      render();
+    });
+  }
+  const gastoPagadorSelect = document.querySelector("#gastoPagadorFilter");
+  if (gastoPagadorSelect) {
+    gastoPagadorSelect.addEventListener("change", (event) => {
+      gastoPagadorFilter = event.target.value;
+      render();
+    });
+  }
   bindProgramacionClienteSearch();
   const form = document.querySelector("#entityForm");
   if (form) form.addEventListener("submit", saveEntity);
@@ -4669,25 +4787,15 @@ function saveEntity(event) {
     document.querySelector("#programacionClienteSearch")?.focus();
     return;
   }
-  const gastoMonthSelect = document.querySelector("#gastoMonthFilter");
-  if (gastoMonthSelect) {
-    gastoMonthSelect.addEventListener("change", (event) => {
-      gastoMonthFilter = event.target.value;
-      render();
-    });
-  }
-  const gastoPagadorSelect = document.querySelector("#gastoPagadorFilter");
-  if (gastoPagadorSelect) {
-    gastoPagadorSelect.addEventListener("change", (event) => {
-      gastoPagadorFilter = event.target.value;
-      render();
-    });
-  }
   if (type === "pendiente" && !String(data.asunto || "").trim()) {
     alert("Escribe que necesitas recordar.");
     return;
   }
   const entity = normalize(type, data);
+  if (type === "servicio" && Number(entity.cobrado || 0) > totalServicio(entity) + 0.009) {
+    const continueSave = confirm(`Los pagos suman ${money(entity.cobrado)}, pero el servicio es por ${money(totalServicio(entity))}. Deseas guardar de todos modos?`);
+    if (!continueSave) return;
+  }
   const collection = typeToCollection(type);
   let savedEntity = null;
   let updatedProgramacion = null;
@@ -4780,6 +4888,39 @@ function normalize(type, data) {
     data.ciudad = data.domicilios[0]?.ciudad || data.ciudad || "MERIDA";
   }
   if (type === "servicio") {
+    const paymentIndexes = Object.keys(data)
+      .map((key) => key.match(/^pagoImporte(\d+)$/)?.[1])
+      .filter((value) => value !== undefined)
+      .map(Number)
+      .sort((a, b) => a - b);
+    data.pagos = paymentIndexes
+      .filter((index) => !data[`pagoEliminar${index}`])
+      .map((index) => {
+        const importe = toNumber(data[`pagoImporte${index}`]);
+        const fechaCapturada = data[`pagoFecha${index}`];
+        const fechaHeredada =
+          (data[`pagoFechaHeredada${index}`] === "true" && !data[`pagoFechaConfirmada${index}`]) ||
+          (!fechaCapturada && importe > 0);
+        return {
+          id: data[`pagoId${index}`] || uid(),
+          fecha: fechaCapturada || data.fecha || today(),
+          importe,
+          formaPago: data[`pagoForma${index}`] || "Sin dato",
+          cobradoPor: data[`pagoCobrador${index}`] || "Sin clasificar",
+          referencia: String(data[`pagoReferencia${index}`] || "").trim(),
+          fechaHeredada,
+        };
+      })
+      .filter((pago) => pago.importe > 0);
+    paymentIndexes.forEach((index) => {
+      ["Id", "FechaHeredada", "Fecha", "Importe", "Forma", "Cobrador", "Referencia", "FechaConfirmada", "Eliminar"].forEach((suffix) => {
+        delete data[`pago${suffix}${index}`];
+      });
+    });
+    data.cobrado = data.pagos.reduce((sum, pago) => sum + Number(pago.importe || 0), 0);
+    const ultimoPago = data.pagos[data.pagos.length - 1];
+    data.formaPago = ultimoPago?.formaPago || "Por cobrar";
+    data.cobradoPor = ultimoPago?.cobradoPor || "Sin clasificar";
     const clienteExiste = state.clientes.some((c) => String(c.id) === String(data.clienteId || ""));
     if (data.clienteId && !clienteExiste) data.clienteId = "";
     if (data.clienteId && clienteExiste) {
