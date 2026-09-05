@@ -116,6 +116,7 @@ let servicioPagoFilter = "Todos";
 let servicioMonthFilter = "";
 const SERVICIO_PAGO_COBRADO_EN_POR_COBRAR = "Cobrado en Por cobrar";
 let servicioTipoFilter = "Todos";
+let servicioTecnicoFilter = "Todos";
 let servicioProductoFilter = "Todos";
 let servicioClienteClasificacionFilter = "Todos";
 let compraSearch = "";
@@ -1085,6 +1086,7 @@ function serviciosFiltradosVista() {
       return true;
     })
     .filter((s) => servicioTipoFilter === "Todos" || s.tipo === servicioTipoFilter)
+    .filter((s) => servicioTecnicoFilter === "Todos" || s.tecnico === servicioTecnicoFilter)
     .filter((s) => {
       if (servicioProductoFilter === "Todos") return true;
       return (s.productos || []).some((item) => item.productoId === servicioProductoFilter);
@@ -3752,6 +3754,12 @@ function renderServicios() {
         </select>
       </div>
       <div class="field">
+        <label>Tecnico</label>
+        <select id="servicioTecnicoFilter">
+          ${["Todos", "SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((tecnico) => `<option value="${tecnico}" ${servicioTecnicoFilter === tecnico ? "selected" : ""}>${tecnico}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field">
         <label>Cliente nuevo / antiguo</label>
         <select id="servicioClienteClasificacionFilter">
           ${clienteClasificacionOptions(true).map((item) => `<option value="${item.value}" ${servicioClienteClasificacionFilter === item.value ? "selected" : ""}>${item.label}</option>`).join("")}
@@ -3762,9 +3770,10 @@ function renderServicios() {
         ${servicioPagoFilter !== "Todos" ? `<br>${servicioPagoFilter}` : ""}
         ${servicioMonthFilter ? `<br>Periodo: ${monthLabel(servicioMonthFilter)}` : ""}
         ${servicioTipoFilter !== "Todos" ? `<br>${servicioTipoFilter}` : ""}
+        ${servicioTecnicoFilter !== "Todos" ? `<br>Tecnico: ${servicioTecnicoFilter}` : ""}
         ${servicioProductoFilter !== "Todos" ? `<br>Producto: ${nombreProducto(servicioProductoFilter)}` : ""}
         ${servicioClienteClasificacionFilter !== "Todos" ? `<br>Cliente: ${servicioClienteClasificacionFilter}` : ""}
-        ${(term || servicioTipoFilter !== "Todos" || servicioProductoFilter !== "Todos" || servicioClienteClasificacionFilter !== "Todos") ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
+        ${(term || servicioTipoFilter !== "Todos" || servicioTecnicoFilter !== "Todos" || servicioProductoFilter !== "Todos" || servicioClienteClasificacionFilter !== "Todos" || servicioMonthFilter) ? `<br><strong>${money(totalFiltrado)}</strong> en servicios encontrados` : ""}
         ${servicioMonthFilter ? `<br><button class="secondary" type="button" data-action="clearServicePeriodFilter">Quitar filtro del periodo</button>` : ""}
       </div>
     </section>
@@ -4529,6 +4538,7 @@ function bindApp() {
       servicioPagoFilter = "Por cobrar";
       servicioSearch = "";
       servicioTipoFilter = "Todos";
+      servicioTecnicoFilter = "Todos";
       servicioProductoFilter = "Todos";
       servicioClienteClasificacionFilter = "Todos";
       activeModule = "servicios";
@@ -4670,6 +4680,13 @@ function bindApp() {
   if (pendienteStatusSelect) {
     pendienteStatusSelect.addEventListener("change", (event) => {
       pendienteStatusFilter = event.target.value;
+      render();
+    });
+  }
+  const servicioTecnicoSelect = document.querySelector("#servicioTecnicoFilter");
+  if (servicioTecnicoSelect) {
+    servicioTecnicoSelect.addEventListener("change", (event) => {
+      servicioTecnicoFilter = event.target.value;
       render();
     });
   }
