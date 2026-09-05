@@ -3187,7 +3187,7 @@ function renderGastosCategoriaResumen(rowsSource = gastosFiltradosOperacion()) {
           <tbody>
             ${
               rows.length
-                ? rows.map((row) => `<tr><td data-label="Rubro"><strong>${row.categoria || "Sin rubro"}</strong></td><td data-label="Gastos">${number(row.gastos)}</td><td data-label="Total"><strong>${money(row.total)}</strong></td></tr>`).join("")
+                ? rows.map((row) => `<tr><td data-label="Rubro"><strong>${escapeHtml(row.categoria || "Sin rubro")}</strong></td><td data-label="Gastos">${number(row.gastos)}</td><td data-label="Total"><button class="table-detail-link" data-gasto-detail-category="${escapeHtml(row.categoria || "Sin categoria")}" title="Ver todos los gastos de ${escapeHtml(row.categoria || "Sin rubro")}">${money(row.total)}</button></td></tr>`).join("")
                 : `<tr><td colspan="3">Aun no hay gastos registrados.</td></tr>`
             }
           </tbody>
@@ -4557,6 +4557,16 @@ function bindApp() {
       gastoMonthFilter = button.dataset.gastoDetailMonth || "";
       gastoPagadorFilter = button.dataset.gastoDetailPagador || "";
       gastoCategoriaFilter = "";
+      activeModule = "gastos";
+      render();
+      document.querySelector("#gastosHistorial")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  document.querySelectorAll("[data-gasto-detail-category]").forEach((button) => {
+    button.addEventListener("click", () => {
+      gastoCategoriaFilter = button.dataset.gastoDetailCategory || "";
+      gastoMonthFilter = "";
+      gastoPagadorFilter = "";
       activeModule = "gastos";
       render();
       document.querySelector("#gastosHistorial")?.scrollIntoView({ behavior: "smooth", block: "start" });
