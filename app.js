@@ -113,6 +113,7 @@ let clienteCiudadFilter = "";
 let clienteClasificacionFilter = "";
 let servicioSearch = "";
 let servicioPagoFilter = "Todos";
+let servicioFormaPagoFilter = "Todos";
 let servicioMonthFilter = "";
 const SERVICIO_PAGO_COBRADO_EN_POR_COBRAR = "Cobrado en Por cobrar";
 let servicioTipoFilter = "Todos";
@@ -1088,6 +1089,8 @@ function serviciosFiltradosVista() {
       if (servicioPagoFilter === "Cobrados") return pendienteServicio(s) <= 0;
       return true;
     })
+    .filter((s) => servicioFormaPagoFilter === "Todos" || pagosServicio(s).some((pago) =>
+      normalizarTexto(pago.formaPago || "Sin dato") === normalizarTexto(servicioFormaPagoFilter)))
     .filter((s) => servicioTipoFilter === "Todos" || s.tipo === servicioTipoFilter)
     .filter((s) => servicioTecnicoFilter === "Todos" || s.tecnico === servicioTecnicoFilter)
     .filter((s) => {
@@ -3747,6 +3750,12 @@ function renderServicios() {
         </select>
       </div>
       <div class="field">
+        <label for="servicioFormaPagoFilter">Forma de pago</label>
+        <select id="servicioFormaPagoFilter">
+          ${["Todos", "Efectivo", "Cheque", "Transferencia", "Tarjeta", "Otro", "Sin dato"].map((forma) => `<option value="${forma}" ${servicioFormaPagoFilter === forma ? "selected" : ""}>${forma === "Todos" ? "Todas" : forma}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field">
         <label>Producto utilizado</label>
         <select id="servicioProductoFilter">
           <option value="Todos">Todos</option>
@@ -3771,6 +3780,7 @@ function renderServicios() {
       <div class="filter-count">
         ${number(servicios.length)} de ${number(serviciosFiltradosOperacion().length)} servicios en ${operacionFilter}
         ${servicioPagoFilter !== "Todos" ? `<br>${servicioPagoFilter}` : ""}
+        ${servicioFormaPagoFilter !== "Todos" ? `<br>Forma de pago: ${servicioFormaPagoFilter}` : ""}
         ${servicioMonthFilter ? `<br>Periodo: ${monthLabel(servicioMonthFilter)}` : ""}
         ${servicioTipoFilter !== "Todos" ? `<br>${servicioTipoFilter}` : ""}
         ${servicioTecnicoFilter !== "Todos" ? `<br>Tecnico: ${servicioTecnicoFilter}` : ""}
@@ -4539,6 +4549,7 @@ function bindApp() {
     button.addEventListener("click", () => {
       servicioMonthFilter = button.dataset.pendingDetailMonth || "";
       servicioPagoFilter = "Por cobrar";
+      servicioFormaPagoFilter = "Todos";
       servicioSearch = "";
       servicioTipoFilter = "Todos";
       servicioTecnicoFilter = "Todos";
@@ -4646,6 +4657,13 @@ function bindApp() {
   if (servicioPagoSelect) {
     servicioPagoSelect.addEventListener("change", (event) => {
       servicioPagoFilter = event.target.value;
+      render();
+    });
+  }
+  const servicioFormaPagoSelect = document.querySelector("#servicioFormaPagoFilter");
+  if (servicioFormaPagoSelect) {
+    servicioFormaPagoSelect.addEventListener("change", (event) => {
+      servicioFormaPagoFilter = event.target.value;
       render();
     });
   }
