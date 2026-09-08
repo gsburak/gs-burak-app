@@ -1209,21 +1209,151 @@ function exportServiciosCsv() {
   );
 }
 
-function exportDashboardExecutiveReport() {
+function renderExecutiveReportModal() {
+  return `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="modal-header"><h2 id="reportTitle">Reporte ejecutivo</h2><button class="ghost" data-action="close">Cerrar</button></div>
+    <form id="executiveReportForm">
+      <div class="field"><label for="reportMode">Periodo</label><select id="reportMode" name="mode">
+        <option value="month">Un mes</option><option value="months">Varios meses</option><option value="dates">Fechas especificas</option><option value="all">Todo el historial</option>
+      </select></div>
+      <div id="reportDates"></div>
+      <p class="readonly">Operacion: ${escapeHtml(operacionFilter)}. Las fechas inicial y final se incluyen en el reporte.</p>
+      <p id="reportError" role="alert"></p>
+      <div class="form-actions"><button class="secondary" type="button" data-action="close">Cancelar</button><button class="primary" type="submit">Generar reporte</button></div>
+    </form></div></div>`;
+}
+
+function executiveReportRange(mode, start, end) {
+  if (mode === "all") return null;
+  if (!["month", "months", "dates"].includes(mode)) throw new Error("Selecciona un periodo valido.");
+  if (mode !== "dates") {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(start) || (mode === "months" && !/^\d{4}-(0[1-9]|1[0-2])$/.test(end))) throw new Error("Selecciona los meses del reporte.");
+    end = mode === "month" ? start : end;
+    const lastDay = monthEndDate(end).getDate();
+    start += "-01";
+    end += `-${lastDay}`;
+  }
+  const valid = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number(value.slice(0, 4)) >= 1900 && Number(value.slice(0, 4)) <= 9999 && !isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  if (!valid(start) || !valid(end)) throw new Error("Selecciona fechas validas (desde 1900).");
+  if (start > end) throw new Error("La fecha inicial debe ser anterior o igual a la final.");
+  return { start, end };
+}
+
+function bindExecutiveReportForm() {
+  const form = document.querySelector("#executiveReportForm");
+  if (!form) return;
+  const mode = form.elements.mode;
+  const update = () => {
+    const type = mode.value === "dates" ? "date" : "month";
+    const value = type === "date" ? today() : today().slice(0, 7);
+    document.querySelector("#reportDates").innerHTML = mode.value === "all" ? "" : `<div class="field"><label for="reportStart">${mode.value === "month" ? "Mes" : "Desde"}</label><input id="reportStart" name="start" type="${type}" value="${value}" required></div>${mode.value === "month" ? "" : `<div class="field"><label for="reportEnd">Hasta</label><input id="reportEnd" name="end" type="${type}" value="${value}" required></div>`}`;
+    document.querySelector("#reportError").textContent = "";
+  };
+  mode.addEventListener("change", update);
+  update();
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    try {
+      const range = executiveReportRange(mode.value, form.elements.start?.value, form.elements.end?.value);
+      exportDashboardExecutiveReport(range);
+    } catch (error) {
+      document.querySelector("#reportError").textContent = error.message;
+    }
+  });
+}
+
+function executivePeriodData(range) {
+  const inRange = (date) => date && date >= range.start && date <= range.end;
+  const source = {
+    gastos: gastosFiltradosOperacion().filter((r) => inRange(r.fecha)),
+    compras: comprasFiltradasOperacion().filter((r) => inRange(r.fecha)),
+    equipos: equiposFiltradosOperacion().filter((r) => inRange(r.fecha)),
+  };
+  const blank = () => ({ ventas: 0, cobrado: 0, porCobrar: 0, productoUsado: 0, gastos: 0, depreciacion: 0, comprasInventario: 0, servicios: 0 });
+  const months = {}, cities = {}, payments = {};
+  const city = (r, fallback) => {
+    const key = operacionRegistro(r, fallback);
+    return cities[key] ||= { ...blank(), ciudad: key };
+  };
+  for (let key = range.start.slice(0, 7); key <= range.end.slice(0, 7);) {
+    months[key] = { ...blank(), key, mes: monthLabel(key) };
+    const [y, m] = key.split("-").map(Number);
+    key = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+  }
+  serviciosFiltradosOperacion().forEach((s) => {
+    const c = city(s, "Yucatan");
+    const pagos = pagosServicio(s);
+    const pending = s.fecha && s.fecha <= range.end ? Math.max(0, totalServicio(s) - pagos.filter((p) => p.fecha && p.fecha <= range.end).reduce((sum, p) => sum + Number(p.importe || 0), 0)) : 0;
+    c.porCobrar += pending;
+    if (inRange(s.fecha)) {
+      const row = months[monthKey(s.fecha)];
+      for (const target of [row, c]) {
+        target.ventas += totalServicio(s);
+        target.productoUsado += costoServicio(s);
+        target.servicios++;
+      }
+      row.porCobrar += pending;
+    }
+    pagos.filter((p) => inRange(p.fecha)).forEach((p) => {
+      const amount = Number(p.importe || 0);
+      months[monthKey(p.fecha)].cobrado += amount;
+      c.cobrado += amount;
+      const forma = String(p.formaPago || "").trim() || "Sin dato";
+      const row = payments[forma] ||= { forma, cobrado: 0, pagos: 0 };
+      row.cobrado += amount;
+      row.pagos++;
+    });
+  });
+  for (const [key, field, amount] of [["gastos", "gastos", (r) => Number(r.monto || 0)], ["compras", "comprasInventario", (r) => Number(r.cantidad || 0) * Number(r.costoUnitario || 0)]]) {
+    source[key].forEach((r) => {
+      months[monthKey(r.fecha)][field] += amount(r);
+      city(r)[field] += amount(r);
+    });
+  }
+  const day = (value) => Date.parse(value + "T00:00:00Z") / 86400000;
+  equiposFiltradosOperacion().forEach((e) => {
+    if (!e.fecha || !(Number(e.vida) > 0)) return;
+    const lifeDays = Number(e.vida) * 365.25;
+    const base = Math.max(0, costoTotalEquipo(e) - Number(e.residual || 0));
+    const accumulated = (date) => Math.min(base, Math.max(0, date - day(e.fecha)) / lifeDays * base);
+    Object.values(months).forEach((row) => {
+      const first = day(row.key + "-01");
+      const last = first + monthEndDate(row.key).getDate();
+      const from = Math.max(first, day(range.start));
+      const to = Math.min(last, day(range.end) + 1);
+      const amount = accumulated(to) - accumulated(from);
+      row.depreciacion += amount;
+      city(e).depreciacion += amount;
+    });
+  });
+  let cumulative = 0;
+  const monthly = Object.values(months).map((r) => {
+    const costosYGastos = r.productoUsado + r.gastos + r.depreciacion;
+    const gananciaGenerada = r.ventas - costosYGastos;
+    cumulative += gananciaGenerada;
+    return { ...r, costosYGastos, gananciaGenerada, gananciaGeneradaAcumulada: cumulative, resultadoCaja: r.cobrado - costosYGastos, estado: r.key >= monthKey(today()) ? "Periodo abierto" : "Cerrado" };
+  });
+  const cityRows = Object.values(cities).map((r) => ({ ...r, utilidad: r.cobrado - r.productoUsado - r.gastos - r.depreciacion })).filter((r) => Object.keys(blank()).some((key) => r[key]));
+  const sum = (field) => monthly.reduce((n, r) => n + r[field], 0);
+  return { source, monthly, cities: cityRows, payments: Object.values(payments), m: { facturado: sum("ventas"), cobrado: sum("cobrado"), porCobrar: cityRows.reduce((n, r) => n + r.porCobrar, 0), utilidad: sum("resultadoCaja") } };
+}
+
+function exportDashboardExecutiveReport(range = null) {
   if (currentUser?.id !== "admin") {
     alert("Este reporte solo esta disponible para VICTOR.");
     return;
   }
 
-  const m = metrics();
-  const monthly = resumenMensualFinanciero();
-  const utilidadCiudad = utilidadPorCiudad();
-  const cobrosForma = cobrosPorFormaPago();
-  const inversionMesPagador = inversionPorMesYPagador();
-  const gastosCiudadPagador = gastosPorCiudadYPagador();
-  const comprasCiudadPagador = comprasPorCiudadYPagador();
-  const equiposCiudadPagador = equiposPorCiudadYPagador();
-  const inversionSocios = inversionYGastoDetallePorPagador();
+  const data = range ? executivePeriodData(range) : null;
+  const m = data ? data.m : metrics();
+  const monthly = data ? data.monthly : resumenMensualFinanciero();
+  const utilidadCiudad = data ? data.cities : utilidadPorCiudad();
+  const cobrosForma = data ? data.payments : cobrosPorFormaPago();
+  const inversionMesPagador = inversionPorMesYPagador(data ? data.source : null);
+  const gastosCiudadPagador = gastosPorCiudadYPagador(data ? data.source : null);
+  const comprasCiudadPagador = comprasPorCiudadYPagador(data ? data.source : null);
+  const equiposCiudadPagador = equiposPorCiudadYPagador(data ? data.source : null);
+  const inversionSocios = inversionYGastoDetallePorPagador(data ? data.source : null);
   const sociosPrincipales = ["SISPROVISA", "VICTOR"];
   const inversionSociosReporte = [
     ...sociosPrincipales.map((pagador) => {
@@ -1310,13 +1440,15 @@ function exportDashboardExecutiveReport() {
     <div class="cover">
       <h1>GS Burak - Reporte ejecutivo</h1>
       <p>Resumen financiero y operativo</p>
+      <p>Periodo: ${range ? escapeHtml(`${range.start} al ${range.end}`) : "Todo el historial"}</p>
+      ${range ? `<p class="note">Ventas y costos por fecha del servicio; cobros por fecha del pago, incluidos servicios anteriores. Pendiente al cierre: todos los servicios hasta ${escapeHtml(range.end)} menos sus pagos hasta esa fecha. La tabla mensual muestra el pendiente al cierre de los servicios vendidos en cada mes. Acumulado desde el inicio del periodo. Depreciacion prorrateada por dias, desde la compra y durante la vida util. Registros sin fecha excluidos; pagos antiguos sin desglose usan la fecha del servicio.</p>` : ""}
       <p>Operacion: ${escapeHtml(periodo)} · Generado: ${escapeHtml(generatedAt)}</p>
     </div>
     <div class="cards">
       <div class="card"><span>Ventas totales</span><strong>${money(m.facturado)}</strong></div>
       <div class="card"><span>Cobrado</span><strong>${money(m.cobrado)}</strong></div>
-      <div class="card"><span>Por cobrar</span><strong>${money(m.porCobrar)}</strong></div>
-      <div class="card"><span>Utilidad real</span><strong>${money(m.utilidad)}</strong></div>
+      <div class="card"><span>${range ? "Por cobrar al cierre" : "Por cobrar"}</span><strong>${money(m.porCobrar)}</strong></div>
+      <div class="card"><span>${range ? "Resultado de caja del periodo" : "Utilidad real"}</span><strong>${money(m.utilidad)}</strong></div>
     </div>
     <section>
       <h2>Inversion total por socio</h2>
@@ -1347,7 +1479,7 @@ function exportDashboardExecutiveReport() {
     <section>
       <h2>Utilidad real por ciudad</h2>
       ${table(
-        ["Ciudad", "Cobrado", "Producto usado", "Gastos", "Deprec. mensual", "Utilidad real", "Por cobrar", "Compras inventario"],
+        ["Ciudad", "Cobrado", "Producto usado", "Gastos", "Depreciacion", "Utilidad real", "Por cobrar", "Compras inventario"],
         utilidadCiudad.map((item) => row([
           `<strong>${escapeHtml(item.ciudad)}</strong>`,
           money(item.cobrado),
@@ -1789,7 +1921,7 @@ function gastosPorPagador() {
   }, {});
 }
 
-function inversionPorMesYPagador() {
+function inversionPorMesYPagador(source = null) {
   const rows = {};
   const ensure = (fecha, pagador) => {
     const mesKey = monthKey(fecha);
@@ -1810,17 +1942,17 @@ function inversionPorMesYPagador() {
     return rows[key];
   };
 
-  gastosFiltradosOperacion().forEach((gasto) => {
+  (source ? source.gastos : gastosFiltradosOperacion()).forEach((gasto) => {
     const row = ensure(gasto.fecha, gasto.pagadoPor);
     if (row) row.gastos += Number(gasto.monto || 0);
   });
 
-  comprasFiltradasOperacion().forEach((compra) => {
+  (source ? source.compras : comprasFiltradasOperacion()).forEach((compra) => {
     const row = ensure(compra.fecha, compra.pagadoPor);
     if (row) row.compras += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
   });
 
-  equiposFiltradosOperacion().forEach((equipo) => {
+  (source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
     const row = ensure(equipo.fecha, equipo.pagadoPor);
     if (row) row.equipos += costoTotalEquipo(equipo);
   });
@@ -1831,7 +1963,7 @@ function inversionPorMesYPagador() {
     .sort((a, b) => String(a.key).localeCompare(String(b.key)) || String(a.pagador).localeCompare(String(b.pagador)));
 }
 
-function gastosPorCiudadYPagador() {
+function gastosPorCiudadYPagador(source = null) {
   const order = { Yucatan: 1, CDMX: 2, "Sin clasificar": 3 };
   const rows = {};
   const ensure = (ciudad) => {
@@ -1840,7 +1972,7 @@ function gastosPorCiudadYPagador() {
     return rows[key];
   };
 
-  gastosFiltradosOperacion().forEach((gasto) => {
+  (source ? source.gastos : gastosFiltradosOperacion()).forEach((gasto) => {
     const row = ensure(operacionRegistro(gasto));
     const monto = Number(gasto.monto || 0);
     const pagador = String(gasto.pagadoPor || "Sin dato").toUpperCase();
@@ -1855,7 +1987,7 @@ function gastosPorCiudadYPagador() {
     .sort((a, b) => (order[a.ciudad] || 99) - (order[b.ciudad] || 99));
 }
 
-function comprasPorCiudadYPagador() {
+function comprasPorCiudadYPagador(source = null) {
   const order = { Yucatan: 1, CDMX: 2, "Sin clasificar": 3 };
   const rows = {};
   const ensure = (ciudad) => {
@@ -1864,7 +1996,7 @@ function comprasPorCiudadYPagador() {
     return rows[key];
   };
 
-  comprasFiltradasOperacion().forEach((compra) => {
+  (source ? source.compras : comprasFiltradasOperacion()).forEach((compra) => {
     const row = ensure(operacionRegistro(compra));
     const monto = Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
     const pagador = String(compra.pagadoPor || "Sin dato").toUpperCase();
@@ -1879,7 +2011,7 @@ function comprasPorCiudadYPagador() {
     .sort((a, b) => (order[a.ciudad] || 99) - (order[b.ciudad] || 99));
 }
 
-function equiposPorCiudadYPagador() {
+function equiposPorCiudadYPagador(source = null) {
   const order = { Yucatan: 1, CDMX: 2, "Sin clasificar": 3 };
   const rows = {};
   const ensure = (ciudad) => {
@@ -1888,7 +2020,7 @@ function equiposPorCiudadYPagador() {
     return rows[key];
   };
 
-  equiposFiltradosOperacion().forEach((equipo) => {
+  (source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
     const row = ensure(operacionRegistro(equipo));
     const monto = costoTotalEquipo(equipo);
     const pagador = String(equipo.pagadoPor || "Sin dato").toUpperCase();
@@ -1937,7 +2069,7 @@ function esCategoriaNomina(categoria) {
   return text.includes("nomina") || text.includes("imss") || text.includes("infonavit") || text.includes("impuesto sobre nomina");
 }
 
-function inversionYGastoDetallePorPagador() {
+function inversionYGastoDetallePorPagador(source = null) {
   const rows = {};
   const ensure = (pagador) => {
     const key = pagadorKey(pagador);
@@ -1955,7 +2087,7 @@ function inversionYGastoDetallePorPagador() {
     return rows[key];
   };
 
-  gastosFiltradosOperacion().forEach((gasto) => {
+  (source ? source.gastos : gastosFiltradosOperacion()).forEach((gasto) => {
     const row = ensure(gasto.pagadoPor);
     const monto = Number(gasto.monto || 0);
     row.totalGastos += monto;
@@ -1963,11 +2095,11 @@ function inversionYGastoDetallePorPagador() {
     else row.otrosGastos += monto;
   });
 
-  comprasFiltradasOperacion().forEach((compra) => {
+  (source ? source.compras : comprasFiltradasOperacion()).forEach((compra) => {
     ensure(compra.pagadoPor).compras += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
   });
 
-  equiposFiltradosOperacion().forEach((equipo) => {
+  (source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
     ensure(equipo.pagadoPor).equipos += costoTotalEquipo(equipo);
   });
 
@@ -4073,6 +4205,7 @@ function rowActions(type, id) {
 
 function renderModal() {
   const { type, id } = modal;
+  if (type === "executiveReport") return renderExecutiveReportModal();
   if (type === "programacionConsulta") return renderProgramacionConsultaModal(id);
   if (type === "servicioConsulta") return renderServicioConsultaModal(id);
   const data = modal.data || (id ? state[typeToCollection(type)].find((x) => x.id === id || x.nombre === id) : {});
@@ -4545,7 +4678,7 @@ function bindApp() {
     button.addEventListener("click", exportServiciosCsv);
   });
   document.querySelectorAll("[data-action='exportDashboardReport']").forEach((button) => {
-    button.addEventListener("click", exportDashboardExecutiveReport);
+    button.addEventListener("click", () => { modal = { type: "executiveReport" }; render(); });
   });
   document.querySelectorAll("[data-pending-detail-month]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -4648,6 +4781,7 @@ function bindApp() {
       }
     });
   }
+  bindExecutiveReportForm();
   const operacionSelect = document.querySelector("#operacionFilter");
   if (operacionSelect) {
     operacionSelect.addEventListener("change", (event) => {
