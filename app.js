@@ -2252,7 +2252,7 @@ function programacionesFiltradasOperacion() {
 }
 
 function tecnicosProgramacionOptions(includeNone = false) {
-  const options = ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"];
+  const options = ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN", "FREDY ALEXANDER"];
   return (includeNone ? ["", ...options] : options).map((x) => ({ value: x, label: x || "Ninguno" }));
 }
 
@@ -3902,7 +3902,7 @@ function renderServicios() {
       <div class="field">
         <label>Tecnico</label>
         <select id="servicioTecnicoFilter">
-          ${["Todos", "SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((tecnico) => `<option value="${tecnico}" ${servicioTecnicoFilter === tecnico ? "selected" : ""}>${tecnico}</option>`).join("")}
+          ${["Todos", ...tecnicosProgramacionOptions().map((option) => option.value)].map((tecnico) => `<option value="${tecnico}" ${servicioTecnicoFilter === tecnico ? "selected" : ""}>${tecnico}</option>`).join("")}
         </select>
       </div>
       <div class="field">
@@ -4511,7 +4511,7 @@ function formServicio(data) {
     ${avisoCliente}
     ${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}
     ${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}
-    ${select("tecnico", "Tecnico", data.tecnico, ["SANTOS", "VICTOR", "FREDDY", "CRISTIAN"].map((x) => ({ value: x, label: x })))}
+    ${select("tecnico", "Tecnico", data.tecnico, tecnicosProgramacionOptions())}
     ${input("zona", "Zona / direccion", data.zona, "text", "wide")}
     ${input("subtotal", "Importe del servicio", data.subtotal, "number")}
     ${data.programacionId ? `<input type="hidden" name="programacionId" value="${data.programacionId}" />` : ""}
