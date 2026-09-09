@@ -3630,6 +3630,58 @@ function renderClientes() {
   `;
 }
 
+function ordenServicioHtml(programacion) {
+  const cliente = state.clientes.find((item) => item.id === programacion.clienteId) || {};
+  const field = (label, value, wide = false) => `<div class="field${wide ? " wide" : ""}"><span>${escapeHtml(label)}</span><div>${escapeHtml(value || "Sin especificar")}</div></div>`;
+  const folio = `OS-${programacion.id}`;
+  const fecha = /^\d{4}-\d{2}-\d{2}$/.test(programacion.fecha || "") ? programacion.fecha.split("-").reverse().join("/") : programacion.fecha;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(folio)} - ${escapeHtml(cliente.nombre || "Cliente")} - GS BURAK</title>
+  <style>
+    @page { size: letter; margin: 14mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #edf1f5; color: #17263d; font: 14px Arial, sans-serif; }
+    .toolbar { max-width: 820px; margin: 20px auto; padding: 0 16px; }
+    button { background: #123d70; color: white; border: 0; border-radius: 6px; padding: 13px 20px; font: inherit; font-weight: bold; cursor: pointer; }
+    .toolbar p { font-size: 13px; line-height: 1.5; }
+    article { max-width: 820px; margin: 0 auto 24px; padding: 28px; background: white; border: 2px solid #123d70; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 4px solid #c53337; padding-bottom: 18px; }
+    header img { width: 190px; max-width: 35%; height: auto; }
+    header div { text-align: right; min-width: 0; }
+    h1 { font-size: 24px; margin: 0 0 8px; color: #123d70; }
+    .folio { font-size: 11px; overflow-wrap: anywhere; }
+    h2 { font-size: 14px; text-transform: uppercase; color: #123d70; padding: 9px 10px; background: #edf2f8; margin: 22px 0 0; border-bottom: 1px solid #bcc9d8; break-after: avoid; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; }
+    .field { padding: 12px 10px; border-bottom: 1px solid #dce3ec; min-width: 0; break-inside: avoid; }
+    .field span { display: block; font-size: 11px; color: #536176; margin-bottom: 6px; }
+    .field div, .notes { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+    .wide { grid-column: 1 / -1; }
+    .notes { padding: 14px 10px; min-height: 110px; }
+    footer { margin-top: 28px; border-top: 2px solid #123d70; padding-top: 10px; font-size: 11px; color: #536176; }
+    @media(max-width: 560px) { article { padding: 16px; } header { gap: 12px; } h1 { font-size: 19px; } .grid { grid-template-columns: 1fr; } }
+    @media print { body { background: white; font-size: 12px; } .toolbar { display: none; } article { margin: 0; max-width: none; padding: 18px; } header { break-inside: avoid; } }
+  </style></head><body>
+  <div class="toolbar"><button onclick="window.print()">Imprimir / Guardar PDF</button><p>Para descargar la orden, elige “Guardar como PDF” en la ventana de impresión. Después puedes enviar el archivo al técnico.</p></div>
+  <article><header><img src="${escapeHtml(new URL("logo-gs-burak.png", location.href).href)}" alt="GS BURAK"><div><h1>ORDEN DE SERVICIO</h1><div class="folio">${escapeHtml(folio)}</div></div></header>
+  <h2>Programación</h2><div class="grid">${field("Fecha", fecha)}${field("Hora", programacion.hora)}${field("Estatus", programacion.estatus || "Programado")}${field("Ciudad / operación", programacion.ciudad || "Yucatan")}</div>
+  <h2>Cliente y ubicación</h2><div class="grid">${field("Cliente", cliente.nombre || nombreCliente(programacion.clienteId), true)}${field("Contacto", cliente.contacto)}${field("Teléfono", cliente.telefono)}${field("Dirección / referencia", programacion.direccion || cliente.direccion, true)}</div>
+  <h2>Trabajo asignado</h2><div class="grid">${field("Tipo de servicio", programacion.tipo, true)}${field("Técnico principal", programacion.tecnico)}${field("Técnico adicional", programacion.tecnicoAdicional || "Sin asignar")}</div>
+  <h2>Comentarios e instrucciones</h2><div class="notes">${escapeHtml(programacion.notas || "Sin comentarios adicionales.")}</div>
+  <footer>GS BURAK · Orden de trabajo para el servicio programado.</footer></article></body></html>`;
+}
+
+function abrirOrdenServicio(id) {
+  const programacion = state.programaciones.find((item) => item.id === id);
+  if (!programacion) return alert("No se encontró el servicio programado.");
+  const html = ordenServicioHtml(programacion);
+  const preview = window.open("", "_blank");
+  if (!preview) return alert("Permite abrir ventanas emergentes para consultar la orden de servicio.");
+  preview.opener = null;
+  preview.document.open();
+  preview.document.write(html);
+  preview.document.close();
+}
+
 function renderProgramacion() {
   const readOnly = isProgramacionReadOnly();
   const rows = [...programacionesFiltradasOperacion()]
@@ -3655,7 +3707,7 @@ function renderProgramacion() {
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Cancelar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button><button class="secondary" data-orden-servicio="${p.id}">Ver orden</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Cancelar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -3684,6 +3736,7 @@ function renderProgramacionAgenda(rows) {
                       <strong>${programacion.hora || "--:--"} ${nombreCliente(programacion.clienteId)}</strong>
                       <span>${programacion.tipo || ""}</span>
                       <small>${tecnicosProgramacionTexto(programacion)} · ${programacion.ciudad || "Yucatan"} · ${programacion.estatus || "Programado"}</small>
+                      <button class="secondary" data-orden-servicio="${programacion.id}">Ver orden</button>
                       ${readOnly ? "" : `
                         <div class="agenda-actions">
                           <button class="secondary" data-edit="programacion" data-id="${programacion.id}">Editar</button>
@@ -4549,6 +4602,9 @@ function bindApp() {
       modal = { type: "programacionConsulta", id: button.dataset.viewProgramacion };
       render();
     });
+  });
+  document.querySelectorAll("[data-orden-servicio]").forEach((button) => {
+    button.addEventListener("click", () => abrirOrdenServicio(button.dataset.ordenServicio));
   });
   document.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
