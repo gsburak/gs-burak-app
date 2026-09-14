@@ -24,4 +24,52 @@ run(`state.programaciones[0].clienteId = 'missing'; state.programaciones[0].nota
 assert.ok(html.includes('Sin comentarios adicionales.'));
 context.window.open = () => null;
 assert.throws(() => run(`abrirOrdenServicio('p1')`), /ventanas emergentes/);
-console.log('Service orders: data, escaping, current values, missing fields and no record mutations passed.');
+// Exercise the mobile navigation without replacing the application document.
+const elements = [];
+const listeners = new Map();
+let restoredFocus = false;
+const trigger = { isConnected: true, focus() { restoredFocus = true; } };
+context.document = {
+  activeElement: trigger,
+  body: { style: { overflow: 'auto' }, appendChild(element) { elements.push(element); } },
+  getElementById(id) { return elements.find(element => element.id === id && !element.removed); },
+  createElement(tag) {
+    return {
+      tag, style: {}, children: [], events: {},
+      setAttribute() {}, appendChild(child) { this.children.push(child); },
+      addEventListener(type, callback) { this.events[type] = callback; },
+      removeEventListener(type) { delete this.events[type]; },
+      focus() { context.document.activeElement = this; }, remove() { this.removed = true; },
+    };
+  },
+};
+context.window.matchMedia = () => ({ matches: true });
+context.window.open = () => { throw new Error('Mobile must not open a new window'); };
+context.window.addEventListener = (type, callback) => listeners.set(type, callback);
+context.window.removeEventListener = type => listeners.delete(type);
+const initialHistoryState = { module: 'programacion' };
+context.window.history = {
+  state: initialHistoryState,
+  pushState(state) { this.state = state; },
+  back() { this.state = initialHistoryState; listeners.get('popstate')?.(); },
+};
+const mobileState = run('JSON.stringify(state)');
+run("abrirOrdenServicio('p1')");
+let preview = context.document.getElementById('orden-servicio-preview');
+assert.ok(preview);
+assert.ok(preview.children[1].srcdoc.includes('OS-p1'));
+assert.ok(preview.children[1].srcdoc.includes('window.print()'));
+assert.equal(context.document.body.style.overflow, 'hidden');
+run("abrirOrdenServicio('p1')");
+assert.equal(elements.length, 1, 'Do not stack duplicate previews or history entries');
+preview.children[0].children[0].events.click();
+assert.equal(context.document.getElementById('orden-servicio-preview'), undefined);
+assert.equal(context.document.body.style.overflow, 'auto');
+assert.equal(context.window.history.state, initialHistoryState);
+assert.equal(listeners.size, 0);
+assert.ok(restoredFocus);
+run("abrirOrdenServicio('p1')");
+context.window.history.back();
+assert.equal(context.document.getElementById('orden-servicio-preview'), undefined, 'Browser Back closes the order');
+assert.equal(run('JSON.stringify(state)'), mobileState, 'Mobile navigation preserves all records');
+console.log('Service orders: desktop preview, mobile return button, browser Back, printing, data and escaping passed.');

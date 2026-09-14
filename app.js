@@ -3659,7 +3659,21 @@ function ordenServicioHtml(programacion) {
     .notes { padding: 14px 10px; min-height: 110px; }
     footer { margin-top: 28px; border-top: 2px solid #123d70; padding-top: 10px; font-size: 11px; color: #536176; }
     @media(max-width: 560px) { article { padding: 16px; } header { gap: 12px; } h1 { font-size: 19px; } .grid { grid-template-columns: 1fr; } }
-    @media print { body { background: white; font-size: 12px; } .toolbar { display: none; } article { margin: 0; max-width: none; padding: 18px; } header { break-inside: avoid; } }
+    @media print {
+      body { background: white; font-size: 11px; }
+      .toolbar { display: none; }
+      article { margin: 0; max-width: none; padding: 12px; }
+      header { break-inside: avoid; padding-bottom: 10px; }
+      header img { width: 150px; max-height: 75px; object-fit: contain; }
+      h1 { font-size: 21px; }
+      h2 { margin-top: 12px; padding: 6px 8px; font-size: 12px; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .field { padding: 7px 8px; }
+      .field span { font-size: 10px; margin-bottom: 3px; }
+      .field div, .notes { line-height: 1.35; }
+      .notes { padding: 9px 8px; min-height: 50px; }
+      footer { margin-top: 12px; padding-top: 7px; font-size: 10px; break-inside: avoid; }
+    }
   </style></head><body>
   <div class="toolbar"><button onclick="window.print()">Imprimir / Guardar PDF</button><p>Para descargar la orden, elige “Guardar como PDF” en la ventana de impresión. Después puedes enviar el archivo al técnico.</p></div>
   <article><header><img src="${escapeHtml(new URL("logo-gs-burak.png", location.href).href)}" alt="GS BURAK"><div><h1>ORDEN DE SERVICIO</h1><div class="folio">${escapeHtml(folio)}</div></div></header>
@@ -3670,10 +3684,64 @@ function ordenServicioHtml(programacion) {
   <footer>GS BURAK · Orden de trabajo para el servicio programado.</footer></article></body></html>`;
 }
 
+function mostrarOrdenServicioEnApp(html) {
+  if (document.getElementById("orden-servicio-preview")) return;
+  const previousFocus = document.activeElement;
+  const previousOverflow = document.body.style.overflow;
+  const preview = document.createElement("div");
+  preview.id = "orden-servicio-preview";
+  preview.setAttribute("role", "dialog");
+  preview.setAttribute("aria-modal", "true");
+  preview.setAttribute("aria-label", "Orden de servicio");
+  preview.style.cssText = "position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;background:#edf1f5;";
+  const toolbar = document.createElement("div");
+  toolbar.style.cssText = "flex-shrink:0;padding:12px;padding-top:max(12px,env(safe-area-inset-top));background:white;border-bottom:1px solid #bcc9d8;";
+  const back = document.createElement("button");
+  back.type = "button";
+  back.textContent = "← Volver a la aplicación";
+  back.style.cssText = "min-height:44px;padding:12px 16px;background:#123d70;color:white;border:0;border-radius:6px;font:inherit;font-weight:bold;cursor:pointer;";
+  const frame = document.createElement("iframe");
+  frame.title = "Orden de servicio";
+  frame.style.cssText = "flex:1;min-height:0;width:100%;border:0;background:#edf1f5;";
+  frame.srcdoc = html;
+  toolbar.appendChild(back);
+  preview.appendChild(toolbar);
+  preview.appendChild(frame);
+  document.body.appendChild(preview);
+  document.body.style.overflow = "hidden";
+  const cleanup = () => {
+    preview.remove();
+    document.body.style.overflow = previousOverflow;
+    window.removeEventListener("popstate", cleanup);
+    preview.removeEventListener("keydown", onKeyDown);
+    if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+  };
+  const close = () => {
+    if (window.history.state && window.history.state.ordenServicioPreview) window.history.back();
+    else cleanup();
+  };
+  const onKeyDown = (event) => {
+    if (event.key === "Escape") close();
+    if (event.key === "Tab" && event.shiftKey && document.activeElement === back) {
+      event.preventDefault();
+      frame.focus();
+    }
+  };
+  window.history.pushState({ ordenServicioPreview: true }, "");
+  window.addEventListener("popstate", cleanup);
+  preview.addEventListener("keydown", onKeyDown);
+  back.addEventListener("click", close);
+  back.focus();
+}
+
 function abrirOrdenServicio(id) {
   const programacion = state.programaciones.find((item) => item.id === id);
   if (!programacion) return alert("No se encontró el servicio programado.");
   const html = ordenServicioHtml(programacion);
+  if (window.matchMedia && window.matchMedia("(max-width: 900px), (pointer: coarse)").matches) {
+    mostrarOrdenServicioEnApp(html);
+    return;
+  }
   const preview = window.open("", "_blank");
   if (!preview) return alert("Permite abrir ventanas emergentes para consultar la orden de servicio.");
   preview.opener = null;
