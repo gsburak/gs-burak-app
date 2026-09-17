@@ -14,6 +14,7 @@ const modules = [
   { id: "presupuestos", label: "Presupuestos", icon: "Presupuestos", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
   { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
+  { id: "cebaderas", label: "Estaciones cebaderas", icon: "Cebaderas", roles: ["admin", "operativo", "consulta"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
@@ -2491,6 +2492,7 @@ function renderModule() {
     presupuestos: renderPresupuestos,
     programacion: renderProgramacion,
     certificados: renderCertificados,
+    cebaderas: renderCebaderas,
     pendientes: renderPendientes,
     servicios: renderServicios,
     tiposServicio: renderTiposServicio,
@@ -2523,6 +2525,20 @@ function renderCertificados() {
       ></iframe>
     </section>
   `;
+}
+
+function renderCebaderas() {
+  const url = "netlify-sites/cebaderas/index.html";
+  return `${topbar("Estaciones cebaderas", "Captura las estaciones de cada cliente y genera su reporte de inspección.",
+    `<a class="secondary certificate-external-link" href="${url}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`)}
+    <section class="certificate-frame-card"><iframe id="cebaderas-frame" class="certificate-frame" src="${url}" title="Reporte de estaciones cebaderas GS BURAK"></iframe></section>`;
+}
+
+// Only the embedded, same-origin form receives the customer catalog.
+function provideCebaderasClients(event) {
+  const frame = document.getElementById("cebaderas-frame");
+  if (!currentUser || !frame || event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== "burak-cebaderas-ready") return;
+  frame.contentWindow.postMessage({ type: "burak-cebaderas-clientes", clientes: state.clientes.map(({ id, nombre, direccion, telefono, correo }) => ({ id, nombre, direccion, telefono, correo })) }, location.origin);
 }
 
 function renderPresupuestos() {
@@ -5295,6 +5311,7 @@ function toNumber(value) {
 }
 
 async function init() {
+  window.addEventListener("message", provideCebaderasClients);
   state = await loadInitialState();
   render();
 }
