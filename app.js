@@ -15,6 +15,7 @@ const modules = [
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
   { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
   { id: "cebaderas", label: "Estaciones cebaderas", icon: "Cebaderas", roles: ["admin", "operativo", "consulta"] },
+  { id: "croquis", label: "Creador de croquis", icon: "Croquis", roles: ["admin", "operativo", "consulta"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
   { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
@@ -2493,6 +2494,7 @@ function renderModule() {
     programacion: renderProgramacion,
     certificados: renderCertificados,
     cebaderas: renderCebaderas,
+    croquis: renderCroquis,
     pendientes: renderPendientes,
     servicios: renderServicios,
     tiposServicio: renderTiposServicio,
@@ -2532,6 +2534,29 @@ function renderCebaderas() {
   return `${topbar("Estaciones cebaderas", "Captura las estaciones de cada cliente y genera su reporte de inspección.",
     `<a class="secondary certificate-external-link" href="${url}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`)}
     <section class="certificate-frame-card"><iframe id="cebaderas-frame" class="certificate-frame" src="${url}" title="Reporte de estaciones cebaderas GS BURAK"></iframe></section>`;
+}
+
+function renderCroquis() {
+  const croquisUrl = "https://euphonious-snickerdoodle-452b35.netlify.app/";
+  return `
+    ${topbar(
+      "Creador de croquis",
+      "Diseña el mapa de estaciones de cebo, lámparas y trampas sin salir de GS BURAK.",
+      `<a class="secondary certificate-external-link" href="${croquisUrl}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`
+    )}
+    <div class="certificate-notice">
+      Agrega áreas, estaciones, lámparas y trampas; después mueve y ajusta cada elemento para formar el croquis del cliente.
+    </div>
+    <section class="certificate-frame-card">
+      <iframe
+        class="certificate-frame"
+        src="${croquisUrl}"
+        title="Creador de croquis de estaciones GS BURAK"
+        loading="eager"
+        allow="clipboard-write"
+      ></iframe>
+    </section>
+  `;
 }
 
 // Only the embedded, same-origin form receives the customer catalog.
