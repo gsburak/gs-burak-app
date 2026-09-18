@@ -109,12 +109,13 @@
       }
 
       .client-list {
-        overflow-x: visible;
+        overflow-x: auto;
       }
 
       .client-list table {
         width: 100%;
         table-layout: fixed;
+        min-width: 900px;
       }
 
       .client-list th,
@@ -127,17 +128,17 @@
 
       .client-list th:nth-child(1),
       .client-list td:nth-child(1) {
-        width: 28%;
+        width: 25%;
       }
 
       .client-list th:nth-child(2),
       .client-list td:nth-child(2) {
-        width: 22%;
+        width: 19%;
       }
 
       .client-list th:nth-child(3),
       .client-list td:nth-child(3) {
-        width: 13%;
+        width: 12%;
       }
 
       .client-list th:nth-child(4),
@@ -146,14 +147,26 @@
       .client-list td:nth-child(5),
       .client-list th:nth-child(6),
       .client-list td:nth-child(6) {
-        width: 10%;
+        width: 9%;
       }
 
       .client-list th:nth-child(7),
       .client-list td:nth-child(7) {
-        width: 7%;
+        width: 17%;
       }
 
+      .client-list td[data-label="Acciones"] > button {
+        margin-bottom: 8px;
+      }
+
+      .client-list td[data-label="Acciones"] button {
+        white-space: nowrap;
+        overflow-wrap: normal;
+        word-break: normal;
+        min-height: 38px;
+      }
+
+      .client-list td[data-label="Acciones"] > button,
       .client-list .actions button {
         width: 100%;
         min-width: 0;
@@ -162,6 +175,7 @@
       }
 
       @media (max-width: 760px) {
+        .client-list table { min-width: 0; }
         .client-list table,
         .client-list thead,
         .client-list tbody,
