@@ -3618,6 +3618,28 @@ function paymentPill(s) {
   return pendiente > 0 ? `<span class="pill pending">Por cobrar</span>` : `<span class="pill good">Cobrado</span>`;
 }
 
+function programarServicioCliente(clienteId) {
+  if (!can("programacion") || isProgramacionReadOnly()) return;
+  const cliente = state.clientes.find((item) => String(item.id) === String(clienteId));
+  if (!cliente) return;
+  const domicilio = domiciliosCliente(cliente)[0] || {};
+  activeModule = "programacion";
+  modal = {
+    type: "programacion",
+    data: {
+      clienteId: cliente.id,
+      ciudad: (domicilio.ciudad || cliente.ciudad) === "CDMX" ? "CDMX" : "Yucatan",
+      direccion: [domicilio.direccion || cliente.direccion, domicilio.referencia].filter(Boolean).join(" — "),
+      notas: [
+        domicilio.contacto || cliente.contacto ? "Contacto: " + (domicilio.contacto || cliente.contacto) : "",
+        cliente.telefono ? "Telefono: " + cliente.telefono : "",
+        cliente.observaciones || "",
+      ].filter(Boolean).join("\n"),
+    },
+  };
+  render();
+}
+
 function renderClientes() {
   const tipos = [...new Set(state.clientes.map((c) => c.tipo || "Sin tipo"))].sort();
   const clasificaciones = clienteClasificacionOptions(false);
@@ -3663,7 +3685,7 @@ function renderClientes() {
             const facturado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
             const cobrado = servicios.reduce((sum, s) => sum + Number(s.cobrado || 0), 0);
             const contacto = [c.contacto, c.telefono, c.correo].filter(Boolean).join(" · ");
-            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${contacto || ""}</td><td data-label="Ciudad / tipo / clasif.">${c.ciudad || "MERIDA"}<br><span class="readonly">${c.tipo || ""}</span><br><span class="pill">${clasificacionCliente(c)}</span></td><td data-label="Servicios">${number(servicios.length)}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${rowActions("cliente", c.id)}</td></tr>`;
+            return `<tr><td data-label="Cliente"><strong>${c.nombre}</strong>${resumenDomiciliosCliente(c)}${c.observaciones ? `<br><span class="readonly">${c.observaciones}</span>` : ""}</td><td data-label="Contacto">${contacto || ""}</td><td data-label="Ciudad / tipo / clasif.">${c.ciudad || "MERIDA"}<br><span class="readonly">${c.tipo || ""}</span><br><span class="pill">${clasificacionCliente(c)}</span></td><td data-label="Servicios">${number(servicios.length)}</td><td data-label="Facturado">${money(facturado)}</td><td data-label="Por cobrar">${money(Math.max(0, facturado - cobrado))}</td><td data-label="Acciones">${can("programacion") && !isProgramacionReadOnly() ? `<button type="button" class="secondary" data-programar-cliente="${escapeHtml(c.id)}">Programar servicio</button>` : ""}${rowActions("cliente", c.id)}</td></tr>`;
           }).join("") : `<tr><td colspan="7">No hay clientes que coincidan con la busqueda.</td></tr>`}
         </tbody>
       </table>
@@ -4693,6 +4715,9 @@ function bindApp() {
       activeModule = button.dataset.module;
       render();
     });
+  });
+  document.querySelectorAll("[data-programar-cliente]").forEach((button) => {
+    button.addEventListener("click", () => programarServicioCliente(button.dataset.programarCliente));
   });
   document.querySelectorAll("[data-open]").forEach((button) => {
     button.addEventListener("click", () => {
