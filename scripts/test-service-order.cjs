@@ -73,3 +73,20 @@ context.window.history.back();
 assert.equal(context.document.getElementById('orden-servicio-preview'), undefined, 'Browser Back closes the order');
 assert.equal(run('JSON.stringify(state)'), mobileState, 'Mobile navigation preserves all records');
 console.log('Service orders: desktop preview, mobile return button, browser Back, printing, data and escaping passed.');
+
+// Planned collection instructions must stay separate from actual payments.
+for (const method of ['Efectivo', 'Transferencia']) {
+  const planned = run(`normalize('programacion', {montoACobrar:'1250.50', formaPagoPrevista:'${method}'})`);
+  assert.equal(planned.montoACobrar, 1250.50);
+  assert.equal(planned.formaPagoPrevista, method);
+  assert.equal(planned.cobrado, undefined);
+  assert.equal(planned.pagos, undefined);
+  const order = run(`ordenServicioHtml({id:'cobro', montoACobrar:1250.50, formaPagoPrevista:'${method}'})`);
+  assert.ok(order.includes('1,250.50'));
+  assert.ok(order.includes(method === 'Efectivo' ? 'Efectivo al tecnico' : 'Transferencia'));
+}
+assert.equal(run(`normalize('programacion', {montoACobrar:''}).montoACobrar`), null);
+assert.equal(run(`montoProgramacionTexto({})`), 'Sin especificar');
+assert.equal(run(`formaPagoProgramacionTexto({})`), 'Por confirmar');
+assert.ok(run(`montoProgramacionTexto({montoACobrar:0})`).includes('0.00'));
+console.log('Programacion: collection amount, methods, legacy records and zero amount passed.');

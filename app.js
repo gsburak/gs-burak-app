@@ -3696,6 +3696,15 @@ function renderClientes() {
   `;
 }
 
+function montoProgramacionTexto(programacion) {
+  return programacion.montoACobrar == null || programacion.montoACobrar === ""
+    ? "Sin especificar" : money(programacion.montoACobrar);
+}
+
+function formaPagoProgramacionTexto(programacion) {
+  return { Transferencia: "Transferencia", Efectivo: "Efectivo al tecnico" }[programacion.formaPagoPrevista] || "Por confirmar";
+}
+
 function ordenServicioHtml(programacion) {
   const cliente = state.clientes.find((item) => item.id === programacion.clienteId) || {};
   const field = (label, value, wide = false) => `<div class="field${wide ? " wide" : ""}"><span>${escapeHtml(label)}</span><div>${escapeHtml(value || "Sin especificar")}</div></div>`;
@@ -3746,6 +3755,7 @@ function ordenServicioHtml(programacion) {
   <h2>Programación</h2><div class="grid">${field("Fecha", fecha)}${field("Hora", programacion.hora)}${field("Estatus", programacion.estatus || "Programado")}${field("Ciudad / operación", programacion.ciudad || "Yucatan")}</div>
   <h2>Cliente y ubicación</h2><div class="grid">${field("Cliente", cliente.nombre || nombreCliente(programacion.clienteId), true)}${field("Contacto", cliente.contacto)}${field("Teléfono", cliente.telefono)}${field("Dirección / referencia", programacion.direccion || cliente.direccion, true)}</div>
   <h2>Trabajo asignado</h2><div class="grid">${field("Tipo de servicio", programacion.tipo, true)}${field("Técnico principal", programacion.tecnico)}${field("Técnico adicional", programacion.tecnicoAdicional || "Sin asignar")}</div>
+  <h2>Cobro al cliente</h2><div class="grid">${field("Monto a cobrar (MXN)", montoProgramacionTexto(programacion))}${field("Forma de pago", formaPagoProgramacionTexto(programacion))}</div>
   <h2>Comentarios e instrucciones</h2><div class="notes">${escapeHtml(programacion.notas || "Sin comentarios adicionales.")}</div>
   <footer>GS BURAK · Orden de trabajo para el servicio programado.</footer></article></body></html>`;
 }
@@ -3841,7 +3851,7 @@ function renderProgramacion() {
         <table>
           <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Ciudad</th><th>Servicio</th><th>Tecnico</th><th>Estatus</th><th>Calendar</th><th></th></tr></thead>
           <tbody>
-            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button><button class="secondary" data-orden-servicio="${p.id}">Ver orden</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Cancelar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
+            ${rows.length ? rows.map((p) => `<tr><td data-label="Fecha">${p.fecha || ""}</td><td data-label="Hora">${p.hora || ""}</td><td data-label="Cliente"><strong>${nombreCliente(p.clienteId)}</strong><br><span class="readonly">${p.direccion || ""}</span></td><td data-label="Ciudad">${p.ciudad || "Yucatan"}</td><td data-label="Servicio">${p.tipo || ""}<br><span class="readonly">${p.notas || ""}</span><br><strong>Cobro: ${montoProgramacionTexto(p)}</strong><br><span class="readonly">${formaPagoProgramacionTexto(p)}</span></td><td data-label="Tecnico">${tecnicosProgramacionTexto(p)}</td><td data-label="Estatus">${programacionPill(p.estatus)}</td><td data-label="Calendar">${calendarPill(p)}</td><td data-label="Acciones"><div class="actions"><button class="secondary" data-view-programacion="${p.id}">Consultar</button><button class="secondary" data-orden-servicio="${p.id}">Ver orden</button>${readOnly ? "" : `<button class="secondary" data-edit="programacion" data-id="${p.id}">Editar</button><button class="primary" data-convert-programacion="${p.id}">Pasar a ventas</button><button class="ghost" data-delete="programacion" data-id="${p.id}">Cancelar</button>`}</div></td></tr>`).join("") : `<tr><td colspan="9">Aun no hay servicios programados para este filtro.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -4459,6 +4469,8 @@ function renderProgramacionConsultaModal(id) {
           ${readField("Tecnico(s)", tecnicosProgramacionTexto(programacion), "wide")}
           ${readField("Estatus", programacion.estatus || "Programado")}
           ${readField("Calendario", programacion.calendarStatus || "Sin calendario")}
+          ${readField("Monto a cobrar (MXN)", montoProgramacionTexto(programacion))}
+          ${readField("Forma de pago", formaPagoProgramacionTexto(programacion))}
           ${readField("Direccion / referencia", programacion.direccion, "full")}
           ${readField("Notas para el tecnico", programacion.notas, "full")}
         </div>
@@ -4628,7 +4640,7 @@ function formFor(type, data) {
   }
   if (type === "programacion") {
     const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
-    return `<div class="form-grid">${data.pendienteId ? `<input type="hidden" name="pendienteId" value="${data.pendienteId}" />` : ""}${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${programacionClienteFields(data.clienteId)}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "", tecnicosProgramacionOptions(true))}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${text("direccion", "Direccion / referencia", data.direccion, "full")}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
+    return `<div class="form-grid">${data.pendienteId ? `<input type="hidden" name="pendienteId" value="${data.pendienteId}" />` : ""}${input("fecha", "Fecha", data.fecha || today(), "date")}${input("hora", "Hora", data.hora || "09:00", "time")}${programacionClienteFields(data.clienteId)}${select("ciudad", "Ciudad", data.ciudad || "Yucatan", ["Yucatan", "CDMX"].map((x) => ({ value: x, label: x })))}${select("tipo", "Tipo de servicio", data.tipo, tipoOptions)}${select("tecnico", "Tecnico principal", data.tecnico || "", tecnicosProgramacionOptions(true))}${select("tecnicoAdicional", "Tecnico adicional", data.tecnicoAdicional || "", tecnicosProgramacionOptions(true))}${select("estatus", "Estatus", data.estatus || "Programado", ["Programado", "Confirmado", "Reprogramar", "Realizado", "Cancelado"].map((x) => ({ value: x, label: x })))}${text("direccion", "Direccion / referencia", data.direccion, "full")}${input("montoACobrar", "Monto a cobrar (MXN)", data.montoACobrar ?? "", "number")}${select("formaPagoPrevista", "Forma de pago", data.formaPagoPrevista || "", [{value: "", label: "Por confirmar"}, {value: "Transferencia", label: "Transferencia"}, {value: "Efectivo", label: "Efectivo al tecnico"}])}${text("notas", "Notas para el tecnico", data.notas, "full")}</div>`;
   }
   if (type === "pendiente") {
     const clienteOptions = [{ value: "", label: "Sin cliente ligado" }, ...[...state.clientes]
@@ -5222,6 +5234,12 @@ function saveEntity(event) {
     alert("Escribe que necesitas recordar.");
     return;
   }
+  if (type === "programacion" && data.montoACobrar !== "" &&
+      (!Number.isFinite(toNumber(data.montoACobrar)) || toNumber(data.montoACobrar) < 0)) {
+    alert("El monto a cobrar debe ser un numero mayor o igual a cero.");
+    form.elements.montoACobrar.focus();
+    return;
+  }
   const entity = normalize(type, data);
   if (type === "servicio" && Number(entity.cobrado || 0) > totalServicio(entity) + 0.009) {
     const continueSave = confirm(`Los pagos suman ${money(entity.cobrado)}, pero el servicio es por ${money(totalServicio(entity))}. Deseas guardar de todos modos?`);
@@ -5377,6 +5395,8 @@ function normalize(type, data) {
   }
   if (type === "programacion") {
     data.tecnico = data.tecnico || "";
+    data.montoACobrar = data.montoACobrar == null || data.montoACobrar === "" ? null : toNumber(data.montoACobrar);
+    data.formaPagoPrevista = ["Transferencia", "Efectivo"].includes(data.formaPagoPrevista) ? data.formaPagoPrevista : "";
     data.tecnicoAdicional = data.tecnicoAdicional || "";
     if (data.tecnico && data.tecnicoAdicional === data.tecnico) data.tecnicoAdicional = "";
   }
