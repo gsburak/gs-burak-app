@@ -2376,7 +2376,10 @@ function renderPendientesAlert() {
   return `<section class="pending-alert" role="alert"><div><strong>Tienes pendientes que requieren atencion</strong><span>${details}. Revísalos para que no se te olviden.</span></div><button class="primary" data-module="pendientes">Ver pendientes</button></section>`;
 }
 
+let programacionFieldsObserver = null;
+
 function render() {
+  programacionFieldsObserver?.disconnect();
   const app = document.querySelector("#app");
   if (!state) {
     app.innerHTML = `<div class="main"><div class="panel"><h2>Cargando GS Burak...</h2><p class="readonly">Preparando datos.</p></div></div>`;
@@ -4709,7 +4712,38 @@ function formServicio(data) {
   </div>`;
 }
 
+function bindProgramacionAutoSize() {
+  const fields = document.querySelectorAll('#entityForm[data-type="programacion"] textarea');
+  const resize = (field) => {
+    const container = field.closest('.modal');
+    const scrollTop = container?.scrollTop;
+    field.style.height = 'auto';
+    const style = getComputedStyle(field);
+    const borders = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+    field.style.height = `${field.scrollHeight + borders}px`;
+    if (container) container.scrollTop = scrollTop;
+  };
+  fields.forEach((field) => {
+    field.style.overflowY = 'hidden';
+    field.style.maxHeight = 'none';
+    field.addEventListener('input', () => resize(field));
+    resize(field);
+  });
+  if (fields.length && typeof ResizeObserver !== 'undefined') {
+    const widths = new WeakMap();
+    programacionFieldsObserver = new ResizeObserver((entries) => {
+      entries.forEach(({ target, contentRect }) => {
+        if (widths.get(target) === contentRect.width) return;
+        widths.set(target, contentRect.width);
+        resize(target);
+      });
+    });
+    fields.forEach((field) => programacionFieldsObserver.observe(field));
+  }
+}
+
 function bindApp() {
+  bindProgramacionAutoSize();
   document.querySelectorAll("[data-module]").forEach((button) => {
     button.addEventListener("click", () => {
       activeModule = button.dataset.module;
