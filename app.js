@@ -1211,6 +1211,84 @@ function exportServiciosCsv() {
   );
 }
 
+function acquisitionReportData(kind, range = null, search = "") {
+  if (!["compras", "equipos"].includes(kind)) throw new Error("Tipo de reporte invalido.");
+  const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const term = normalize(search.trim());
+  const source = kind === "compras" ? comprasFiltradasOperacion() : equiposFiltradosOperacion();
+  const rows = source.map((item) => ({
+    fecha: item.fecha || "",
+    operacion: operacionRegistro(item),
+    articulo: kind === "compras" ? nombreProducto(item.productoId) : item.equipo || "Sin nombre",
+    cantidad: Number(kind === "compras" ? item.cantidad || 0 : item.unidad || 1),
+    unidad: kind === "compras" ? unidadCompraProducto(item.productoId) : "pieza",
+    costo: Number(kind === "compras" ? item.costoUnitario || 0 : item.costo || 0),
+    total: kind === "compras" ? Number(item.cantidad || 0) * Number(item.costoUnitario || 0) : costoTotalEquipo(item),
+    proveedor: item.proveedor || "",
+    pagador: item.pagadoPor || "",
+  })).filter((row) => (!range || (row.fecha >= range.start && row.fecha <= range.end)) &&
+    (!term || [row.articulo, row.proveedor, row.pagador, row.operacion].some((value) => normalize(value).includes(term))))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.articulo.localeCompare(b.articulo));
+  const monthly = new Map();
+  rows.forEach((row) => {
+    const key = /^\d{4}-\d{2}-\d{2}$/.test(row.fecha) ? row.fecha.slice(0, 7) : "Sin fecha";
+    const month = monthly.get(key) || { mes: key, registros: 0, total: 0 };
+    month.registros += 1;
+    month.total += row.total;
+    monthly.set(key, month);
+  });
+  return { rows, monthly: [...monthly.values()], total: rows.reduce((sum, row) => sum + row.total, 0) };
+}
+
+function renderAcquisitionReportModal(kind) {
+  const title = kind === "equipos" ? "Reporte de compras de equipos" : "Reporte de compras de productos";
+  return `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="acquisitionTitle">
+    <div class="modal-header"><h2 id="acquisitionTitle">${title}</h2><button class="ghost" data-action="close">Cerrar</button></div>
+    <form id="executiveReportForm" data-acquisition="${kind}">
+      <div class="field"><label for="reportMode">Periodo</label><select id="reportMode" name="mode">
+        <option value="month">Un mes</option><option value="months">Varios meses</option><option value="dates">Fechas especificas</option><option value="all">Todo el historial</option>
+      </select></div>
+      <div id="reportDates"></div>
+      <div class="field"><label for="reportSearch">Filtrar por articulo, proveedor o pagador (opcional)</label><input id="reportSearch" name="search" type="search" value="${escapeHtml(kind === "compras" ? compraSearch : "")}" placeholder="Vacio para incluir todos"></div>
+      <p class="readonly">Operacion: ${escapeHtml(operacionFilter)}. Se incluyen ambas fechas. Los registros sin fecha solo aparecen en Todo el historial.</p>
+      <p class="readonly">Se abrira un informe con detalle, subtotales mensuales y total del periodo para imprimir o guardar como PDF.</p>
+      <p id="reportError" role="alert"></p>
+      <div class="form-actions"><button class="secondary" type="button" data-action="close">Cancelar</button><button class="primary" type="submit">Generar reporte</button></div>
+    </form></div></div>`;
+}
+
+function exportAcquisitionReport(kind, range = null, search = "") {
+  if (currentUser?.id !== "admin") throw new Error("Este reporte solo esta disponible para el administrador.");
+  const report = acquisitionReportData(kind, range, search);
+  const title = kind === "equipos" ? "Compras de equipos" : "Compras de productos";
+  const period = range ? `${range.start} al ${range.end}` : "Todo el historial";
+  const cell = (value) => `<td>${escapeHtml(value)}</td>`;
+  const detail = report.rows.map((row) => `<tr>${[
+    row.fecha || "Sin fecha", row.operacion, row.articulo, `${number(row.cantidad)} ${row.unidad}`,
+    money(row.costo), money(row.total), row.proveedor || "Sin registrar", row.pagador || "Sin registrar",
+  ].map(cell).join("")}</tr>`).join("");
+  const summary = report.monthly.map((row) => `<tr>${[row.mes, number(row.registros), money(row.total)].map(cell).join("")}</tr>`).join("");
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GS BURAK - ${title} - ${escapeHtml(period)}</title>
+    <style>
+      body{font:14px Arial,sans-serif;color:#142d38;margin:24px}h1{font-size:25px}h2{font-size:18px;margin-top:28px}
+      .toolbar{background:#edf7f6;padding:14px;border-radius:8px}.toolbar button{background:#0c7974;color:white;border:0;border-radius:5px;padding:12px;cursor:pointer}
+      .meta{line-height:1.7}.total{font-size:20px;font-weight:bold;color:#086760}table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #cfdbdf;padding:8px;text-align:left;overflow-wrap:anywhere}th{background:#edf3f5}tr{break-inside:avoid}.summary{max-width:650px}.table-wrap{overflow-x:auto}small{color:#53646a}
+      @page{size:A4 landscape;margin:12mm}@media print{body{margin:0;font-size:10px}.toolbar{display:none}.table-wrap{overflow:visible}thead{display:table-header-group}h2{break-after:avoid}th,td{padding:6px}h1{font-size:21px}}
+    </style></head><body>
+    <div class="toolbar"><button onclick="window.print()">Imprimir / Guardar PDF</button><p>Para enviar el reporte por correo o WhatsApp, selecciona Guardar como PDF y adjunta el archivo guardado.</p></div>
+    <h1>GS BURAK · ${title}</h1><p class="meta"><strong>Periodo:</strong> ${escapeHtml(period)}<br><strong>Operacion:</strong> ${escapeHtml(operacionFilter)}<br><strong>Filtro:</strong> ${escapeHtml(search.trim() || "Todos los articulos")}<br><strong>Generado:</strong> ${escapeHtml(today())}</p>
+    <p class="total">Total del periodo: ${money(report.total)}</p><p>${number(report.rows.length)} registros de compra.</p>
+    <h2>Resumen por mes</h2><table class="summary"><thead><tr><th>Mes</th><th>Registros</th><th>Importe</th></tr></thead><tbody>${summary || '<tr><td colspan="3">Sin compras para este periodo y filtros.</td></tr>'}<tr><td><strong>Total</strong></td><td>${number(report.rows.length)}</td><td><strong>${money(report.total)}</strong></td></tr></tbody></table>
+    <h2>Detalle de compras</h2><div class="table-wrap"><table><thead><tr><th>Fecha de compra</th><th>Operacion</th><th>${kind === "equipos" ? "Equipo" : "Producto"}</th><th>Cantidad</th><th>Costo unitario</th><th>Importe</th><th>Proveedor</th><th>Pagado por</th></tr></thead><tbody>${detail || '<tr><td colspan="8">Sin compras para este periodo y filtros.</td></tr>'}</tbody></table></div>
+    <p><strong>Total de compras: ${money(report.total)}</strong></p><small>Importes en MXN segun los costos de compra registrados.${kind === "equipos" ? " El importe corresponde a la adquisicion, sin descontar depreciacion." : " Cantidades expresadas en unidades de compra."} Los registros sin fecha solo se incluyen en Todo el historial.</small>
+    </body></html>`;
+  const reportWindow = window.open("", "_blank");
+  if (!reportWindow) throw new Error("El navegador bloqueo el reporte. Permite ventanas emergentes para esta pagina e intenta de nuevo.");
+  reportWindow.document.open();
+  reportWindow.document.write(html);
+  reportWindow.document.close();
+}
+
 function renderExecutiveReportModal() {
   return `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
     <div class="modal-header"><h2 id="reportTitle">Reporte ejecutivo</h2><button class="ghost" data-action="close">Cerrar</button></div>
@@ -1257,7 +1335,8 @@ function bindExecutiveReportForm() {
     event.preventDefault();
     try {
       const range = executiveReportRange(mode.value, form.elements.start?.value, form.elements.end?.value);
-      exportDashboardExecutiveReport(range);
+      if (form.dataset.acquisition) exportAcquisitionReport(form.dataset.acquisition, range, form.elements.search.value);
+      else exportDashboardExecutiveReport(range);
     } catch (error) {
       document.querySelector("#reportError").textContent = error.message;
     }
@@ -4252,7 +4331,7 @@ function renderCompras() {
   const comprasMensuales = comprasPorMes(comprasRows);
   const maxCompraMensual = Math.max(...comprasMensuales.map((row) => row.total), 1);
   return `
-    ${topbar("Compras", "Entradas de producto para alimentar inventario.", `${operationFilterControl()}<button class="primary" data-open="compra">Nueva compra</button>`)}
+    ${topbar("Compras", "Entradas de producto para alimentar inventario.", `${operationFilterControl()}<button class="secondary" data-acquisition-report="compras">Reporte de compras</button><button class="primary" data-open="compra">Nueva compra</button>`)}
     <section class="panel filters">
       <div class="field">
         <label>Buscar producto comprado</label>
@@ -4376,7 +4455,7 @@ function renderGastos() {
 function renderEquipos() {
   const equiposRows = equiposFiltradosOperacion();
   return `
-    ${topbar("Equipos", "Activos, vida util, depreciacion mensual y acumulada.", `${operationFilterControl()}<button class="primary" data-open="equipo">Nuevo equipo</button>`)}
+    ${topbar("Equipos", "Activos, vida util, depreciacion mensual y acumulada.", `${operationFilterControl()}<button class="secondary" data-acquisition-report="equipos">Reporte de compras</button><button class="primary" data-open="equipo">Nuevo equipo</button>`)}
     ${renderEquiposPagadorResumen()}
     <section class="panel" style="margin-top:14px">
       <h2>Historial de equipos</h2>
@@ -4402,6 +4481,7 @@ function rowActions(type, id) {
 
 function renderModal() {
   const { type, id } = modal;
+  if (type === "acquisitionReport") return renderAcquisitionReportModal(modal.kind);
   if (type === "executiveReport") return renderExecutiveReportModal();
   if (type === "programacionConsulta") return renderProgramacionConsultaModal(id);
   if (type === "servicioConsulta") return renderServicioConsultaModal(id);
@@ -4755,6 +4835,9 @@ function bindProgramacionAutoSize() {
 }
 
 function bindApp() {
+  document.querySelectorAll("[data-acquisition-report]").forEach((button) => {
+    button.addEventListener("click", () => { modal = { type: "acquisitionReport", kind: button.dataset.acquisitionReport }; render(); });
+  });
   bindProgramacionAutoSize();
   document.querySelectorAll("[data-module]").forEach((button) => {
     button.addEventListener("click", () => {
