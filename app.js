@@ -1211,7 +1211,7 @@ function exportServiciosCsv() {
   );
 }
 
-function acquisitionReportData(kind, range = null, search = "") {
+function acquisitionReportData(kind, range = null, search = "", payer = "") {
   if (!["compras", "equipos"].includes(kind)) throw new Error("Tipo de reporte invalido.");
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const term = normalize(search.trim());
@@ -1226,7 +1226,7 @@ function acquisitionReportData(kind, range = null, search = "") {
     total: kind === "compras" ? Number(item.cantidad || 0) * Number(item.costoUnitario || 0) : costoTotalEquipo(item),
     proveedor: item.proveedor || "",
     pagador: item.pagadoPor || "",
-  })).filter((row) => (!range || (row.fecha >= range.start && row.fecha <= range.end)) &&
+  })).filter((row) => (!payer || pagadorKey(row.pagador) === payer) && (!range || (row.fecha >= range.start && row.fecha <= range.end)) &&
     (!term || [row.articulo, row.proveedor, row.pagador, row.operacion].some((value) => normalize(value).includes(term))))
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.articulo.localeCompare(b.articulo));
   const monthly = new Map();
@@ -1241,6 +1241,8 @@ function acquisitionReportData(kind, range = null, search = "") {
 }
 
 function renderAcquisitionReportModal(kind) {
+  const source = kind === "compras" ? comprasFiltradasOperacion() : equiposFiltradosOperacion();
+  const payers = [...new Set(source.map((row) => pagadorKey(row.pagadoPor)))].sort((a, b) => a.localeCompare(b));
   const title = kind === "equipos" ? "Reporte de compras de equipos" : "Reporte de compras de productos";
   return `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="acquisitionTitle">
     <div class="modal-header"><h2 id="acquisitionTitle">${title}</h2><button class="ghost" data-action="close">Cerrar</button></div>
@@ -1249,6 +1251,7 @@ function renderAcquisitionReportModal(kind) {
         <option value="month">Un mes</option><option value="months">Varios meses</option><option value="dates">Fechas especificas</option><option value="all">Todo el historial</option>
       </select></div>
       <div id="reportDates"></div>
+      <div class="field"><label for="reportPayer">Pagado por</label><select id="reportPayer" name="payer"><option value="">Todos</option>${payers.map((payer) => `<option value="${escapeHtml(payer)}">${escapeHtml(payer)}</option>`).join("")}</select></div>
       <div class="field"><label for="reportSearch">Filtrar por articulo, proveedor o pagador (opcional)</label><input id="reportSearch" name="search" type="search" value="${escapeHtml(kind === "compras" ? compraSearch : "")}" placeholder="Vacio para incluir todos"></div>
       <p class="readonly">Operacion: ${escapeHtml(operacionFilter)}. Se incluyen ambas fechas. Los registros sin fecha solo aparecen en Todo el historial.</p>
       <p class="readonly">Se abrira un informe con detalle, subtotales mensuales y total del periodo para imprimir o guardar como PDF.</p>
@@ -1257,9 +1260,9 @@ function renderAcquisitionReportModal(kind) {
     </form></div></div>`;
 }
 
-function exportAcquisitionReport(kind, range = null, search = "") {
+function exportAcquisitionReport(kind, range = null, search = "", payer = "") {
   if (currentUser?.id !== "admin") throw new Error("Este reporte solo esta disponible para el administrador.");
-  const report = acquisitionReportData(kind, range, search);
+  const report = acquisitionReportData(kind, range, search, payer);
   const title = kind === "equipos" ? "Compras de equipos" : "Compras de productos";
   const period = range ? `${range.start} al ${range.end}` : "Todo el historial";
   const cell = (value) => `<td>${escapeHtml(value)}</td>`;
@@ -1276,7 +1279,7 @@ function exportAcquisitionReport(kind, range = null, search = "") {
       @page{size:A4 landscape;margin:12mm}@media print{body{margin:0;font-size:10px}.toolbar{display:none}.table-wrap{overflow:visible}thead{display:table-header-group}h2{break-after:avoid}th,td{padding:6px}h1{font-size:21px}}
     </style></head><body>
     <div class="toolbar"><button onclick="window.print()">Imprimir / Guardar PDF</button><p>Para enviar el reporte por correo o WhatsApp, selecciona Guardar como PDF y adjunta el archivo guardado.</p></div>
-    <h1>GS BURAK · ${title}</h1><p class="meta"><strong>Periodo:</strong> ${escapeHtml(period)}<br><strong>Operacion:</strong> ${escapeHtml(operacionFilter)}<br><strong>Filtro:</strong> ${escapeHtml(search.trim() || "Todos los articulos")}<br><strong>Generado:</strong> ${escapeHtml(today())}</p>
+    <h1>GS BURAK · ${title}</h1><p class="meta"><strong>Periodo:</strong> ${escapeHtml(period)}<br><strong>Operacion:</strong> ${escapeHtml(operacionFilter)}<br><strong>Pagado por:</strong> ${escapeHtml(payer || "Todos")}<br><strong>Filtro:</strong> ${escapeHtml(search.trim() || "Todos los articulos")}<br><strong>Generado:</strong> ${escapeHtml(today())}</p>
     <p class="total">Total del periodo: ${money(report.total)}</p><p>${number(report.rows.length)} registros de compra.</p>
     <h2>Resumen por mes</h2><table class="summary"><thead><tr><th>Mes</th><th>Registros</th><th>Importe</th></tr></thead><tbody>${summary || '<tr><td colspan="3">Sin compras para este periodo y filtros.</td></tr>'}<tr><td><strong>Total</strong></td><td>${number(report.rows.length)}</td><td><strong>${money(report.total)}</strong></td></tr></tbody></table>
     <h2>Detalle de compras</h2><div class="table-wrap"><table><thead><tr><th>Fecha de compra</th><th>Operacion</th><th>${kind === "equipos" ? "Equipo" : "Producto"}</th><th>Cantidad</th><th>Costo unitario</th><th>Importe</th><th>Proveedor</th><th>Pagado por</th></tr></thead><tbody>${detail || '<tr><td colspan="8">Sin compras para este periodo y filtros.</td></tr>'}</tbody></table></div>
@@ -1335,7 +1338,7 @@ function bindExecutiveReportForm() {
     event.preventDefault();
     try {
       const range = executiveReportRange(mode.value, form.elements.start?.value, form.elements.end?.value);
-      if (form.dataset.acquisition) exportAcquisitionReport(form.dataset.acquisition, range, form.elements.search.value);
+      if (form.dataset.acquisition) exportAcquisitionReport(form.dataset.acquisition, range, form.elements.search.value, form.elements.payer.value);
       else exportDashboardExecutiveReport(range);
     } catch (error) {
       document.querySelector("#reportError").textContent = error.message;
