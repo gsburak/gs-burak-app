@@ -14,6 +14,7 @@ const modules = [
   { id: "presupuestos", label: "Presupuestos", icon: "Presupuestos", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
   { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
+  { id: "diagnostico", label: "Reporte de diagnóstico", icon: "Diagnóstico", roles: ["admin", "operativo", "consulta"] },
   { id: "cebaderas", label: "Estaciones cebaderas", icon: "Cebaderas", roles: ["admin", "operativo", "consulta"] },
   { id: "croquis", label: "Creador de croquis", icon: "Croquis", roles: ["admin", "operativo", "consulta"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
@@ -2579,6 +2580,7 @@ function renderModule() {
     programacion: renderProgramacion,
     certificados: renderCertificados,
     cebaderas: renderCebaderas,
+    diagnostico: renderDiagnostico,
     croquis: renderCroquis,
     pendientes: renderPendientes,
     servicios: renderServicios,
@@ -2612,6 +2614,19 @@ function renderCertificados() {
       ></iframe>
     </section>
   `;
+}
+
+function renderDiagnostico() {
+  const url = "netlify-sites/diagnostico/index.html";
+  return `${topbar("Reporte de diagnóstico", "Registra la inspección, los hallazgos y las acciones para entregar al cliente.",
+    `<a class="secondary certificate-external-link" href="${url}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`)}
+    <section class="certificate-frame-card"><iframe id="diagnostico-frame" class="certificate-frame" src="${url}" title="Reporte de diagnóstico GS BURAK"></iframe></section>`;
+}
+
+function provideDiagnosticoClients(event) {
+  const frame = document.getElementById("diagnostico-frame");
+  if (!currentUser || !frame || event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== "burak-diagnostico-ready") return;
+  frame.contentWindow.postMessage({ type: "burak-diagnostico-clientes", clientes: state.clientes.map(({ id, nombre, direccion, telefono, correo }) => ({ id, nombre, direccion, telefono, correo })) }, location.origin);
 }
 
 function renderCebaderas() {
@@ -5502,6 +5517,7 @@ function toNumber(value) {
 
 async function init() {
   window.addEventListener("message", provideCebaderasClients);
+  window.addEventListener("message", provideDiagnosticoClients);
   state = await loadInitialState();
   render();
 }
