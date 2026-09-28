@@ -599,6 +599,8 @@ function buildServicioPendiente(data) {
       .filter((producto) => producto.productoId && producto.cantidad > 0),
     reporte: {
       folio: data.folio || "",
+      horaInicio: data.hora || "",
+      horaFin: data.horaFin || "",
       tiempoReentrada: data.tiempoReentrada || "",
       metodos: data.metodos || [],
       plagas: data.plagas || [],
@@ -763,11 +765,12 @@ function crearPdfEditable(data) {
   doc.line(45, 116, 568, 116);
   y = 124;
 
-  const boxW = (page.w - page.m * 2 - 18) / 4;
+  const boxW = (page.w - page.m * 2 - 24) / 5;
   labeledBox("Fecha", data.fecha, page.m, y, boxW, 27);
-  labeledBox("Hora", data.hora, page.m + boxW + 6, y, boxW, 27);
-  labeledBox("Tecnico", data.tecnico, page.m + (boxW + 6) * 2, y, boxW, 27);
-  labeledBox("Tiempo de reentrada", data.tiempoReentrada, page.m + (boxW + 6) * 3, y, boxW, 27);
+  labeledBox("Hora de inicio", data.hora, page.m + boxW + 6, y, boxW, 27);
+  labeledBox("Hora de término", data.horaFin, page.m + (boxW + 6) * 2, y, boxW, 27);
+  labeledBox("Tecnico", data.tecnico, page.m + (boxW + 6) * 3, y, boxW, 27);
+  labeledBox("Tiempo de reentrada", data.tiempoReentrada, page.m + (boxW + 6) * 4, y, boxW, 27);
   y += 36;
 
   section("DATOS DEL CLIENTE");
@@ -908,7 +911,8 @@ function renderCertificate(data, signatures) {
 
       <div class="cert-meta">
         <div><span>Fecha</span><strong>${display(data.fecha)}</strong></div>
-        <div><span>Hora</span><strong>${display(data.hora)}</strong></div>
+        <div><span>Hora de inicio</span><strong>${display(data.hora)}</strong></div>
+        <div><span>Hora de término</span><strong>${display(data.horaFin)}</strong></div>
         <div><span>Tecnico</span><strong>${display(data.tecnico)}</strong></div>
         <div><span>Tiempo de reentrada</span><strong>${display(data.tiempoReentrada)}</strong></div>
       </div>

@@ -2594,7 +2594,7 @@ function renderModule() {
 }
 
 function renderCertificados() {
-  const certificadoUrl = "https://stirring-semolina-e8a9e3.netlify.app/";
+  const certificadoUrl = "netlify-sites/certificado/index.html";
   return `
     ${topbar(
       "Certificado de servicio",

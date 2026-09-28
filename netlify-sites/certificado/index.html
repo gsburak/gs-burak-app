@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Certificado / Reporte de servicio</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260927b">
   </head>
   <body>
     <main class="app-shell">
@@ -34,8 +34,11 @@
             <label>Fecha
               <input name="fecha" type="date" required>
             </label>
-            <label>Hora
+            <label>Hora de inicio
               <input name="hora" type="time" required>
+            </label>
+            <label>Hora de término
+              <input name="horaFin" type="time" required>
             </label>
             <label>Folio
               <input name="folio" id="folio" type="text" required>
@@ -207,6 +210,6 @@
     <section id="certificatePreview" class="certificate hidden"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=20260927b"></script>
   </body>
 </html>
