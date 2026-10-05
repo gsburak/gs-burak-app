@@ -142,12 +142,15 @@ function today(offset = 0) {
   return date.toISOString().slice(0, 10);
 }
 
+const moneyFormatter = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+const numberFormatter = new Intl.NumberFormat("es-MX");
+
 function money(value) {
-  return Number(value || 0).toLocaleString("es-MX", { style: "currency", currency: "MXN" });
+  return moneyFormatter.format(Number(value || 0));
 }
 
 function number(value) {
-  return Number(value || 0).toLocaleString("es-MX");
+  return numberFormatter.format(Number(value || 0));
 }
 
 function escapeHtml(value) {
@@ -1131,6 +1134,13 @@ function normalizarTexto(value) {
 }
 
 function clienteDeServicio(servicio) {
+  if (!renderCostCache) return buscarClienteDeServicio(servicio);
+  if (!renderCostCache.clients) renderCostCache.clients = new Map();
+  if (!renderCostCache.clients.has(servicio)) renderCostCache.clients.set(servicio, buscarClienteDeServicio(servicio));
+  return renderCostCache.clients.get(servicio);
+}
+
+function buscarClienteDeServicio(servicio) {
   const exacto = state.clientes.find((item) => item.id === servicio.clienteId);
   if (exacto) return exacto;
   const nombre = normalizarTexto(nombreCliente(servicio.clienteId, servicio));
