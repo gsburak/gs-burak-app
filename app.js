@@ -1838,6 +1838,15 @@ function comprasOrdenadas(productoId, operacion = null) {
 }
 
 function lotesRestantesProducto(productoId, operacion = null) {
+  if (!renderCostCache) return calcularLotesRestantesProducto(productoId, operacion);
+  if (!renderCostCache.lots) renderCostCache.lots = new Map();
+  if (!renderCostCache.lots.has(productoId)) renderCostCache.lots.set(productoId, new Map());
+  const byOperation = renderCostCache.lots.get(productoId);
+  if (!byOperation.has(operacion)) byOperation.set(operacion, calcularLotesRestantesProducto(productoId, operacion));
+  return byOperation.get(operacion);
+}
+
+function calcularLotesRestantesProducto(productoId, operacion = null) {
   const lots = comprasOrdenadas(productoId, operacion);
 
   for (const servicio of serviciosOrdenados()) {
@@ -1867,7 +1876,43 @@ function compraPorId(id) {
   return state.compras.find((compra) => compra.id === id);
 }
 
+let renderCostCache = null;
+
+function calcularCostosServicios() {
+  const lotsByProduct = new Map();
+  const costs = new Map();
+  for (const servicio of serviciosOrdenados()) {
+    let serviceCost = 0;
+    for (const item of servicio.productos || []) {
+      const productId = item.productoId;
+      if (!lotsByProduct.has(productId)) lotsByProduct.set(productId, comprasOrdenadas(productId));
+      let remainingUse = Number(item.cantidad || 0);
+      let itemCost = 0;
+      for (const lot of lotsByProduct.get(productId)) {
+        if (remainingUse <= 0) break;
+        if (lot.remaining <= 0) continue;
+        const used = Math.min(remainingUse, lot.remaining);
+        itemCost += used * lot.costPerUse;
+        lot.remaining -= used;
+        remainingUse -= used;
+      }
+      if (remainingUse > 0) itemCost += remainingUse * costoProducto(productId);
+      serviceCost += itemCost;
+    }
+    if (!costs.has(servicio.id)) costs.set(servicio.id, serviceCost);
+  }
+  return costs;
+}
+
 function costoServicioPorLotes(targetService) {
+  if (renderCostCache) {
+    if (!renderCostCache.costs) renderCostCache.costs = calcularCostosServicios();
+    return renderCostCache.costs.get(targetService.id) ?? 0;
+  }
+  return costoServicioPorLotesSinCache(targetService);
+}
+
+function costoServicioPorLotesSinCache(targetService) {
   const lotsByProduct = {};
   let targetCost = 0;
 
@@ -2462,6 +2507,16 @@ function renderPendientesAlert() {
 let programacionFieldsObserver = null;
 
 function render() {
+  // Costs are cached only during this render; subsequent edits use fresh data.
+  renderCostCache = {};
+  try {
+    renderContent();
+  } finally {
+    renderCostCache = null;
+  }
+}
+
+function renderContent() {
   programacionFieldsObserver?.disconnect();
   const app = document.querySelector("#app");
   if (!state) {
