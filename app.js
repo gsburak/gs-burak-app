@@ -1065,7 +1065,7 @@ function xmlEscape(value) {
 }
 
 function clientesFiltradosVista() {
-  const term = clienteSearch.trim().toLowerCase();
+  const term = normalizarTexto(clienteSearch);
   return state.clientes
     .filter((c) => !clienteTipoFilter || (c.tipo || "Sin tipo") === clienteTipoFilter)
     .filter((c) => !clienteCiudadFilter || (c.ciudad || "MERIDA") === clienteCiudadFilter)
@@ -1075,19 +1075,18 @@ function clientesFiltradosVista() {
       const domiciliosText = domiciliosCliente(c)
         .map((domicilio) => [domicilio.alias, domicilio.direccion, domicilio.ciudad, domicilio.referencia, domicilio.contacto].join(" "))
         .join(" ");
-      return [c.nombre, c.contacto, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones, domiciliosText]
-        .some((value) => String(value || "").toLowerCase().includes(term));
+      return coincideBusqueda([c.nombre, c.contacto, c.telefono, c.correo, c.direccion, c.tipo, c.ciudad, c.observaciones, domiciliosText].join(" "), term);
     })
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")));
 }
 
 function serviciosFiltradosVista() {
-  const term = servicioSearch.trim().toLowerCase();
+  const term = normalizarTexto(servicioSearch);
   return serviciosFiltradosOperacion()
     .filter((s) => !servicioMonthFilter || monthKey(s.fecha) === servicioMonthFilter)
     .filter((s) => {
       if (!term) return true;
-      return nombreCliente(s.clienteId, s).toLowerCase().includes(term);
+      return coincideBusqueda(nombreCliente(s.clienteId, s), term);
     })
     .filter((s) => {
       if (servicioPagoFilter === SERVICIO_PAGO_COBRADO_EN_POR_COBRAR) {
@@ -1123,6 +1122,11 @@ function clasificacionServicio(servicio) {
   const cliente = clienteDeServicio(servicio);
   if (!cliente) return "Servicio por revisar";
   return clasificacionCliente(cliente);
+}
+
+function coincideBusqueda(value, term) {
+  const text = normalizarTexto(value).replace(/\s+/g, " ");
+  return normalizarTexto(term).split(/\s+/).filter(Boolean).every((word) => text.includes(word));
 }
 
 function normalizarTexto(value) {
@@ -4218,7 +4222,7 @@ function renderResumenServiciosPorCliente(servicios) {
 }
 
 function renderServicios() {
-  const term = servicioSearch.trim().toLowerCase();
+  const term = normalizarTexto(servicioSearch);
   const servicios = serviciosFiltradosVista();
   const totalFiltrado = servicios.reduce((sum, s) => sum + totalServicio(s), 0);
   const rows = servicios.map((s) => {
@@ -5309,7 +5313,7 @@ function bindProgramacionClienteSearch() {
         domicilio.referencia,
       ]),
     ];
-    return searchable.some((value) => String(value || "").toLowerCase().includes(term));
+    return coincideBusqueda(searchable.join(" "), term);
   };
 
   const selectClient = (cliente) => {
@@ -5321,7 +5325,7 @@ function bindProgramacionClienteSearch() {
   };
 
   const updateResults = () => {
-    const term = searchInput.value.trim().toLowerCase();
+    const term = normalizarTexto(searchInput.value);
     clientIdInput.value = "";
     resultsBox.innerHTML = "";
 
