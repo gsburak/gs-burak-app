@@ -125,6 +125,7 @@ let servicioProductoFilter = "Todos";
 let servicioClienteClasificacionFilter = "Todos";
 let compraSearch = "";
 let compraPagadorFilter = "";
+let equipoPagadorFilter = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
 let pendienteStatusFilter = "Activos";
@@ -3689,17 +3690,26 @@ function renderComprasPagadorResumen(source = comprasFiltradasOperacion()) {
   `;
 }
 
-function renderEquiposPagadorResumen() {
-  const rows = Object.entries(equiposPorPagador()).sort((a, b) => b[1] - a[1]);
+function renderEquiposPagadorResumen(source = equiposFiltradosOperacion()) {
+  const groups = new Map([['SISPROVISA', { count: 0, total: 0 }], ['VICTOR', { count: 0, total: 0 }]]);
+  source.forEach((equipo) => {
+    const payer = pagadorKey(equipo.pagadoPor);
+    const group = groups.get(payer) || { count: 0, total: 0 };
+    group.count += 1;
+    group.total += costoTotalEquipo(equipo);
+    groups.set(payer, group);
+  });
+  const total = [...groups.values()].reduce((sum, group) => sum + group.total, 0);
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Equipos pagados por</h2>
-      <div class="bars">
-        ${
-          rows.length
-            ? rows.map(([pagador, total]) => renderBar(pagador, total, Math.max(...rows.map((row) => row[1]), 1), true)).join("")
-            : `<p class="readonly">Aun no hay equipos registrados.</p>`
-        }
+      <p class="readonly">Importes de compra de equipos: cantidad por costo unitario, sin descontar depreciacion. Respeta la operacion seleccionada; el total general incluye a todos los pagadores.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Pagado por</th><th>Registros de compra</th><th>Importe pagado</th></tr></thead>
+          <tbody>${[...groups].map(([payer, group]) => `<tr><td data-label="Pagado por"><strong>${escapeHtml(payer)}</strong></td><td data-label="Registros de compra">${number(group.count)}</td><td data-label="Importe pagado">${money(group.total)}</td></tr>`).join('')}</tbody>
+          <tfoot><tr><td data-label="Pagado por"><strong>Total general</strong></td><td data-label="Registros de compra">${number(source.length)}</td><td data-label="Importe pagado"><strong>${money(total)}</strong></td></tr></tfoot>
+        </table>
       </div>
     </section>
   `;
@@ -4555,10 +4565,18 @@ function renderGastos() {
 }
 
 function renderEquipos() {
-  const equiposRows = equiposFiltradosOperacion();
+  const equiposOperacion = equiposFiltradosOperacion();
+  const equiposRows = equiposOperacion.filter((equipo) => !equipoPagadorFilter || pagadorKey(equipo.pagadoPor) === equipoPagadorFilter);
   return `
     ${topbar("Equipos", "Activos, vida util, depreciacion mensual y acumulada.", `${operationFilterControl()}<button class="secondary" data-acquisition-report="equipos">Reporte de compras</button><button class="primary" data-open="equipo">Nuevo equipo</button>`)}
     ${renderEquiposPagadorResumen()}
+    <section class="panel filters">
+      <div class="field">
+        <label for="equipoPagadorFilter">Ver equipos pagados por</label>
+        <select id="equipoPagadorFilter"><option value="">Todos</option>${[...new Set(['SISPROVISA', 'VICTOR', ...equiposOperacion.map((equipo) => pagadorKey(equipo.pagadoPor))])].map((payer) => `<option value="${escapeHtml(payer)}" ${equipoPagadorFilter === payer ? 'selected' : ''}>${escapeHtml(payer)}</option>`).join('')}</select>
+      </div>
+      <div class="filter-count">${number(equiposRows.length)} de ${number(equiposOperacion.length)} registros de compra<br><strong>${money(equiposRows.reduce((sum, equipo) => sum + costoTotalEquipo(equipo), 0))}</strong> en equipos mostrados</div>
+    </section>
     <section class="panel" style="margin-top:14px">
       <h2>Historial de equipos</h2>
     </section>
@@ -4568,7 +4586,7 @@ function renderEquipos() {
         <tbody>${equiposRows.map((e) => {
           const monthly = Number(e.vida || 0) > 0 ? (costoTotalEquipo(e) - Number(e.residual || 0)) / Number(e.vida) / 12 : 0;
           return `<tr><td data-label="Equipo">${e.equipo}</td><td data-label="Operacion">${operacionRegistro(e)}</td><td data-label="Cantidad">${e.unidad || 1}</td><td data-label="Costo unitario">${money(e.costo)}</td><td data-label="Costo total">${money(costoTotalEquipo(e))}</td><td data-label="Compra">${e.fecha || ""}</td><td data-label="Vida util">${e.vida || 0} anos</td><td data-label="Pagado por">${e.pagadoPor || ""}</td><td data-label="Deprec. mensual">${money(monthly)}</td><td data-label="Deprec. acum.">${money(depreciacionAcumulada(e))}</td><td data-label="Acciones">${rowActions("equipo", e.id)}</td></tr>`;
-        }).join("")}</tbody>
+        }).join("") || `<tr><td colspan="11">No hay equipos que coincidan con este filtro.</td></tr>`}</tbody>
       </table>
     </div>
   `;
@@ -5247,6 +5265,13 @@ function bindApp() {
   }
   const compraSearchInput = document.querySelector("#compraSearch");
   const compraPagadorSelect = document.querySelector("#compraPagadorFilter");
+  const equipoPagadorSelect = document.querySelector("#equipoPagadorFilter");
+  if (equipoPagadorSelect) {
+    equipoPagadorSelect.addEventListener("change", (event) => {
+      equipoPagadorFilter = event.target.value;
+      render();
+    });
+  }
   if (compraPagadorSelect) {
     compraPagadorSelect.addEventListener("change", (event) => {
       compraPagadorFilter = event.target.value;
