@@ -124,6 +124,7 @@ let servicioTecnicoFilter = "Todos";
 let servicioProductoFilter = "Todos";
 let servicioClienteClasificacionFilter = "Todos";
 let compraSearch = "";
+let compraPagadorFilter = "";
 let operacionFilter = "Todas";
 let programacionStatusFilter = "Activos";
 let pendienteStatusFilter = "Activos";
@@ -3663,17 +3664,26 @@ function renderEquiposCiudadPagadorResumen() {
   `;
 }
 
-function renderComprasPagadorResumen() {
-  const rows = Object.entries(comprasPorPagador()).sort((a, b) => b[1] - a[1]);
+function renderComprasPagadorResumen(source = comprasFiltradasOperacion()) {
+  const groups = new Map([['SISPROVISA', { count: 0, total: 0 }], ['VICTOR', { count: 0, total: 0 }]]);
+  source.forEach((compra) => {
+    const payer = pagadorKey(compra.pagadoPor);
+    const group = groups.get(payer) || { count: 0, total: 0 };
+    group.count += 1;
+    group.total += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
+    groups.set(payer, group);
+  });
+  const total = [...groups.values()].reduce((sum, group) => sum + group.total, 0);
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Compras pagadas por</h2>
-      <div class="bars">
-        ${
-          rows.length
-            ? rows.map(([pagador, total]) => renderBar(pagador, total, Math.max(...rows.map((row) => row[1]), 1), true)).join("")
-            : `<p class="readonly">Aun no hay compras registradas.</p>`
-        }
+      <p class="readonly">Compras de producto e inventario por quien realizo el pago. Respeta la operacion y la busqueda; el total general incluye a todos los pagadores.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Pagado por</th><th>Compras</th><th>Importe pagado</th></tr></thead>
+          <tbody>${[...groups].map(([payer, group]) => `<tr><td data-label="Pagado por"><strong>${escapeHtml(payer)}</strong></td><td data-label="Compras">${number(group.count)}</td><td data-label="Importe pagado">${money(group.total)}</td></tr>`).join('')}</tbody>
+          <tfoot><tr><td data-label="Pagado por"><strong>Total general</strong></td><td data-label="Compras">${number(source.length)}</td><td data-label="Importe pagado"><strong>${money(total)}</strong></td></tr></tfoot>
+        </table>
       </div>
     </section>
   `;
@@ -4389,7 +4399,7 @@ function renderProductos() {
 function renderCompras() {
   const normalizeTerm = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const term = normalizeTerm(compraSearch.trim());
-  const comprasRows = comprasFiltradasOperacion()
+  const comprasBusqueda = comprasFiltradasOperacion()
     .filter((compra) => {
       if (!term) return true;
       return [
@@ -4404,6 +4414,7 @@ function renderCompras() {
       if (dateCompare !== 0) return dateCompare;
       return nombreProducto(a.productoId).localeCompare(nombreProducto(b.productoId));
     });
+  const comprasRows = comprasBusqueda.filter((compra) => !compraPagadorFilter || pagadorKey(compra.pagadoPor) === compraPagadorFilter);
   const stockOperacion = operacionFilter === "Todas" ? null : operacionFilter;
   const stockRows = state.productos
     .map((p) => {
@@ -4421,14 +4432,19 @@ function renderCompras() {
     ${topbar("Compras", "Entradas de producto para alimentar inventario.", `${operationFilterControl()}<button class="secondary" data-acquisition-report="compras">Reporte de compras</button><button class="primary" data-open="compra">Nueva compra</button>`)}
     <section class="panel filters">
       <div class="field">
-        <label>Buscar producto comprado</label>
-        <input id="compraSearch" type="search" placeholder="Escribe el nombre del producto" value="${compraSearch}" />
+        <label>Buscar compras</label>
+        <input id="compraSearch" type="search" placeholder="Producto, proveedor o pagador" value="${escapeHtml(compraSearch)}" />
+      </div>
+      <div class="field">
+        <label for="compraPagadorFilter">Ver compras pagadas por</label>
+        <select id="compraPagadorFilter"><option value="">Todos</option>${[...new Set(['SISPROVISA', 'VICTOR', ...comprasFiltradasOperacion().map((compra) => pagadorKey(compra.pagadoPor))])].map((payer) => `<option value="${escapeHtml(payer)}" ${compraPagadorFilter === payer ? 'selected' : ''}>${escapeHtml(payer)}</option>`).join('')}</select>
       </div>
       <div class="filter-count">
         ${number(comprasRows.length)} de ${number(comprasFiltradasOperacion().length)} compras
-        ${term ? `<br><strong>${money(comprasRows.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0))}</strong> en compras encontradas` : ""}
+        <br><strong>${money(comprasRows.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0))}</strong> en compras mostradas
       </div>
     </section>
+    ${renderComprasPagadorResumen(comprasBusqueda)}
     <section class="panel">
       <h2>Compras por mes</h2>
       <div class="bars">
@@ -4439,7 +4455,6 @@ function renderCompras() {
         }
       </div>
     </section>
-    ${renderComprasPagadorResumen()}
     <section class="panel" style="margin-top:14px">
       <h2>Stock por producto ${stockOperacion ? `- ${stockOperacion}` : "- global"}</h2>
       <div class="table-card service-list">
@@ -5231,6 +5246,13 @@ function bindApp() {
     });
   }
   const compraSearchInput = document.querySelector("#compraSearch");
+  const compraPagadorSelect = document.querySelector("#compraPagadorFilter");
+  if (compraPagadorSelect) {
+    compraPagadorSelect.addEventListener("change", (event) => {
+      compraPagadorFilter = event.target.value;
+      render();
+    });
+  }
   if (compraSearchInput) {
     compraSearchInput.addEventListener("input", (event) => {
       compraSearch = event.target.value;

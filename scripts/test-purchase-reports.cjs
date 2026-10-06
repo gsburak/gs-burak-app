@@ -50,6 +50,18 @@ assert.equal(run(`acquisitionReportData('compras',range,'SISPROVISA','VICTOR').t
 assert.equal(run(`acquisitionReportData('equipos',range,'','VICTOR').total`),300);
 assert.equal(run(`acquisitionReportData('equipos',range,'','SISPROVISA').total`),0);
 assert.equal(run(`acquisitionReportData('compras',range,'','VICTOR').monthly[0].total`),20);
+const payerSummary = run(`renderComprasPagadorResumen()`);
+assert.match(payerSummary, /SISPROVISA/);
+assert.match(payerSummary, /VICTOR/);
+assert.match(payerSummary, /Sin dato/);
+assert.match(payerSummary, /Total general/);
+assert.ok(payerSummary.includes(run(`money(157)`)));
+assert.ok(payerSummary.includes(run(`money(120)`)));
+assert.ok(payerSummary.includes(run(`money(30)`)));
+const emptySummary = run(`renderComprasPagadorResumen([])`);
+assert.match(emptySummary, /SISPROVISA/);
+assert.match(emptySummary, /VICTOR/);
+assert.ok(emptySummary.includes(run(`money(0)`)));
 assert.match(run(`renderAcquisitionReportModal('compras')`), /name="payer"/);
 assert.match(run(`renderAcquisitionReportModal('equipos')`), /value="VICTOR"/);
 run(`exportAcquisitionReport('compras',range,'','VICTOR')`);
