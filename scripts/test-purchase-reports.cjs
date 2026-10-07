@@ -79,6 +79,23 @@ assert.ok(equipmentView.includes(run(`money(700)`)));
 run(`equipoPagadorFilter='Sin dato'`);
 assert.match(run(`renderEquipos()`), /No hay equipos que coincidan/);
 run(`equipoPagadorFilter=''`);
+run(`state.gastos = [
+  {id:'g1',fecha:'2024-02-01',ciudad:'CDMX',categoria:'Renta',monto:100,pagadoPor:'VICTOR'},
+  {id:'g2',fecha:'2024-02-02',ciudad:'CDMX',categoria:'Renta',monto:200,pagadoPor:'SISPROVISA'},
+  {id:'g3',fecha:'2024-03-01',ciudad:'CDMX',categoria:'Otros',monto:40},
+  {id:'g4',fecha:'2024-02-01',ciudad:'Yucatan',categoria:'Renta',monto:999,pagadoPor:'VICTOR'}];`);
+const expenseSummary = run(`renderGastosPagadorResumen()`);
+assert.match(expenseSummary, /Sin dato/);
+assert.match(expenseSummary, /Total general/);
+assert.ok(expenseSummary.includes(run(`money(340)`)));
+assert.ok(run(`renderGastosPagadorResumen([])`).includes(run(`money(0)`)));
+run(`gastoMonthFilter='2024-02'; gastoCategoriaFilter='Renta'; gastoPagadorFilter='VICTOR'`);
+const expenseView = run(`renderGastos()`);
+assert.ok(expenseView.includes(run(`money(300)`)));
+assert.ok(expenseView.includes(run(`money(200)`)));
+assert.match(expenseView, /Total mostrado: \$100\.00/);
+assert.doesNotMatch(expenseView, /2024-03-01|999\.00/);
+run(`gastoMonthFilter=''; gastoCategoriaFilter=''; gastoPagadorFilter=''`);
 assert.match(run(`renderAcquisitionReportModal('compras')`), /name="payer"/);
 assert.match(run(`renderAcquisitionReportModal('equipos')`), /value="VICTOR"/);
 run(`exportAcquisitionReport('compras',range,'','VICTOR')`);

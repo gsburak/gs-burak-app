@@ -3510,17 +3510,26 @@ function renderServiciosTecnicoResumen() {
   `;
 }
 
-function renderGastosPagadorResumen() {
-  const rows = Object.entries(gastosPorPagador()).sort((a, b) => b[1] - a[1]);
+function renderGastosPagadorResumen(source = gastosFiltradosOperacion()) {
+  const groups = new Map([['SISPROVISA', { count: 0, total: 0 }], ['VICTOR', { count: 0, total: 0 }]]);
+  source.forEach((gasto) => {
+    const payer = pagadorKey(gasto.pagadoPor);
+    const group = groups.get(payer) || { count: 0, total: 0 };
+    group.count += 1;
+    group.total += Number(gasto.monto || 0);
+    groups.set(payer, group);
+  });
+  const total = [...groups.values()].reduce((sum, group) => sum + group.total, 0);
   return `
     <section class="panel" style="margin-top:14px">
       <h2>Gastos pagados por</h2>
-      <div class="bars">
-        ${
-          rows.length
-            ? rows.map(([pagador, total]) => renderBar(pagador, total, Math.max(...rows.map((row) => row[1]), 1), true)).join("")
-            : `<p class="readonly">Aun no hay gastos registrados.</p>`
-        }
+      <p class="readonly">Respeta la operacion, el mes y el rubro seleccionados. El total general incluye a todos los pagadores; el filtro Pagado por se aplica al historial y al total mostrado.</p>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Pagado por</th><th>Gastos</th><th>Importe pagado</th></tr></thead>
+          <tbody>${[...groups].map(([payer, group]) => `<tr><td data-label="Pagado por"><strong>${escapeHtml(payer)}</strong></td><td data-label="Gastos">${number(group.count)}</td><td data-label="Importe pagado">${money(group.total)}</td></tr>`).join('')}</tbody>
+          <tfoot><tr><td data-label="Pagado por"><strong>Total general</strong></td><td data-label="Gastos">${number(source.length)}</td><td data-label="Importe pagado"><strong>${money(total)}</strong></td></tr></tfoot>
+        </table>
       </div>
     </section>
   `;
@@ -4495,7 +4504,10 @@ function renderGastos() {
   const gastosRows = gastosFiltradosOperacion();
   const categorias = [...new Set(gastosRows.map((g) => g.categoria || "Sin categoria"))].sort();
   const meses = [...new Set(gastosRows.map((g) => monthKey(g.fecha)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
-  const pagadores = [...new Set(gastosRows.map((g) => pagadorKey(g.pagadoPor)))].sort();
+  const pagadores = [...new Set(['SISPROVISA', 'VICTOR', ...gastosRows.map((g) => pagadorKey(g.pagadoPor))])].sort();
+  const gastosResumen = gastosRows.filter((g) =>
+    (!gastoCategoriaFilter || (g.categoria || "Sin categoria") === gastoCategoriaFilter) &&
+    (!gastoMonthFilter || monthKey(g.fecha) === gastoMonthFilter));
   const gastosFiltrados = gastosRows.filter((g) => {
     const coincideCategoria = !gastoCategoriaFilter || (g.categoria || "Sin categoria") === gastoCategoriaFilter;
     const coincideMes = !gastoMonthFilter || monthKey(g.fecha) === gastoMonthFilter;
@@ -4512,6 +4524,7 @@ function renderGastos() {
   const totalCategoria = gastosFiltrados.reduce((sum, gasto) => sum + Number(gasto.monto || 0), 0);
   return `
     ${topbar("Gastos", "Gastos operativos por categoria, comprobante y responsable.", `${operationFilterControl()}<button class="primary" data-open="gasto">Nuevo gasto</button>`)}
+    ${renderGastosPagadorResumen(gastosResumen)}
     <section class="panel">
       <h2>Gastos por mes${gastoCategoriaFilter ? ` - ${gastoCategoriaFilter}` : ""}</h2>
       <div class="bars">
@@ -4524,7 +4537,6 @@ function renderGastos() {
     </section>
     ${renderGastosCategoriaResumen(gastosRows)}
     ${renderGastosMensualesCategoriaResumen(gastosRows)}
-    ${renderGastosPagadorResumen()}
     <section class="panel" id="gastosHistorial" style="margin-top:14px">
       <h2>Historial de gastos</h2>
       <section class="filters expense-filters" style="margin-bottom:0">
