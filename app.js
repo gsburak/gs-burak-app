@@ -24,6 +24,7 @@ const modules = [
   { id: "compras", label: "Compras", icon: "Compras", roles: ["admin"] },
   { id: "gastos", label: "Gastos", icon: "Gastos", roles: ["admin"] },
   { id: "equipos", label: "Equipos", icon: "Equipos", roles: ["admin"] },
+  { id: "reportesRapidos", label: "Reportes rapidos", icon: "Reportes", roles: ["admin"] },
 ];
 
 const seed = {
@@ -132,6 +133,10 @@ let pendienteStatusFilter = "Activos";
 let gastoCategoriaFilter = "";
 let gastoMonthFilter = "";
 let gastoPagadorFilter = "";
+let reporteRapidoMes = (() => { const date = new Date(); date.setDate(1); date.setMonth(date.getMonth() - 1); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; })();
+let reporteRapidoTipo = "gastos";
+let reporteRapidoOperacion = "Todas";
+let reporteRapidoPagador = "";
 let remoteSaveQueue = Promise.resolve();
 
 function uid() {
@@ -2660,8 +2665,66 @@ function renderModule() {
     compras: renderCompras,
     gastos: renderGastos,
     equipos: renderEquipos,
+    reportesRapidos: renderReportesRapidos,
   };
   return map[activeModule]();
+}
+
+function reporteRapidoData(mes = reporteRapidoMes, tipo = reporteRapidoTipo, operacion = reporteRapidoOperacion, pagador = reporteRapidoPagador) {
+  if (currentUser?.id !== 'admin') throw new Error('Solo el administrador puede consultar reportes.');
+  const range = executiveReportRange('month', mes);
+  if (!['gastos', 'compras', 'equipos', 'todo'].includes(tipo)) throw new Error('Tipo de reporte invalido.');
+  const rows = [];
+  const add = (items, kind, amount, description) => (items || []).forEach((item) => {
+    if (!item.fecha || item.fecha < range.start || item.fecha > range.end) return;
+    const ciudad = operacionRegistro(item);
+    const payer = pagadorKey(item.pagadoPor);
+    if ((operacion !== 'Todas' && ciudad !== operacion) || (pagador && payer !== pagador)) return;
+    rows.push({ fecha: item.fecha, tipo: kind, operacion: ciudad, descripcion: description(item), pagador: payer, total: amount(item) });
+  });
+  if (tipo === 'gastos' || tipo === 'todo') add(state.gastos, 'Gastos', (r) => Number(r.monto || 0), (r) => [r.categoria, r.descripcion].filter(Boolean).join(' - '));
+  if (tipo === 'compras' || tipo === 'todo') add(state.compras, 'Compras', (r) => Number(r.cantidad || 0) * Number(r.costoUnitario || 0), (r) => nombreProducto(r.productoId));
+  if (tipo === 'equipos' || tipo === 'todo') add(state.equipos, 'Equipos', costoTotalEquipo, (r) => r.equipo || 'Sin nombre');
+  rows.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const payers = new Map([['SISPROVISA', 0], ['VICTOR', 0]]);
+  rows.forEach((r) => payers.set(r.pagador, (payers.get(r.pagador) || 0) + r.total));
+  return { rows, payers: [...payers], total: rows.reduce((sum, r) => sum + r.total, 0), range };
+}
+
+function renderReportesRapidos() {
+  const report = reporteRapidoData();
+  const types = [['gastos', 'Gastos'], ['compras', 'Compras de inventario'], ['equipos', 'Compra de equipos'], ['todo', 'Gastos + compras + equipos']];
+  const options = (values, selected) => values.map(([value, label]) => `<option value="${escapeHtml(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('');
+  const payers = [...new Set(['SISPROVISA', 'VICTOR', ...[...(state.gastos || []), ...(state.compras || []), ...(state.equipos || [])].map((r) => pagadorKey(r.pagadoPor))])];
+  return `${topbar('Reportes rapidos', 'Elige el mes y consulta cuanto se pago.', '<button class="secondary" id="exportReporteRapido">Descargar Excel (CSV)</button>')}
+    <section class="panel filters">
+      <div class="field"><label for="reporteRapidoMes">Mes y año</label><input id="reporteRapidoMes" type="month" value="${escapeHtml(reporteRapidoMes)}" required></div>
+      <div class="field"><label for="reporteRapidoTipo">Que quieres consultar</label><select id="reporteRapidoTipo">${options(types, reporteRapidoTipo)}</select></div>
+      <div class="field"><label for="reporteRapidoOperacion">Operacion</label><select id="reporteRapidoOperacion">${options(['Todas', 'Yucatan', 'CDMX', 'Sin clasificar'].map((v) => [v, v]), reporteRapidoOperacion)}</select></div>
+      <div class="field"><label for="reporteRapidoPagador">Pagado por</label><select id="reporteRapidoPagador">${options([['', 'Todos'], ...payers.map((v) => [v, v])], reporteRapidoPagador)}</select></div>
+    </section>
+    <section class="panel"><h2>${escapeHtml(types.find(([v]) => v === reporteRapidoTipo)[1])} en ${escapeHtml(monthLabel(reporteRapidoMes))}</h2>
+      <p>Total ${reporteRapidoPagador ? 'del pagador seleccionado' : 'general'}: <strong>${money(report.total)}</strong> · ${number(report.rows.length)} registros</p>
+      <p class="readonly">Operacion: ${escapeHtml(reporteRapidoOperacion)}. Del ${report.range.start} al ${report.range.end}. Importes registrados en MXN; equipos sin descontar depreciacion. Los registros sin fecha no se incluyen.</p>
+      <div class="table-card"><table><thead><tr><th>Pagado por</th><th>Total pagado</th></tr></thead><tbody>${report.payers.filter(([payer]) => !reporteRapidoPagador || payer === reporteRapidoPagador).map(([payer, total]) => `<tr><td data-label="Pagado por">${escapeHtml(payer)}</td><td data-label="Total pagado">${money(total)}</td></tr>`).join('')}</tbody></table></div>
+    </section>
+    <section class="panel"><h2>Detalle del reporte</h2><div class="table-card"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Operacion</th><th>Descripcion</th><th>Pagado por</th><th>Importe</th></tr></thead><tbody>${report.rows.map((r) => `<tr><td data-label="Fecha">${escapeHtml(r.fecha)}</td><td data-label="Tipo">${r.tipo}</td><td data-label="Operacion">${escapeHtml(r.operacion)}</td><td data-label="Descripcion">${escapeHtml(r.descripcion)}</td><td data-label="Pagado por">${escapeHtml(r.pagador)}</td><td data-label="Importe">${money(r.total)}</td></tr>`).join('') || '<tr><td colspan="6">No hay registros para este mes y filtros.</td></tr>'}</tbody></table></div></section>`;
+}
+
+function bindReportesRapidos() {
+  const setters = { reporteRapidoMes: (v) => { reporteRapidoMes = v; }, reporteRapidoTipo: (v) => { reporteRapidoTipo = v; }, reporteRapidoOperacion: (v) => { reporteRapidoOperacion = v; }, reporteRapidoPagador: (v) => { reporteRapidoPagador = v; } };
+  Object.entries(setters).forEach(([id, set]) => document.getElementById(id)?.addEventListener('change', (event) => {
+    if (!event.target.value && id === 'reporteRapidoMes') { event.target.value = reporteRapidoMes; return; }
+    set(event.target.value); render();
+  }));
+  document.getElementById('exportReporteRapido')?.addEventListener('click', () => {
+    const report = reporteRapidoData();
+    downloadCsv(`reporte-${reporteRapidoTipo}-${reporteRapidoMes}.csv`, ['Fecha', 'Tipo', 'Operacion', 'Descripcion', 'Pagado por', 'Importe MXN'], [
+      ...report.rows.map((r) => [r.fecha, r.tipo, r.operacion, r.descripcion, r.pagador, r.total]),
+      ...report.payers.filter(([payer]) => !reporteRapidoPagador || payer === reporteRapidoPagador).map(([payer, total]) => ['', 'Subtotal por pagador', reporteRapidoOperacion, '', payer, total]),
+      ['', 'Total del reporte', reporteRapidoOperacion, `${report.range.start} al ${report.range.end}`, reporteRapidoPagador || 'Todos', report.total]
+    ]);
+  });
 }
 
 function renderCertificados() {
@@ -4967,6 +5030,7 @@ function bindProgramacionAutoSize() {
 }
 
 function bindApp() {
+  bindReportesRapidos();
   document.querySelectorAll("[data-acquisition-report]").forEach((button) => {
     button.addEventListener("click", () => { modal = { type: "acquisitionReport", kind: button.dataset.acquisitionReport }; render(); });
   });
