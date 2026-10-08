@@ -418,10 +418,6 @@ function productRow(index) {
 }
 
 function addProduct() {
-  if (products.children.length >= 4) {
-    alert("El formato permite hasta 4 productos aplicados.");
-    return;
-  }
   products.appendChild(productRow(products.children.length + 1));
 }
 
@@ -804,13 +800,19 @@ function crearPdfEditable(data) {
   tableRow(["Dosis", "Producto / Formula", "Cad.", "Lote", "Cantidad preparada o aplicada", "Observaciones"], [48, 160, 72, 76, 126, 74], 16, true);
   const productos = data.productos.length ? data.productos : [{ dosis: "", formula: "Sin productos registrados", caducidad: "", lote: "", cantidad: "", observacion: "" }];
   productos.forEach((p) => {
+    if (y + 20 >= page.h - page.m) {
+      ensurePage(51);
+      section("PRODUCTOS APLICADOS (CONTINUACION)");
+      tableRow(["Dosis", "Producto / Formula", "Cad.", "Lote", "Cantidad preparada o aplicada", "Observaciones"], [48, 160, 72, 76, 126, 74], 16, true);
+    }
     tableRow([p.dosis, p.formula, p.caducidad, p.lote, p.cantidad, p.observacion], [48, 160, 72, 76, 126, 74], 20);
   });
 
-  y += 7;
-  section("OBSERVACIONES Y RECOMENDACIONES");
   const notas = split(data.observaciones || "Sin observaciones", 545, 7.2);
   const noteH = Math.max(34, Math.min(82, notas.length * 9 + 10));
+  ensurePage(noteH + 30);
+  y += 7;
+  section("OBSERVACIONES Y RECOMENDACIONES");
   rect(page.m, y, 556, noteH);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.2);

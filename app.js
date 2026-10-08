@@ -4937,11 +4937,12 @@ function formFor(type, data) {
   return formServicio(data);
 }
 
+function servicioProductoRow(index, item = {}) {
+  return `${select(`productoId${index}`, `Producto ${index + 1}`, item.productoId, [{ value: "", label: "Sin producto" }, ...state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadUso || ""})` }))])}${input(`cantidad${index}`, "Cantidad usada en ml, gramos o piezas", item.cantidad, "number")}`;
+}
+
 function formServicio(data) {
-  const productRows = [0, 1, 2, 3].map((index) => {
-    const item = (data.productos || [])[index] || {};
-    return `${select(`productoId${index}`, `Producto ${index + 1}`, item.productoId, [{ value: "", label: "Sin producto" }, ...state.productos.map((p) => ({ value: p.id, label: `${p.producto} (${p.unidadUso || ""})` }))])}${input(`cantidad${index}`, "Cantidad usada en ml, gramos o piezas", item.cantidad, "number")}`;
-  }).join("");
+  const productRows = Array.from({ length: Math.max(4, (data.productos || []).length) }, (_, index) => servicioProductoRow(index, (data.productos || [])[index])).join("");
   const tipoOptions = state.tiposServicio.map((x) => ({ value: x.nombre, label: x.nombre }));
   const clienteOptions = [...state.clientes]
     .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || "")))
@@ -4994,7 +4995,7 @@ function formServicio(data) {
       <p class="readonly">Total pagado: <strong>${money(totalPagado)}</strong> · Pendiente actual: <strong>${money(Math.max(0, totalServicio(data) - totalPagado))}</strong>. Usa la ultima fila para agregar un pago nuevo.</p>
       ${paymentRows}
     </div>
-    <div class="full panel"><h2>Productos usados</h2><div class="form-grid">${productRows}</div></div>
+    <div class="full panel"><h2>Productos usados</h2><div class="form-grid" id="servicioProductos">${productRows}</div><button type="button" class="secondary" id="agregarProductoServicio">+ Agregar producto</button></div>
     ${text("observaciones", "Observaciones", data.observaciones, "full")}
   </div>`;
 }
@@ -5030,6 +5031,11 @@ function bindProgramacionAutoSize() {
 }
 
 function bindApp() {
+  document.getElementById('agregarProductoServicio')?.addEventListener('click', () => {
+    const rows = document.getElementById('servicioProductos');
+    const index = rows.querySelectorAll('select').length;
+    rows.insertAdjacentHTML('beforeend', servicioProductoRow(index));
+  });
   bindReportesRapidos();
   document.querySelectorAll("[data-acquisition-report]").forEach((button) => {
     button.addEventListener("click", () => { modal = { type: "acquisitionReport", kind: button.dataset.acquisitionReport }; render(); });
@@ -5678,10 +5684,11 @@ function normalize(type, data) {
       data.razonSocial = data.cliente;
       data.clienteManual = true;
     }
-    data.productos = [0, 1, 2, 3]
+    const productIndexes = Object.keys(data).map((key) => key.match(/^productoId(\d+)$/)?.[1]).filter((index) => index !== undefined).map(Number).sort((a, b) => a - b);
+    data.productos = productIndexes
       .map((i) => ({ productoId: data[`productoId${i}`], cantidad: toNumber(data[`cantidad${i}`]) }))
       .filter((item) => item.productoId && item.cantidad > 0);
-    [0, 1, 2, 3].forEach((i) => {
+    productIndexes.forEach((i) => {
       delete data[`productoId${i}`];
       delete data[`cantidad${i}`];
     });

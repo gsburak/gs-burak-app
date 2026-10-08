@@ -1,0 +1,15 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+const context = vm.createContext({ location: { protocol: 'file:' }, console });
+vm.runInContext(fs.readFileSync('app.js', 'utf8').replace(/init\(\);\s*$/, ''), context);
+const run = (code) => vm.runInContext(code, context);
+run(`state=JSON.parse(JSON.stringify(seed)); var fields={fecha:'2026-10-08',subtotal:'100',clienteId:state.clientes[0].id}; for(let i=0;i<7;i++){fields['productoId'+i]=state.productos[0].id;fields['cantidad'+i]=String(i+1)}; var saved=normalize('servicio',fields);`);
+assert.equal(run('saved.productos.length'),7);
+assert.equal(run('saved.productos[6].cantidad'),7);
+assert.equal(run(`Object.keys(saved).some(k=>/^productoId\d+$/.test(k))`),false);
+assert.match(run('formServicio(saved)'),/name="productoId6"/);
+assert.match(run('formServicio(saved)'),/agregarProductoServicio/);
+run(`var original=JSON.stringify(saved); formServicio(saved);`);
+assert.equal(run('JSON.stringify(saved)===original'),true);
+console.log('Service products passed: seven products survive save and edit, quantities, field cleanup and non-mutation.');
