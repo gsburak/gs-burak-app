@@ -512,6 +512,17 @@ function setupSignature(canvas) {
   window.addEventListener("resize", resize);
   return {
     clear: () => ctx.clearRect(0, 0, canvas.width, canvas.height),
+    loadImage: (image) => {
+      drawing = false;
+      const ratio = window.devicePixelRatio || 1;
+      const width = canvas.width / ratio;
+      const height = canvas.height / ratio;
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      const imageWidth = image.naturalWidth * scale;
+      const imageHeight = image.naturalHeight * scale;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, (width - imageWidth) / 2, (height - imageHeight) / 2, imageWidth, imageHeight);
+    },
     data: () => canvas.toDataURL("image/png")
   };
 }
@@ -1012,8 +1023,51 @@ const signaturePads = {
 
 document.querySelector("#addProduct").addEventListener("click", addProduct);
 
+const technicianImageInput = document.querySelector("#imagenFirmaTecnico");
+const technicianImageStatus = document.querySelector("#estadoFirmaTecnico");
+let technicianImageRequest = 0;
+technicianImageInput.addEventListener("change", async () => {
+  const request = ++technicianImageRequest;
+  const file = technicianImageInput.files[0];
+  if (!file) return;
+  try {
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      throw new Error("Elige una imagen PNG o JPG.");
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error("La imagen debe pesar como máximo 10 MB.");
+    }
+    technicianImageStatus.textContent = "Cargando firma...";
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error("No se pudo leer la imagen. Elige otro archivo PNG o JPG."));
+        image.src = url;
+      });
+      if (request !== technicianImageRequest) return;
+      signaturePads.firmaTecnico.loadImage(image);
+      technicianImageStatus.textContent = "Firma cargada. Se incluirá en el reporte y el PDF.";
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch (error) {
+    if (request === technicianImageRequest) technicianImageStatus.textContent = error.message;
+  } finally {
+    if (request === technicianImageRequest) technicianImageInput.value = "";
+  }
+});
+
 document.querySelectorAll("[data-clear]").forEach((button) => {
-  button.addEventListener("click", () => signaturePads[button.dataset.clear].clear());
+  button.addEventListener("click", () => {
+    signaturePads[button.dataset.clear].clear();
+    if (button.dataset.clear === "firmaTecnico") {
+      technicianImageRequest += 1;
+      technicianImageInput.value = "";
+      technicianImageStatus.textContent = "";
+    }
+  });
 });
 
 document.querySelector("#saveDraft").addEventListener("click", () => {
@@ -1024,6 +1078,8 @@ document.querySelector("#saveDraft").addEventListener("click", () => {
 document.querySelector("#resetForm").addEventListener("click", () => {
   if (confirm("Limpiar todo el formulario?")) {
     form.reset();
+    technicianImageRequest += 1;
+    technicianImageStatus.textContent = "";
     setupFolio();
     setupResponsableSanitario();
     products.innerHTML = "";

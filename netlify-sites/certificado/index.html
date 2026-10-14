@@ -181,6 +181,11 @@
                 <input name="nombreTecnicoFirma" type="text" placeholder="Si es distinto al tecnico aplicador">
               </label>
               <canvas class="signature-pad" id="firmaTecnico"></canvas>
+              <label>Cargar imagen de firma (PNG o JPG)
+                <input id="imagenFirmaTecnico" type="file" accept="image/png,image/jpeg" aria-describedby="ayudaFirmaTecnico">
+              </label>
+              <p id="ayudaFirmaTecnico">Dibuja con el dedo o el mouse, o elige una imagen guardada. La imagen reemplaza la firma actual.</p>
+              <p id="estadoFirmaTecnico" role="status" aria-live="polite"></p>
               <button type="button" class="ghost-button small" data-clear="firmaTecnico">Borrar firma</button>
             </div>
             <div>
@@ -210,6 +215,6 @@
     <section id="certificatePreview" class="certificate hidden"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js?v=20261008a"></script>
+    <script src="app.js?v=20261014a"></script>
   </body>
 </html>
