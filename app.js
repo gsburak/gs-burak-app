@@ -2771,7 +2771,7 @@ function renderCebaderas() {
 }
 
 function renderCroquis() {
-  const croquisUrl = "https://euphonious-snickerdoodle-452b35.netlify.app/";
+  const croquisUrl = "netlify-sites/croquis/index.html";
   return `
     ${topbar(
       "Creador de croquis",
@@ -2801,7 +2801,7 @@ function provideCebaderasClients(event) {
 }
 
 function renderPresupuestos() {
-  const presupuestoUrl = "https://magnificent-ganache-f9c37a.netlify.app/";
+  const presupuestoUrl = "netlify-sites/presupuesto/index.html";
   return `
     ${topbar(
       "Presupuestos",
