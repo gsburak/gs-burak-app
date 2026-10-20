@@ -5087,9 +5087,20 @@ function bindApp() {
   });
   bindProgramacionAutoSize();
   document.querySelectorAll("[data-module]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeModule = button.dataset.module;
-      render();
+    button.addEventListener("click", async () => {
+      const nextModule = button.dataset.module;
+      button.disabled = true;
+      try {
+        // Field reports save independently of this window. Read the shared
+        // state again before displaying lists or allowing another edit.
+        await remoteSaveQueue;
+        if (SERVER_MODE) state = await loadInitialState();
+        activeModule = nextModule;
+        render();
+      } catch (error) {
+        button.disabled = false;
+        alert(`No se pudo actualizar la información: ${error.message}`);
+      }
     });
   });
   document.querySelectorAll("[data-programar-cliente]").forEach((button) => {

@@ -64,6 +64,25 @@ const path = require('node:path');
     await frame.locator('#imagenFirmaTecnico').waitFor();
     assert.match(await page.locator('iframe').getAttribute('src'), /administracion=nueva/);
     await frame.locator('.product-select option[value=p]').first().waitFor({ state: 'attached' });
+    // An unscheduled field report must become visible without reloading the app.
+    await frame.locator('[name=fecha]').fill('2026-10-20');
+    await frame.locator('[name=hora]').fill('10:00');
+    await frame.locator('[name=horaFin]').fill('11:00');
+    await frame.locator('[name=tecnico]').selectOption({ label: 'VICTOR' });
+    await frame.locator('#clienteNombre').fill('Servicio inesperado de prueba');
+    await frame.locator('#clienteDomicilio').fill('Domicilio de prueba');
+    await frame.locator('[name=tiempoReentrada]').fill('4 horas');
+    await frame.locator('body').evaluate(() => { window.print = () => {}; window.jspdf = undefined; });
+    const fieldSaved = page.waitForResponse(r => r.url().endsWith('/api/record') && r.request().method() === 'POST');
+    await frame.locator('#generateReport').click();
+    assert.equal((await fieldSaved).status(), 200);
+    await frame.locator('#reportStatus').filter({ hasText: 'Servicio guardado' }).waitFor();
+    current = await read('nueva');
+    assert.equal(current.servicios.length, 2);
+    assert.equal(current.servicios.find(s => s.cliente === 'Servicio inesperado de prueba').programacionId, '');
+    await page.locator('[data-module=servicios]').click();
+    await page.locator('td[data-label=Cliente]').filter({ hasText: 'Servicio inesperado de prueba' }).first().waitFor();
+    assert.equal((await read('anterior')).servicios.length, 1);
     await page.locator('[data-module=dashboard]').click();
     fs.mkdirSync('tmp/admin-ui', { recursive: true });
     await page.screenshot({ path: path.resolve('tmp/admin-ui/desktop.png') });
@@ -78,3 +97,4 @@ const path = require('node:path');
     child.kill();
   }
 })().catch(error => { console.error(error); process.exitCode = 1; });
+
