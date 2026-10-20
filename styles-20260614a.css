@@ -1376,3 +1376,11 @@ th {
     padding: 12px;
   }
 }
+
+.administration-box { margin: 10px; padding: 10px; border: 1px solid #83b5bd; border-radius: 8px; color: #fff; display: grid; gap: 8px; }
+.administration-box select { width: 100%; font-size: 12px; padding: 8px 2px; }
+.administration-banner { margin-bottom: 16px; padding: 12px 16px; background: #e5f5f0; color: #124739; border: 1px solid #91bcb1; border-radius: 8px; font-weight: 700; }
+.administration-old { background: #fff0ce; color: #713c00; border-color: #c58319; }
+
+.administration-box { flex-shrink: 0; margin: 8px 0; }
+.administration-box label { color: inherit; }

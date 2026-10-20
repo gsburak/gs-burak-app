@@ -1,3 +1,6 @@
+(async () => {
+await window.BurakAdmin.ready;
+const administrationStorage = { getItem: key => localStorage.getItem(window.BurakAdmin.storageKey(key)), setItem: (key, value) => localStorage.setItem(window.BurakAdmin.storageKey(key), value) };
 const pests = [
   "Cucarachas",
   "Hormigas",
@@ -188,39 +191,21 @@ function buildChecks() {
 }
 
 async function fetchCatalog(table) {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=data`, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      Accept: "application/json"
-    }
-  });
-  if (!response.ok) throw new Error(`No se pudo cargar ${table}`);
-  const rows = await response.json();
-  return rows.map((row) => row.data).filter(Boolean);
+  if (location.protocol.startsWith("http")) {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error("No se pudo cargar el catálogo de esta administración");
+    return (await response.json())[table.replace(/^app_/, "")] || [];
+  }
+  throw new Error("Abre el certificado desde la aplicación GS Burak para elegir la administración.");
+
 }
 
 async function saveSupabaseRecord(table, record) {
-  const payload = [{
-    id: String(record.id),
-    data: record,
-    updated_at: new Date().toISOString()
-  }];
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?on_conflict=id`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=representation"
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "No se pudo guardar en Supabase");
-  }
+  if (!location.protocol.startsWith("http")) throw new Error("Abre el certificado desde GS Burak antes de guardar el servicio.");
+  const response = await fetch("/api/record", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ collection: table.replace(/^app_/, ""), record }) });
+  if (!response.ok) throw new Error("No se pudo guardar en esta administración");
   return response.json();
+
 }
 
 function fillCliente(cliente) {
@@ -443,7 +428,7 @@ function setupFolio() {
   if (folio.value) return;
   const year = new Date().getFullYear();
   const key = `certificado_folio_${year}`;
-  const next = Number(localStorage.getItem(key) || "0");
+  const next = Number(administrationStorage.getItem(key) || "0");
   folio.value = `GS-${String(next).padStart(5, "0")}-${year}`;
 }
 
@@ -457,8 +442,8 @@ function setupResponsableSanitario() {
 function commitFolio() {
   const year = new Date().getFullYear();
   const key = `certificado_folio_${year}`;
-  const current = Number(localStorage.getItem(key) || "0");
-  localStorage.setItem(key, String(current + 1));
+  const current = Number(administrationStorage.getItem(key) || "0");
+  administrationStorage.setItem(key, String(current + 1));
 }
 
 function setupSignature(canvas) {
@@ -1071,7 +1056,7 @@ document.querySelectorAll("[data-clear]").forEach((button) => {
 });
 
 document.querySelector("#saveDraft").addEventListener("click", () => {
-  localStorage.setItem("certificadoBorrador", JSON.stringify(dataFromForm()));
+  administrationStorage.setItem("certificadoBorrador", JSON.stringify(dataFromForm()));
   alert("Borrador guardado en esta tableta.");
 });
 
@@ -1135,9 +1120,9 @@ form.addEventListener("submit", async (event) => {
     crearPdfEditable(data);
 
     const folioConfirmado = `certificado_folio_confirmado_${data.folio}`;
-    if (!localStorage.getItem(folioConfirmado)) {
+    if (!administrationStorage.getItem(folioConfirmado)) {
       commitFolio();
-      localStorage.setItem(folioConfirmado, "1");
+      administrationStorage.setItem(folioConfirmado, "1");
     }
 
     estado.textContent = `${guardado.mensaje} Se abrio la ventana para guardar el PDF.`;
@@ -1153,3 +1138,5 @@ form.addEventListener("submit", async (event) => {
     boton.textContent = "Guardar servicio y generar PDF";
   }
 });
+
+})().catch(error => { document.body.insertAdjacentText("afterbegin", "No se pudo abrir esta administración. Recarga la página: " + error.message); });

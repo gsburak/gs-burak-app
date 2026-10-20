@@ -1,5 +1,5 @@
-const STORAGE_KEY = "gs_burak_app_v1";
-const BACKUP_KEY = "gs_burak_app_backups_v1";
+let STORAGE_KEY = "gs_burak_app_v1";
+let BACKUP_KEY = "gs_burak_app_backups_v1";
 const SERVER_MODE = location.protocol.startsWith("http");
 
 const users = [
@@ -178,10 +178,11 @@ async function loadInitialState() {
   if (!SERVER_MODE) return loadState();
   try {
     const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error("No se pudo cargar la administración");
     const data = await response.json();
     const hasData = data && Object.keys(data).length > 0;
     const remoteState = migrateState(hasData ? data : structuredClone(seed));
-    const localRecovery = totalRecords(remoteState) === 0 ? bestLocalRecoveryState(remoteState) : null;
+    const localRecovery = !remoteState.administracion && totalRecords(remoteState) === 0 ? bestLocalRecoveryState(remoteState) : null;
     if (localRecovery) {
       await saveRemoteState(localRecovery);
       alert("Se recupero informacion guardada en este navegador y se subio a la nube. Revise los ultimos registros.");
@@ -189,6 +190,7 @@ async function loadInitialState() {
     }
     return remoteState;
   } catch (error) {
+    if (window.BurakAdmin) throw error;
     alert("No se pudo cargar la base compartida. Se usara modo local de este navegador.");
     return loadState();
   }
@@ -601,7 +603,7 @@ function backupFileName() {
     String(now.getMonth() + 1).padStart(2, "0"),
     String(now.getDate()).padStart(2, "0"),
   ].join("-");
-  return `respaldo-gs-burak-${stamp}.json`;
+  return `respaldo-gs-burak-${state.administracion?.id || "actual"}-${stamp}.json`;
 }
 
 function datedFileName(prefix, extension) {
@@ -611,7 +613,7 @@ function datedFileName(prefix, extension) {
     String(now.getMonth() + 1).padStart(2, "0"),
     String(now.getDate()).padStart(2, "0"),
   ].join("-");
-  return `${prefix}-${stamp}.${extension}`;
+  return `${prefix}-${state.administracion?.id || "actual"}-${stamp}.${extension}`;
 }
 
 function csvCell(value) {
@@ -670,7 +672,7 @@ function buildProfessionalBackupWorkbook() {
   const productoUsado = servicios.reduce((sum, item) => sum + costoServicio(item), 0);
   const gastoTotal = gastos.reduce((sum, item) => sum + Number(item.monto || 0), 0);
   const compraTotal = compras.reduce((sum, item) => sum + totalCompra(item), 0);
-  const depreciacionMensual = gastoDepreciacionMensual(equipos);
+  const depreciacionMensual = depreciacionActualEtapa(equipos);
   const utilidad = cobrado - productoUsado - gastoTotal - depreciacionMensual;
 
   const sheets = [
@@ -934,8 +936,13 @@ function buildProfessionalBackupWorkbook() {
     },
   ];
 
+  if (state.inventarioInicial) sheets.push({
+    name: "Inventario inicial", title: "Inventario recibido al cierre del 15/10/2026",
+    columns: [{ header: "Producto", key: "producto" }, { header: "Operacion", key: "operacion" }, { header: "Cantidad", key: "cantidadUso", type: "number" }, { header: "Unidad", key: "unidad" }, { header: "Costo por unidad de uso", key: "costoUso", type: "currency" }, { header: "Valor inicial", key: "valor", type: "currency" }, { header: "Compra de origen", key: "origen" }],
+    rows: state.inventarioInicial.map(lot => ({ ...lot, producto: nombreProducto(lot.productoId), unidad: unidadUsoProducto(lot.productoId), valor: Number(lot.cantidadUso) * Number(lot.costoUso), origen: lot.fechaOrigen || lot.fecha }))
+  });
   const worksheets = sheets.map((sheet) => professionalWorksheet(sheet)).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Respaldo profesional GS Burak</Title><Author>GS Burak Control Operativo</Author><Created>${new Date().toISOString()}</Created></DocumentProperties><Styles><Style ss:ID="title"><Font ss:Bold="1" ss:Size="16" ss:Color="#0B2A35"/></Style><Style ss:ID="subtitle"><Font ss:Color="#5E6A7D"/></Style><Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style><Style ss:ID="text"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style><Style ss:ID="money"><NumberFormat ss:Format="$#,##0.00"/></Style><Style ss:ID="number"><NumberFormat ss:Format="#,##0"/></Style><Style ss:ID="percent"><NumberFormat ss:Format="0.0%"/></Style></Styles>${worksheets}</Workbook>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Respaldo profesional GS Burak - ${escapeHtml(administrationLabel())}</Title><Author>GS Burak Control Operativo</Author><Created>${new Date().toISOString()}</Created></DocumentProperties><Styles><Style ss:ID="title"><Font ss:Bold="1" ss:Size="16" ss:Color="#0B2A35"/></Style><Style ss:ID="subtitle"><Font ss:Color="#5E6A7D"/></Style><Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#0F766E" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style><Style ss:ID="text"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style><Style ss:ID="money"><NumberFormat ss:Format="$#,##0.00"/></Style><Style ss:ID="number"><NumberFormat ss:Format="#,##0"/></Style><Style ss:ID="percent"><NumberFormat ss:Format="0.0%"/></Style></Styles>${worksheets}</Workbook>`;
 }
 
 function resumenProfesionalPorCiudad() {
@@ -948,7 +955,7 @@ function resumenProfesionalPorCiudad() {
     const cobrado = servicios.reduce((sum, item) => sum + Number(item.cobrado || 0), 0);
     const productoUsado = servicios.reduce((sum, item) => sum + costoServicio(item), 0);
     const gastoTotal = gastos.reduce((sum, item) => sum + Number(item.monto || 0), 0);
-    const depreciacion = gastoDepreciacionMensual(equipos);
+    const depreciacion = depreciacionActualEtapa(equipos);
     return {
       ciudad,
       ventas,
@@ -965,6 +972,7 @@ function resumenProfesionalPorCiudad() {
 }
 
 function professionalWorksheet(sheet) {
+  if (state.administracion) sheet = { ...sheet, subtitle: `${administrationLabel()} · ${sheet.subtitle || ""}` };
   const columns = sheet.columns || [];
   const rows = sheet.rows || [];
   const columnXml = columns.map((column) => `<Column ss:Width="${Number(column.width || 115)}"/>`).join("");
@@ -1237,7 +1245,7 @@ function acquisitionReportData(kind, range = null, search = "", payer = "") {
   if (!["compras", "equipos"].includes(kind)) throw new Error("Tipo de reporte invalido.");
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const term = normalize(search.trim());
-  const source = kind === "compras" ? comprasFiltradasOperacion() : equiposFiltradosOperacion();
+  const source = kind === "compras" ? comprasFiltradasOperacion() : equipmentAcquisitions(equiposFiltradosOperacion());
   const rows = source.map((item) => ({
     fecha: item.fecha || "",
     operacion: operacionRegistro(item),
@@ -1263,7 +1271,7 @@ function acquisitionReportData(kind, range = null, search = "", payer = "") {
 }
 
 function renderAcquisitionReportModal(kind) {
-  const source = kind === "compras" ? comprasFiltradasOperacion() : equiposFiltradosOperacion();
+  const source = kind === "compras" ? comprasFiltradasOperacion() : equipmentAcquisitions(equiposFiltradosOperacion());
   const payers = [...new Set(source.map((row) => pagadorKey(row.pagadoPor)))].sort((a, b) => a.localeCompare(b));
   const title = kind === "equipos" ? "Reporte de compras de equipos" : "Reporte de compras de productos";
   return `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="acquisitionTitle">
@@ -1369,11 +1377,12 @@ function bindExecutiveReportForm() {
 }
 
 function executivePeriodData(range) {
+  if (state.administracion?.id === "nueva") range = { ...range, start: range.start < "2026-10-16" ? "2026-10-16" : range.start };
   const inRange = (date) => date && date >= range.start && date <= range.end;
   const source = {
     gastos: gastosFiltradosOperacion().filter((r) => inRange(r.fecha)),
     compras: comprasFiltradasOperacion().filter((r) => inRange(r.fecha)),
-    equipos: equiposFiltradosOperacion().filter((r) => inRange(r.fecha)),
+    equipos: equipmentAcquisitions(equiposFiltradosOperacion()).filter((r) => inRange(r.fecha)),
   };
   const blank = () => ({ ventas: 0, cobrado: 0, porCobrar: 0, productoUsado: 0, gastos: 0, depreciacion: 0, comprasInventario: 0, servicios: 0 });
   const months = {}, cities = {}, payments = {};
@@ -1426,8 +1435,8 @@ function executivePeriodData(range) {
       const first = day(row.key + "-01");
       const last = first + monthEndDate(row.key).getDate();
       const from = Math.max(first, day(range.start));
-      const to = Math.min(last, day(range.end) + 1);
-      const amount = accumulated(to) - accumulated(from);
+      const to = Math.min(last, day(range.end) + 1, state.administracion?.id === "anterior" ? day("2026-10-16") : Infinity);
+      const amount = to > from ? accumulated(to) - accumulated(from) : 0;
       row.depreciacion += amount;
       city(e).depreciacion += amount;
     });
@@ -1713,7 +1722,12 @@ async function importBackupFile(file) {
   try {
     const textContent = await file.text();
     const payload = JSON.parse(textContent);
+    if (payload.borrador) throw new Error("Este archivo es un borrador de revisión. No se puede restaurar como respaldo definitivo.");
     const nextState = payload?.data || payload;
+    if (state.administracion && nextState?.administracion?.id !== state.administracion.id) {
+      throw new Error("Este respaldo no pertenece a la administración seleccionada. No se importó información.");
+    }
+    if (state.administracion) nextState.revisionAdministracion = state.revisionAdministracion;
     const required = ["clientes", "productos", "tiposServicio", "servicios", "programaciones", "compras", "gastos", "equipos"];
     const valid = required.every((collection) => Array.isArray(nextState?.[collection]));
     if (!valid) {
@@ -1767,13 +1781,13 @@ function unidadCompraProducto(productoId) {
 function cantidadCompradaUso(productoId) {
   const product = state.productos.find((p) => p.id === productoId);
   const factor = Number(product?.factor || 1);
-  return state.compras.filter((c) => c.productoId === product?.id).reduce((sum, c) => sum + Number(c.cantidad || 0) * factor, 0);
+  return inventoryEntries().filter((c) => c.productoId === product?.id).reduce((sum, c) => sum + Number(c.cantidad || 0) * factor, 0);
 }
 
 function cantidadCompradaUsoOperacion(productoId, operacion) {
   const product = state.productos.find((p) => p.id === productoId);
   const factor = Number(product?.factor || 1);
-  return state.compras
+  return inventoryEntries()
     .filter((c) => c.productoId === product?.id && operacionRegistro(c) === operacion)
     .reduce((sum, c) => sum + Number(c.cantidad || 0) * factor, 0);
 }
@@ -1840,7 +1854,7 @@ function serviciosOrdenados() {
 }
 
 function comprasOrdenadas(productoId, operacion = null) {
-  return state.compras
+  return inventoryEntries()
     .filter((compra) => compra.productoId === productoId && (!operacion || operacionRegistro(compra) === operacion))
     .map((compra) => {
       const product = state.productos.find((p) => p.id === productoId);
@@ -1894,7 +1908,7 @@ function costoProximoLoteUso(productoId, operacion = null) {
 }
 
 function compraPorId(id) {
-  return state.compras.find((compra) => compra.id === id);
+  return inventoryEntries().find((compra) => compra.id === id);
 }
 
 let renderCostCache = null;
@@ -1906,10 +1920,12 @@ function calcularCostosServicios() {
     let serviceCost = 0;
     for (const item of servicio.productos || []) {
       const productId = item.productoId;
-      if (!lotsByProduct.has(productId)) lotsByProduct.set(productId, comprasOrdenadas(productId));
+      const costOperation = state.administracion?.id === "nueva" ? operacionRegistro(servicio, "Yucatan") : null;
+      const lotKey = JSON.stringify([productId, costOperation]);
+      if (!lotsByProduct.has(lotKey)) lotsByProduct.set(lotKey, comprasOrdenadas(productId, costOperation));
       let remainingUse = Number(item.cantidad || 0);
       let itemCost = 0;
-      for (const lot of lotsByProduct.get(productId)) {
+      for (const lot of lotsByProduct.get(lotKey)) {
         if (remainingUse <= 0) break;
         if (lot.remaining <= 0) continue;
         const used = Math.min(remainingUse, lot.remaining);
@@ -1940,13 +1956,15 @@ function costoServicioPorLotesSinCache(targetService) {
   for (const servicio of serviciosOrdenados()) {
     for (const item of servicio.productos || []) {
       const productId = item.productoId;
-      if (!lotsByProduct[productId]) {
-        lotsByProduct[productId] = comprasOrdenadas(productId);
+      const costOperation = state.administracion?.id === "nueva" ? operacionRegistro(servicio, "Yucatan") : null;
+      const lotKey = JSON.stringify([productId, costOperation]);
+      if (!lotsByProduct[lotKey]) {
+        lotsByProduct[lotKey] = comprasOrdenadas(productId, costOperation);
       }
 
       let remainingUse = Number(item.cantidad || 0);
       let itemCost = 0;
-      const lots = lotsByProduct[productId];
+      const lots = lotsByProduct[lotKey];
 
       for (const lot of lots) {
         if (remainingUse <= 0) break;
@@ -2103,7 +2121,7 @@ function inversionPorMesYPagador(source = null) {
     if (row) row.compras += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
   });
 
-  (source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
+  equipmentAcquisitions(source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
     const row = ensure(equipo.fecha, equipo.pagadoPor);
     if (row) row.equipos += costoTotalEquipo(equipo);
   });
@@ -2171,7 +2189,7 @@ function equiposPorCiudadYPagador(source = null) {
     return rows[key];
   };
 
-  (source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
+  equipmentAcquisitions(source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
     const row = ensure(operacionRegistro(equipo));
     const monto = costoTotalEquipo(equipo);
     const pagador = String(equipo.pagadoPor || "Sin dato").toUpperCase();
@@ -2200,7 +2218,7 @@ function totalComprasProductos() {
 }
 
 function equiposPorPagador() {
-  return equiposFiltradosOperacion().reduce((rows, equipo) => {
+  return equipmentAcquisitions(equiposFiltradosOperacion()).reduce((rows, equipo) => {
     const pagador = equipo.pagadoPor || "Sin dato";
     rows[pagador] = (rows[pagador] || 0) + costoTotalEquipo(equipo);
     return rows;
@@ -2250,7 +2268,7 @@ function inversionYGastoDetallePorPagador(source = null) {
     ensure(compra.pagadoPor).compras += Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0);
   });
 
-  (source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
+  equipmentAcquisitions(source ? source.equipos : equiposFiltradosOperacion()).forEach((equipo) => {
     ensure(equipo.pagadoPor).equipos += costoTotalEquipo(equipo);
   });
 
@@ -2317,7 +2335,7 @@ function utilidadPorCiudad() {
   });
 
   state.equipos.forEach((equipo) => {
-    ensure(operacionRegistro(equipo)).depreciacion += gastoDepreciacionMensual([equipo]);
+    ensure(operacionRegistro(equipo)).depreciacion += depreciacionActualEtapa([equipo]);
   });
 
   state.compras.forEach((compra) => {
@@ -2353,6 +2371,23 @@ function gastoDepreciacionMensual(rows = state.equipos) {
   }, 0);
 }
 
+function depreciacionEntreFechas(rows, start, endExclusive) {
+  const day = value => Date.parse(value + "T00:00:00Z") / 86400000;
+  if (endExclusive <= start) return 0;
+  return rows.reduce((sum, item) => {
+    if (!item.fecha || !(Number(item.vida) > 0)) return sum;
+    const base = Math.max(0, costoTotalEquipo(item) - Number(item.residual || 0));
+    const accumulated = date => Math.min(base, Math.max(0, day(date) - day(item.fecha)) / (Number(item.vida) * 365.25) * base);
+    return sum + Math.max(0, accumulated(endExclusive) - accumulated(start));
+  }, 0);
+}
+
+function depreciacionActualEtapa(rows = state.equipos) {
+  if (state.administracion?.id !== "nueva") return gastoDepreciacionMensual(rows);
+  const tomorrow = new Date(today() + "T00:00:00Z"); tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  return depreciacionEntreFechas(rows, "2026-10-16", tomorrow.toISOString().slice(0, 10));
+}
+
 function inversionEquipos(rows = state.equipos) {
   return rows.reduce((sum, item) => sum + costoTotalEquipo(item), 0);
 }
@@ -2365,7 +2400,8 @@ function depreciacionAcumulada(item) {
   if (!item.fecha || !item.vida) return 0;
   const base = costoTotalEquipo(item) - Number(item.residual || 0);
   const mensual = base / Number(item.vida) / 12;
-  const months = Math.max(0, (new Date() - new Date(item.fecha)) / (1000 * 60 * 60 * 24 * 30.44));
+  const asOf = state.administracion?.id === "anterior" ? new Date("2026-10-16T00:00:00") : new Date();
+  const months = Math.max(0, (asOf - new Date(item.fecha)) / (1000 * 60 * 60 * 24 * 30.44));
   return Math.min(base, months * mensual);
 }
 
@@ -2472,7 +2508,7 @@ function metrics() {
   const costoProductos = servicios.reduce((sum, s) => sum + costoServicio(s), 0);
   const gastos = gastosRows.reduce((sum, g) => sum + Number(g.monto || 0), 0);
   const comprasProductos = comprasRows.reduce((sum, compra) => sum + Number(compra.cantidad || 0) * Number(compra.costoUnitario || 0), 0);
-  const depreciacion = gastoDepreciacionMensual(equiposRows);
+  const depreciacion = depreciacionActualEtapa(equiposRows);
   const inversionEquipo = inversionEquipos(equiposRows);
   const depreciacionEquipoAcumulada = depreciacionAcumuladaEquipos(equiposRows);
   const totalClientes = state.clientes.length;
@@ -2507,6 +2543,7 @@ function isProgramacionReadOnly() {
 
 function pendientesQueRequierenAtencion() {
   return (state?.pendientes || []).filter((pendiente) => {
+    if (pendiente.trasladadoAdministracion) return false;
     if (["Completado", "Cancelado", "Confirmado"].includes(pendiente.estatus)) return false;
     return pendiente.fechaRecordatorio && pendiente.fechaRecordatorio <= today();
   });
@@ -2557,6 +2594,7 @@ function renderContent() {
     <div class="shell">
       ${renderSidebar()}
       <main class="main">
+        ${administrationBanner()}
         ${renderPendientesAlert()}
         ${renderModule()}
       </main>
@@ -2609,6 +2647,7 @@ function bindLogin() {
       return;
     }
     currentUser = user;
+    sessionStorage.setItem("burak-session-user-v1", user.id);
     activeModule = modules.find((module) => module.roles.includes(user.role))?.id || "programacion";
     render();
   });
@@ -2621,6 +2660,7 @@ function renderSidebar() {
       <div class="brand">
         <img class="brand-logo" src="logo-gs-burak.png" alt="GS Burak" />
       </div>
+      ${administrationControl()}
       <nav class="nav">
         ${modules
           .filter((m) => m.roles.includes(currentUser.role))
@@ -2684,7 +2724,7 @@ function reporteRapidoData(mes = reporteRapidoMes, tipo = reporteRapidoTipo, ope
   });
   if (tipo === 'gastos' || tipo === 'todo') add(state.gastos, 'Gastos', (r) => Number(r.monto || 0), (r) => [r.categoria, r.descripcion].filter(Boolean).join(' - '));
   if (tipo === 'compras' || tipo === 'todo') add(state.compras, 'Compras', (r) => Number(r.cantidad || 0) * Number(r.costoUnitario || 0), (r) => nombreProducto(r.productoId));
-  if (tipo === 'equipos' || tipo === 'todo') add(state.equipos, 'Equipos', costoTotalEquipo, (r) => r.equipo || 'Sin nombre');
+  if (tipo === 'equipos' || tipo === 'todo') add(equipmentAcquisitions(state.equipos), 'Equipos', costoTotalEquipo, (r) => r.equipo || 'Sin nombre');
   rows.sort((a, b) => a.fecha.localeCompare(b.fecha));
   const payers = new Map([['SISPROVISA', 0], ['VICTOR', 0]]);
   rows.forEach((r) => payers.set(r.pagador, (payers.get(r.pagador) || 0) + r.total));
@@ -2728,7 +2768,7 @@ function bindReportesRapidos() {
 }
 
 function renderCertificados() {
-  const certificadoUrl = "netlify-sites/certificado/index.html";
+  const certificadoUrl = administrationUrl("netlify-sites/certificado/index.html");
   return `
     ${topbar(
       "Certificado de servicio",
@@ -2751,7 +2791,7 @@ function renderCertificados() {
 }
 
 function renderDiagnostico() {
-  const url = "netlify-sites/diagnostico/index.html";
+  const url = administrationUrl("netlify-sites/diagnostico/index.html");
   return `${topbar("Reporte de diagnóstico", "Registra la inspección, los hallazgos y las acciones para entregar al cliente.",
     `<a class="secondary certificate-external-link" href="${url}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`)}
     <section class="certificate-frame-card"><iframe id="diagnostico-frame" class="certificate-frame" src="${url}" title="Reporte de diagnóstico GS BURAK"></iframe></section>`;
@@ -2764,14 +2804,14 @@ function provideDiagnosticoClients(event) {
 }
 
 function renderCebaderas() {
-  const url = "netlify-sites/cebaderas/index.html";
+  const url = administrationUrl("netlify-sites/cebaderas/index.html");
   return `${topbar("Estaciones cebaderas", "Captura las estaciones de cada cliente y genera su reporte de inspección.",
     `<a class="secondary certificate-external-link" href="${url}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`)}
     <section class="certificate-frame-card"><iframe id="cebaderas-frame" class="certificate-frame" src="${url}" title="Reporte de estaciones cebaderas GS BURAK"></iframe></section>`;
 }
 
 function renderCroquis() {
-  const croquisUrl = "netlify-sites/croquis/index.html";
+  const croquisUrl = administrationUrl("netlify-sites/croquis/index.html");
   return `
     ${topbar(
       "Creador de croquis",
@@ -2801,7 +2841,7 @@ function provideCebaderasClients(event) {
 }
 
 function renderPresupuestos() {
-  const presupuestoUrl = "netlify-sites/presupuesto/index.html";
+  const presupuestoUrl = administrationUrl("netlify-sites/presupuesto/index.html");
   return `
     ${topbar(
       "Presupuestos",
@@ -3076,6 +3116,10 @@ function depreciacionMensualParaMes(key) {
     if (!equipo.fecha) return true;
     return new Date(`${equipo.fecha}T00:00:00`) <= end;
   });
+  if (state.administracion?.id === "nueva") {
+    const next = new Date(Date.UTC(end.getFullYear(), end.getMonth() + 1, 1)).toISOString().slice(0, 10);
+    return depreciacionEntreFechas(equipos, key + "-01" < "2026-10-16" ? "2026-10-16" : key + "-01", next);
+  }
   return gastoDepreciacionMensual(equipos);
 }
 
@@ -4182,11 +4226,11 @@ function pendientePill(value, kind = "status") {
 function renderPendientes() {
   const rows = [...state.pendientes]
     .filter((item) => pendienteStatusFilter === "Todos"
-      || (pendienteStatusFilter === "Activos" && !["Completado", "Cancelado", "Confirmado"].includes(item.estatus))
+      || (pendienteStatusFilter === "Activos" && !item.trasladadoAdministracion && !["Completado", "Cancelado", "Confirmado"].includes(item.estatus))
       || item.estatus === pendienteStatusFilter)
     .sort((a, b) => pendienteDateTime(a).localeCompare(pendienteDateTime(b)));
   const groups = ["Vencidos", "Para hoy", "Proximos", "Sin fecha"];
-  const active = state.pendientes.filter((item) => !["Completado", "Cancelado", "Confirmado"].includes(item.estatus));
+  const active = state.pendientes.filter((item) => !item.trasladadoAdministracion && !["Completado", "Cancelado", "Confirmado"].includes(item.estatus));
   const filter = `<select id="pendienteStatusFilter"><option value="Activos" ${pendienteStatusFilter === "Activos" ? "selected" : ""}>Activos</option><option value="Todos" ${pendienteStatusFilter === "Todos" ? "selected" : ""}>Todos</option><option value="Completado" ${pendienteStatusFilter === "Completado" ? "selected" : ""}>Completados</option><option value="Confirmado" ${pendienteStatusFilter === "Confirmado" ? "selected" : ""}>Confirmados</option><option value="Cancelado" ${pendienteStatusFilter === "Cancelado" ? "selected" : ""}>Cancelados</option></select>`;
   return `
     ${topbar("Pendientes y recordatorios", `${number(active.length)} pendientes activos. Los apartados provisionales no ocupan la agenda confirmada.`, `${filter}<button class="primary" data-open="pendiente">Nuevo pendiente</button>`)}
@@ -5031,6 +5075,7 @@ function bindProgramacionAutoSize() {
 }
 
 function bindApp() {
+  bindAdministration();
   document.getElementById('agregarProductoServicio')?.addEventListener('click', () => {
     const rows = document.getElementById('servicioProductos');
     const index = rows.querySelectorAll('select').length;
@@ -5174,6 +5219,7 @@ function bindApp() {
   document.querySelectorAll("[data-action='logout']").forEach((button) => {
     button.addEventListener("click", () => {
       currentUser = null;
+      sessionStorage.removeItem("burak-session-user-v1");
       render();
     });
   });
@@ -5714,11 +5760,97 @@ function toNumber(value) {
   return Number(String(value || "0").replace(",", "."));
 }
 
-async function init() {
+function administrationLabel() {
+  return state?.administracion?.nombre || "Administración actual — separación pendiente";
+}
+
+function administrationUrl(url) {
+  return window.BurakAdmin?.stage ? window.BurakAdmin.url(url) : url;
+}
+
+function administrationControl() {
+  if (!window.BurakAdmin?.stage) {
+    return currentUser?.id === "admin" ? `<div class="administration-box"><strong>Preparación de nueva administración</strong><button class="secondary" id="reviewAdministration">Revisar separación del 16 de octubre</button></div>` : "";
+  }
+  return `<div class="administration-box ${state.administracion.id === "anterior" ? "administration-old" : ""}"><label for="administrationSelect">Administración</label><select id="administrationSelect"><option value="nueva" ${state.administracion.id === "nueva" ? "selected" : ""}>Nueva — desde el 16/10/2026</option><option value="anterior" ${state.administracion.id === "anterior" ? "selected" : ""}>Anterior — hasta el 15/10/2026</option></select></div>`;
+}
+
+function administrationBanner() {
+  const label = administrationLabel();
+  return `<div class="administration-banner ${state?.administracion?.id === "anterior" ? "administration-old" : ""}" role="status">${escapeHtml(label)}${state?.administracion?.id === "anterior" ? " · Los cobros de ventas anteriores se registran aquí con su fecha real." : ""}</div>`;
+}
+
+function bindAdministration() {
+  document.querySelector("#reviewAdministration")?.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/api/administraciones/preparar", { cache: "no-store" });
+      if (!response.ok) throw new Error("No se pudo revisar la separación.");
+      const draft = await response.json();
+      if (draft.activa) { location.reload(); return; }
+      const issues = draft.incidencias || [];
+      const blockers = issues.filter(i => i.tipo !== "cliente_desconocido");
+      const detail = issues.map(i => i.tipo === "inventario_negativo" ? `${i.producto}: ${i.saldo} ${i.unidad} (${i.operacion})` : `${i.tipo}: ${i.coleccion || i.id || "revisar"}`).join("\n");
+      const summary = Object.entries(draft.conteos).map(([key, counts]) => `${key}: anterior ${counts.anterior}, nueva ${counts.nueva}`).join("\n");
+      if (blockers.length) {
+        alert(`La separación aún no se puede activar. No se ha modificado ningún registro.\n\n${summary}\n\nDiferencias que requieren revisión:\n${detail}`);
+        return;
+      }
+      if (!confirm(`Se guardará un respaldo completo en la nube y se separarán las administraciones desde el 16/10/2026.\n\n${summary}\n\n${detail ? "Avisos históricos:\n" + detail + "\n\n" : ""}Los cobros se conservarán junto a su venta, con sus fechas reales. ¿Activar la separación revisada?`)) return;
+      const activate = await fetch("/api/administraciones/activar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ huellaOrigen: draft.huellaOrigen }) });
+      const result = await activate.json();
+      if (!activate.ok) throw new Error(result.error || "No se pudo activar la separación.");
+      location.href = new URL(location.pathname + "?administracion=nueva", location.origin).href;
+    } catch (error) { alert(error.message); }
+  });
+  document.querySelector("#administrationSelect")?.addEventListener("change", async event => {
+    event.target.disabled = true;
+    try {
+      await remoteSaveQueue;
+      if (window.BurakAdmin.failed) throw new Error("Hay un guardado pendiente de resolver. Recarga antes de cambiar de administración.");
+      if (modal && !confirm("Hay un formulario abierto. ¿Cerrar sin guardar y cambiar de administración?")) { event.target.disabled = false; event.target.value = state.administracion.id; return; }
+      const stage = event.target.value;
+      const url = new URL(location.href); url.searchParams.set("administracion", stage);
+      location.href = url.href;
+    } catch (error) { alert(error.message); event.target.disabled = false; }
+  });
+}
+
+function openingInventoryPurchases() {
+  return (state.inventarioInicial || []).map(lot => {
+    const factor = Number(state.productos.find(p => p.id === lot.productoId)?.factor || 1);
+    return { id: lot.id, productoId: lot.productoId, fecha: lot.fechaOrigen || lot.fecha, operacion: lot.operacion, cantidad: Number(lot.cantidadUso) / factor, costoUnitario: Number(lot.costoUso) * factor, esInventarioInicial: true };
+  });
+}
+
+function inventoryEntries() {
+  return [...openingInventoryPurchases(), ...state.compras];
+}
+
+function equipmentAcquisitions(rows) {
+  return rows.filter(e => !e.equipoInicial);
+}
+
+
+async function initializeApplication() {
+  if (window.BurakAdmin) {
+    await window.BurakAdmin.ready;
+    if (window.BurakAdmin.stage) {
+      STORAGE_KEY = window.BurakAdmin.storageKey("state");
+      BACKUP_KEY = window.BurakAdmin.storageKey("backups");
+    }
+  }
   window.addEventListener("message", provideCebaderasClients);
   window.addEventListener("message", provideDiagnosticoClients);
   state = await loadInitialState();
+  if (window.BurakAdmin) {
+    const savedUser = sessionStorage.getItem("burak-session-user-v1");
+    currentUser = users.find(user => user.id === savedUser) || null;
+  }
   render();
 }
+
+function init() { return initializeApplication().catch(error => {
+  document.querySelector("#app").textContent = `${error.message} Recarga esta página para volver a intentarlo. No se usarán registros de otra administración.`;
+}); }
 
 init();

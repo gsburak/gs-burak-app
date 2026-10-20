@@ -1,3 +1,6 @@
+(async () => {
+await window.BurakAdmin.ready;
+const administrationStorage = { getItem: key => localStorage.getItem(window.BurakAdmin.storageKey(key)), setItem: (key, value) => localStorage.setItem(window.BurakAdmin.storageKey(key), value) };
 /* Standalone editable report. No writes to the application's operational database. */
 'use strict';
 const $ = (selector) => document.querySelector(selector);
@@ -35,7 +38,7 @@ function validate(data){
   return result;
 }
 function library(){
-  const data=JSON.parse(localStorage.getItem(STORAGE)||'[]');
+  const data=JSON.parse(administrationStorage.getItem(STORAGE)||'[]');
   if(!Array.isArray(data)) throw new Error('No se pudo leer la biblioteca de reportes. Descarga el editable para conservar tus datos.');
   return data;
 }
@@ -44,7 +47,7 @@ function updateLibrary(){
   catch(e){status(e.message,true);}
 }
 function draft(){
-  try{localStorage.setItem(DRAFT,JSON.stringify(report));}
+  try{administrationStorage.setItem(DRAFT,JSON.stringify(report));}
   catch(_){status('No se pudo guardar el borrador en este navegador. Usa Descargar editable para conservarlo.',true);}
 }
 function changed(){ dirty=true;draft();clearTimeout(timer);timer=setTimeout(renderPreview,160); }
@@ -65,7 +68,7 @@ function save(){
   try{
     const data=library();const index=data.findIndex(r=>r.id===report.id);
     if(index<0)data.unshift(structuredClone(report));else data[index]=structuredClone(report);
-    localStorage.setItem(STORAGE,JSON.stringify(data));draft();dirty=false;updateLibrary();$('#saved').value=report.id;status('Reporte guardado en este navegador. Puedes reabrirlo y seguir editando.');
+    administrationStorage.setItem(STORAGE,JSON.stringify(data));draft();dirty=false;updateLibrary();$('#saved').value=report.id;status('Reporte guardado en este navegador. Puedes reabrirlo y seguir editando.');
   }catch(e){status('No se pudo guardar. Descarga el editable para conservar tus cambios. '+e.message,true);}
 }
 function canReplace(){return !dirty||confirm('Hay cambios sin guardar en la biblioteca. ¿Quieres reemplazar el reporte abierto? Puedes cancelar y guardarlo primero.');}
@@ -126,7 +129,9 @@ $('#catalog').addEventListener('change',()=>{const c=clients.find(c=>String(c.id
 $('#print').addEventListener('click',()=>{renderPreview();if($('#print').disabled)return;if(!report.cliente.trim()||!report.fecha||!report.diagnostico.trim()){status('Completa cliente, fecha y conclusión del diagnóstico antes de generar la copia para el cliente.',true);return;}window.print();});
 window.addEventListener('beforeprint',renderPreview);
 window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===parent&&e.data?.type==='burak-diagnostico-clientes')setClients(e.data.clientes);});
-try{const raw=localStorage.getItem(DRAFT);if(raw){report=validate(JSON.parse(raw));dirty=true;status('Se recuperó el último borrador de este navegador.');}}catch(_){status('No se pudo recuperar el borrador. Puedes abrir un archivo editable.',true);}
+try{const raw=administrationStorage.getItem(DRAFT);if(raw){report=validate(JSON.parse(raw));dirty=true;status('Se recuperó el último borrador de este navegador.');}}catch(_){status('No se pudo recuperar el borrador. Puedes abrir un archivo editable.',true);}
 updateLibrary();showReport();
 if(parent!==window)parent.postMessage({type:'burak-diagnostico-ready'},location.origin);
 else if(location.protocol.startsWith('http'))fetch('/api/state',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>setClients(data.clientes||data.data?.clientes||[])).catch(()=>status('Captura los datos manualmente o abre el diagnóstico desde la app para elegir un cliente.'));
+
+})().catch(error => { document.body.insertAdjacentText("afterbegin", "No se pudo abrir esta administración. Recarga la página: " + error.message); });

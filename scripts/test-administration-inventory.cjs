@@ -1,0 +1,18 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+const context = vm.createContext({ location: { protocol: 'file:' }, console });
+vm.runInContext(fs.readFileSync('app.js', 'utf8').replace(/init\(\);\s*$/, ''), context);
+const run = code => vm.runInContext(code, context);
+run(`state = { administracion:{id:'nueva',nombre:'Nueva administración',corte:'2026-10-16'}, productos:[{id:'p',factor:1000,costo:100,unidadUso:'gr'}], inventarioInicial:[{id:'apertura_z',productoId:'p',operacion:'Yucatan',fecha:'2026-10-15',fechaOrigen:'2026-08-01',cantidadUso:800,costoUso:.2},{id:'apertura_a',productoId:'p',operacion:'Yucatan',fecha:'2026-10-15',fechaOrigen:'2026-09-01',cantidadUso:200,costoUso:.3}], compras:[{id:'new',fecha:'2026-10-16',productoId:'p',operacion:'Yucatan',cantidad:1,costoUnitario:400}], servicios:[{id:'sale',fecha:'2026-10-16',ciudad:'Yucatan',productos:[{productoId:'p',cantidad:900}]}], gastos:[],equipos:[],clientes:[],tiposServicio:[],programaciones:[] };`);
+assert.equal(run(`cantidadCompradaUso('p')`), 2000);
+assert.equal(run(`cantidadCompradaUsoOperacion('p','Yucatan')-cantidadConsumidaUsoOperacion('p','Yucatan')`), 1100);
+assert.equal(run(`costoServicio(state.servicios[0])`), 190, 'FIFO preserves original lot order despite cutover and random IDs');
+assert.equal(run(`totalComprasProductos()`), 400, 'Opening inventory is not a new purchase');
+assert.equal(run(`state.compras.length`), 1);
+assert.equal(run(`equipmentAcquisitions([{id:'e',equipoInicial:true},{id:'n'}]).length`), 1);
+assert.equal(run(`backupFileName().includes('nueva')`), true);
+run(`state.inventarioInicial.unshift({id:'apertura_cdmx',productoId:'p',operacion:'CDMX',fecha:'2026-10-15',fechaOrigen:'2026-01-01',cantidadUso:1000,costoUso:5});`);
+assert.equal(run(`costoServicio(state.servicios[0])`), 190, 'Yucatan never consumes the older, higher-cost CDMX opening lot');
+assert.equal(run(`calcularCostosServicios().get('sale')`), 190, 'Cached and uncached costs isolate cities identically');
+console.log('Opening inventory: quantities, city, lot costs/FIFO, no fake purchases, assets and separate backups passed.');

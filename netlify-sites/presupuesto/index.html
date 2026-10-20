@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
+<script src="../../administration-context.js?v=20261017a"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Formato de Presupuesto GS BURAK</title>
@@ -673,9 +674,11 @@
   </main>
 
   <script>
+(async () => { await window.BurakAdmin.ready;
+
     const $ = (sel, root = document) => root.querySelector(sel);
     const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-    const STORE_KEY = 'gs-burak-presupuesto-v1';
+    const STORE_KEY = window.BurakAdmin.storageKey('gs-burak-presupuesto-v1');
     const IVA = 0.16;
 
     const defaults = {
@@ -1021,6 +1024,8 @@
     state.fecha = state.fecha || todayISO();
     writeForm();
     renderPreview();
-  </script>
+
+})().catch(error => alert(error.message));
+</script>
 </body>
 </html>

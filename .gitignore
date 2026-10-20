@@ -2,3 +2,5 @@
 GS_BURAK_RESPALDOS/
 *.backup.zip
 /tmp/
+__pycache__/
+*.pyc

@@ -7,6 +7,7 @@ import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from datetime import datetime
+from administration_api import AdministrationAPI, LOCK as ADMINISTRATION_LOCK
 
 
 ROOT = Path(__file__).resolve().parent
@@ -171,6 +172,9 @@ def load_local_state():
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def administration_api(self, method):
+        return AdministrationAPI(self, lambda: load_table_state() or load_cloud_state(), supabase_request).handle(method)
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         self.send_header("Pragma", "no-cache")
@@ -178,6 +182,8 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if self.administration_api("GET"):
+            return
         if self.path == "/api/state":
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -198,6 +204,12 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        with ADMINISTRATION_LOCK:
+            if self.administration_api("POST"):
+                return
+            self.legacy_POST()
+
+    def legacy_POST(self):
         if self.path == "/api/pendientes":
             length = int(self.headers.get("Content-Length", "0"))
             body = self.rfile.read(length)
@@ -308,6 +320,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_error(404)
 
     def do_DELETE(self):
+        with ADMINISTRATION_LOCK:
+            if self.administration_api("DELETE"):
+                return
+            self.legacy_DELETE()
+
+    def legacy_DELETE(self):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/record":
             params = urllib.parse.parse_qs(parsed.query)

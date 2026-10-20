@@ -18,6 +18,9 @@ $archivosCodigo = @(
   'styles.css',
   'styles-20260614a.css',
   'server.py',
+  'administrations.py',
+  'administration_api.py',
+  'administration-context.js',
   'requirements.txt',
   'README.md',
   'logo-gs-burak.png',
@@ -33,12 +36,31 @@ foreach ($archivo in $archivosCodigo) {
 
 Copy-Item -LiteralPath (Join-Path $raizProyecto 'netlify-sites') -Destination $codigo -Recurse
 Copy-Item -LiteralPath (Join-Path $raizProyecto 'scripts') -Destination $codigo -Recurse
+Copy-Item -LiteralPath (Join-Path $raizProyecto 'docs') -Destination $codigo -Recurse
 
 $estadoRemoto = Join-Path $datos 'gs_burak_datos_supabase.json'
 try {
-  Invoke-WebRequest -Uri 'https://gs-burak-app.onrender.com/api/state' -OutFile $estadoRemoto -UseBasicParsing
-  $contenido = Get-Content -LiteralPath $estadoRemoto -Raw -Encoding UTF8 | ConvertFrom-Json
-  if ($null -eq $contenido) { throw 'La respuesta remota no contiene datos validos.' }
+  $administracionesActivas = $false
+  try {
+    $administracionResponse = Invoke-WebRequest -Uri 'https://gs-burak-app.onrender.com/api/administraciones' -UseBasicParsing -TimeoutSec 60
+    $administracionStatus = $administracionResponse.Content | ConvertFrom-Json
+    $administracionesActivas = $administracionStatus.activa -eq $true
+  } catch {
+    # The published version before the cutover does not have this endpoint.
+    if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -ne 404) { throw }
+    if (-not $_.Exception.Response) { throw }
+  }
+  $etapasRespaldo = if ($administracionesActivas) { @('anterior', 'nueva') } else { @('actual') }
+  foreach ($etapaRespaldo in $etapasRespaldo) {
+    $cabecerasRespaldo = if ($etapaRespaldo -eq 'actual') { @{} } else { @{ 'X-Burak-Administracion' = $etapaRespaldo } }
+    $archivoRespaldo = if ($etapaRespaldo -eq 'actual') { $estadoRemoto } else { Join-Path $datos "gs_burak_$etapaRespaldo.json" }
+    Invoke-WebRequest -Uri 'https://gs-burak-app.onrender.com/api/state' -Headers $cabecerasRespaldo -OutFile $archivoRespaldo -UseBasicParsing -TimeoutSec 60
+    $contenido = Get-Content -LiteralPath $archivoRespaldo -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach ($coleccionRespaldo in @('clientes','productos','tiposServicio','servicios','programaciones','pendientes','compras','gastos','equipos')) {
+      if ($null -eq $contenido.$coleccionRespaldo) { throw "Falta $coleccionRespaldo en el respaldo $etapaRespaldo." }
+    }
+    if ($etapaRespaldo -ne 'actual' -and $contenido.administracion.id -ne $etapaRespaldo) { throw 'El servidor devolvió otra administración.' }
+  }
 } catch {
   $estadoLocal = Join-Path $raizProyecto 'gs_burak_data.json'
   if (Test-Path -LiteralPath $estadoLocal) {
