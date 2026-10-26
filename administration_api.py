@@ -129,6 +129,14 @@ class AdministrationAPI:
                     data[collection] = [r for r in data[collection] if str(r["id"]) != str(identifier)]
                     if method == "POST":
                         data[collection].append(record)
+                        # Field reports and their scheduled job must commit together.
+                        if collection == "servicios" and record.get("reporte") and record.get("programacionId"):
+                            programacion = next((p for p in data["programaciones"] if str(p["id"]) == str(record["programacionId"])), None)
+                            if programacion is None:
+                                raise ValueError("No se encontró el servicio programado en esta administración")
+                            if programacion.get("servicioId") and str(programacion["servicioId"]) != str(identifier):
+                                raise ValueError("El programado ya está vinculado a otra venta. Actualiza la aplicación.")
+                            programacion.update(estatus="Realizado", servicioId=identifier)
                 else:
                     self.respond({"error": "Ruta no disponible para esta administración"}, 404)
                     return True

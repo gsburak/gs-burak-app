@@ -110,5 +110,34 @@ class Tests(unittest.TestCase):
         self.assertTrue(AdministrationAPI(request, lambda: fixture(), failed).handle("GET"))
         self.assertEqual(request.status, 503)
 
+    def test_field_report_completes_schedule_atomically(self):
+        storage = {BUNDLE_ID: prepare(fixture())}
+        original_old = deepcopy(storage[BUNDLE_ID]["etapas"]["anterior"])
+        def cloud(method, path, payload=None):
+            if method == "GET": return [{"data": deepcopy(storage[BUNDLE_ID])}]
+            for row in payload: storage[row["id"]] = deepcopy(row["data"])
+        def save(record, revision):
+            request = Request("/api/record", {"collection": "servicios", "record": record}, "nueva", revision)
+            AdministrationAPI(request, fixture, cloud).handle("POST")
+            return request
+        report = {"id": "report-a", "fecha": "2026-10-20", "clienteId": "client", "programacionId": "a", "reporte": {"folio": "1"}, "subtotal": 0}
+        self.assertEqual(save(report, 0).status, 200)
+        stage = storage[BUNDLE_ID]["etapas"]["nueva"]
+        schedule = stage["programaciones"][0]
+        self.assertEqual(schedule["estatus"], "Realizado")
+        self.assertEqual(schedule["servicioId"], "report-a")
+        self.assertEqual(schedule["calendarEventId"], "existing-event")
+        self.assertEqual(schedule["anticipo"], 500)
+        self.assertEqual(stage["revisionAdministracion"], 1)
+        self.assertEqual(save(report, 1).status, 200)
+        self.assertEqual(sum(s["id"] == "report-a" for s in storage[BUNDLE_ID]["etapas"]["nueva"]["servicios"]), 1)
+        before = deepcopy(storage)
+        self.assertEqual(save({**report, "id": "duplicate"}, 2).status, 400)
+        self.assertEqual(save({**report, "programacionId": "missing"}, 2).status, 400)
+        self.assertEqual(save(report, 0).status, 409)
+        self.assertEqual(save({**report, "fecha": "2026-10-14"}, 2).status, 400)
+        self.assertEqual(storage, before)
+        self.assertEqual(storage[BUNDLE_ID]["etapas"]["anterior"], original_old)
+
 
 if __name__ == "__main__": unittest.main()

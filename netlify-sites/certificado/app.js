@@ -605,8 +605,15 @@ function buildServicioPendiente(data) {
 
 async function saveReporteComoServicio(data) {
   const servicio = buildServicioPendiente(data);
+  // A report can remain open while other users update this administration.
+  // Refresh its revision immediately before the write; the API still rejects races.
+  if (window.BurakAdmin.stage) {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error("No se pudo actualizar esta administración antes de guardar.");
+    await response.json();
+  }
   await saveSupabaseRecord("app_servicios", servicio);
-  if (data.programacionId) {
+  if (data.programacionId && !window.BurakAdmin.stage) {
     const programacion = programacionesCatalogo.find((item) => String(item.id) === String(data.programacionId));
     if (programacion) {
       await saveSupabaseRecord("app_programaciones", {
