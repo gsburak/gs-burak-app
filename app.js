@@ -5093,10 +5093,19 @@ function bindApp() {
       try {
         // Field reports save independently of this window. Read the shared
         // state again before displaying lists or allowing another edit.
-        await remoteSaveQueue;
-        if (SERVER_MODE) state = await loadInitialState();
+        let failedSave = false;
+        await remoteSaveQueue.catch(() => { failedSave = true; });
+        failedSave = failedSave || Boolean(window.BurakAdmin?.failed);
+        if (SERVER_MODE) {
+          state = await loadInitialState();
+          // Only resume writes after the displayed state has been replaced by
+          // the latest server state. Never replay the rejected local snapshot.
+          if (window.BurakAdmin) window.BurakAdmin.failed = false;
+          remoteSaveQueue = Promise.resolve();
+        }
         activeModule = nextModule;
         render();
+        if (failedSave) alert("Se cargó la información más reciente. El cambio que no se pudo guardar no se aplicó; revísalo y vuelve a capturarlo si hace falta.");
       } catch (error) {
         button.disabled = false;
         alert(`No se pudo actualizar la información: ${error.message}`);

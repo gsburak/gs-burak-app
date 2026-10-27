@@ -25,7 +25,8 @@
     const url = new URL(typeof input === "string" ? input : input.url, location.href);
     if (url.origin !== location.origin || !url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/administraciones")) return nativeFetch(input, options);
     await context.ready;
-    if (context.failed) throw new Error("Recarga la página para recuperar la última información antes de guardar.");
+    // A failed write must block further writes, but never prevent a fresh read.
+    if (context.failed && (options.method || "GET").toUpperCase() !== "GET") throw new Error("Recarga la página para recuperar la última información antes de guardar.");
     const headers = new Headers(options.headers || (typeof input !== "string" ? input.headers : undefined));
     if (context.stage) headers.set("X-Burak-Administracion", context.stage);
     if (context.stage && context.revision !== null) headers.set("X-Burak-Revision", String(context.revision));

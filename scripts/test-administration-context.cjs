@@ -30,6 +30,10 @@ async function tab(stage) {
   await assert.rejects(current.window.fetch('/api/restore', { method: 'POST', body: JSON.stringify({ administracion: { id: 'anterior' } }) }), /otra administración/);
   await assert.rejects(old.window.fetch('/api/fail'), /Datos cambiados/);
   await assert.rejects(old.window.fetch('/api/record', { method: 'POST' }), /Recarga/);
+  await old.window.fetch('/api/state');
+  assert.equal(old.calls.at(-1).path, '/api/state', 'A rejected write does not block navigation reads');
+  assert.equal(old.window.BurakAdmin.failed, true, 'Reading alone must not unlock stale writes');
+  await assert.rejects(old.window.fetch('/api/record', { method: 'POST' }), /Recarga/);
   await current.window.fetch('/api/state');
   assert.equal(current.window.BurakAdmin.failed, false, 'A stale old tab does not affect a new tab');
   console.log('Administration browser context: separate tabs, local keys, document URLs, revisions and stale-write rejection passed.');
