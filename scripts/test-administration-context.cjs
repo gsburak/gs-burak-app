@@ -34,6 +34,9 @@ async function tab(stage) {
   assert.equal(old.calls.at(-1).path, '/api/state', 'A rejected write does not block navigation reads');
   assert.equal(old.window.BurakAdmin.failed, true, 'Reading alone must not unlock stale writes');
   await assert.rejects(old.window.fetch('/api/record', { method: 'POST' }), /Recarga/);
+  current.window.BurakAdmin.revision = 3;
+  await current.window.fetch('/api/state', { burakBackgroundRead: true });
+  assert.equal(current.window.BurakAdmin.revision, 3, 'Background reads must not advance the revision of displayed data');
   await current.window.fetch('/api/state');
   assert.equal(current.window.BurakAdmin.failed, false, 'A stale old tab does not affect a new tab');
   console.log('Administration browser context: separate tabs, local keys, document URLs, revisions and stale-write rejection passed.');

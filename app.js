@@ -138,6 +138,40 @@ let reporteRapidoTipo = "gastos";
 let reporteRapidoOperacion = "Todas";
 let reporteRapidoPagador = "";
 let remoteSaveQueue = Promise.resolve();
+let moduleRefreshPromise = null;
+let moduleRefreshAt = 0;
+
+function refreshModuleInBackground() {
+  if (!SERVER_MODE || modal) return Promise.resolve();
+  if (moduleRefreshPromise) return moduleRefreshPromise;
+  if (!window.BurakAdmin?.failed && Date.now() - moduleRefreshAt < 15000) return Promise.resolve();
+  const queue = remoteSaveQueue;
+  const displayedState = state;
+  moduleRefreshPromise = (async () => {
+    let failedSave = false;
+    await queue.catch(() => { failedSave = true; });
+    failedSave = failedSave || Boolean(window.BurakAdmin?.failed);
+    const response = await fetch("/api/state", { cache: "no-store", burakBackgroundRead: true });
+    if (!response.ok) throw new Error("No se pudo consultar la información reciente.");
+    const data = await response.json();
+    // Do not replace edits or advance the revision of a snapshot we discard.
+    if (queue !== remoteSaveQueue || displayedState !== state || modal ||
+        document.activeElement?.matches("input, textarea, select, [contenteditable]")) return;
+    state = migrateState(data);
+    if (window.BurakAdmin) {
+      if (data.revisionAdministracion !== undefined) window.BurakAdmin.revision = data.revisionAdministracion;
+      window.BurakAdmin.failed = false;
+    }
+    remoteSaveQueue = Promise.resolve();
+    moduleRefreshAt = Date.now();
+    render();
+    if (failedSave) alert("Se cargó la información más reciente. El cambio que no se pudo guardar no se aplicó; revísalo y vuelve a capturarlo si hace falta.");
+  })().catch(error => {
+    moduleRefreshAt = 0;
+    alert(`El módulo está abierto con la información anterior. No se pudo actualizar: ${error.message}`);
+  }).finally(() => { moduleRefreshPromise = null; });
+  return moduleRefreshPromise;
+}
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -5087,29 +5121,11 @@ function bindApp() {
   });
   bindProgramacionAutoSize();
   document.querySelectorAll("[data-module]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => {
       const nextModule = button.dataset.module;
-      button.disabled = true;
-      try {
-        // Field reports save independently of this window. Read the shared
-        // state again before displaying lists or allowing another edit.
-        let failedSave = false;
-        await remoteSaveQueue.catch(() => { failedSave = true; });
-        failedSave = failedSave || Boolean(window.BurakAdmin?.failed);
-        if (SERVER_MODE) {
-          state = await loadInitialState();
-          // Only resume writes after the displayed state has been replaced by
-          // the latest server state. Never replay the rejected local snapshot.
-          if (window.BurakAdmin) window.BurakAdmin.failed = false;
-          remoteSaveQueue = Promise.resolve();
-        }
-        activeModule = nextModule;
-        render();
-        if (failedSave) alert("Se cargó la información más reciente. El cambio que no se pudo guardar no se aplicó; revísalo y vuelve a capturarlo si hace falta.");
-      } catch (error) {
-        button.disabled = false;
-        alert(`No se pudo actualizar la información: ${error.message}`);
-      }
+      activeModule = nextModule;
+      render();
+      void refreshModuleInBackground();
     });
   });
   document.querySelectorAll("[data-programar-cliente]").forEach((button) => {

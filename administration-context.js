@@ -46,7 +46,7 @@
       if (response.status === 409 || (options.method || "GET") !== "GET") context.failed = true;
       throw new Error(error.error || "No se pudo completar la operación. No se cambiará de administración.");
     }
-    if (context.stage && ["/api/state", "/api/record", "/api/restore", "/api/pendientes"].includes(url.pathname)) {
+    if (!options.burakBackgroundRead && context.stage && ["/api/state", "/api/record", "/api/restore", "/api/pendientes"].includes(url.pathname)) {
       const data = await response.clone().json();
       if (data.revisionAdministracion !== undefined) context.revision = data.revisionAdministracion;
     }
