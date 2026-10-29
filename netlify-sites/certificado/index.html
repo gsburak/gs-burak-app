@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Certificado / Reporte de servicio</title>
-    <link rel="stylesheet" href="styles.css?v=20260927b">
+    <link rel="stylesheet" href="styles.css?v=20261028a">
   </head>
   <body>
     <main class="app-shell">
@@ -199,6 +199,14 @@
           </div>
         </section>
 
+        <section class="panel wide-panel">
+          <h2>Evidencia fotográfica del servicio</h2>
+          <p>Agrega hasta 12 fotos JPG, PNG o WebP (máximo 15 MB cada una). Se incluirán al final del PDF, cuatro por página. Conserva el PDF: las fotos permanecen en esta página hasta que la cierres o limpies.</p>
+          <label>Agregar fotografías de la galería<input id="evidenceFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+          <label>Tomar una fotografía<input id="evidenceCamera" type="file" accept="image/*" capture="environment"></label>
+          <p id="evidenceStatus" role="status" aria-live="polite"></p>
+          <div id="evidenceList" class="evidence-grid"></div>
+        </section>
         <footer class="action-bar">
           <button type="button" class="secondary-button" id="saveDraft">Guardar borrador</button>
           <button type="submit" class="primary-button" id="generateReport">Guardar servicio y generar PDF</button>
@@ -216,6 +224,6 @@
     <section id="certificatePreview" class="certificate hidden"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js?v=20261026a"></script>
+    <script src="app.js?v=20261028a"></script>
   </body>
 </html>

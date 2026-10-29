@@ -701,3 +701,8 @@ textarea {
     background: #eaf0f6 !important;
   }
 }
+
+.evidence-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.evidence-grid img { width:100%; height:220px; object-fit:contain; background:#f2f6fa; }
+.evidence-grid textarea { width:100%; box-sizing:border-box; }
+@media(max-width:600px) { .evidence-grid { grid-template-columns:1fr; } }

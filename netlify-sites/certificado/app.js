@@ -512,6 +512,70 @@ function setupSignature(canvas) {
   };
 }
 
+
+let evidencePhotos = [];
+let evidenceVersion = 0;
+let evidenceLoading = false;
+const evidenceList = document.querySelector('#evidenceList');
+const evidenceStatus = document.querySelector('#evidenceStatus');
+function showEvidence() {
+  evidenceList.replaceChildren();
+  evidencePhotos.forEach((photo, index) => {
+    const card = document.createElement('div');
+    const img = document.createElement('img');
+    img.src = photo.src; img.alt = 'Fotografía ' + (index + 1);
+    const label = document.createElement('label');
+    label.textContent = 'Descripción de fotografía ' + (index + 1);
+    const caption = document.createElement('textarea');
+    caption.maxLength = 180; caption.rows = 3; caption.value = photo.caption;
+    caption.addEventListener('input', () => { photo.caption = caption.value; });
+    label.append(caption);
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.className = 'ghost-button'; remove.textContent = 'Quitar fotografía';
+    remove.addEventListener('click', () => { evidencePhotos.splice(index, 1); showEvidence(); });
+    card.append(img, label, remove); evidenceList.append(card);
+  });
+}
+async function addEvidence(event) {
+  if (evidenceLoading) return;
+  const files = Array.from(event.target.files);
+  const version = evidenceVersion;
+  evidenceLoading = true;
+  document.querySelectorAll('#evidenceFiles, #evidenceCamera').forEach(input => { input.disabled = true; });
+  const errors = [];
+  evidenceStatus.textContent = 'Preparando fotografías…';
+  try {
+    for (const file of files) {
+      if (version !== evidenceVersion) break;
+      if (evidencePhotos.length >= 12) { errors.push('El límite es de 12 fotografías.'); break; }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 15 * 1024 * 1024) {
+        errors.push(file.name + ': elige JPG, PNG o WebP de hasta 15 MB.'); continue;
+      }
+      const url = URL.createObjectURL(file);
+      try {
+        const img = new Image();
+        await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
+        const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (version === evidenceVersion) evidencePhotos.push({ src: canvas.toDataURL('image/jpeg', 0.82), width: canvas.width, height: canvas.height, caption: '' });
+      } catch (_) { errors.push(file.name + ': no se pudo leer la imagen.'); }
+      finally { URL.revokeObjectURL(url); }
+    }
+  } finally {
+    evidenceLoading = false;
+    document.querySelectorAll('#evidenceFiles, #evidenceCamera').forEach(input => { input.disabled = false; input.value = ''; });
+    showEvidence();
+    evidenceStatus.textContent = evidencePhotos.length + ' fotografías listas. ' + errors.join(' ');
+  }
+}
+document.querySelector('#evidenceFiles').addEventListener('change', addEvidence);
+document.querySelector('#evidenceCamera').addEventListener('change', addEvidence);
+
 function dataFromForm() {
   const fd = new FormData(form);
   const data = Object.fromEntries(fd.entries());
@@ -641,6 +705,7 @@ function crearPdfEditable(data) {
   if (!jsPDF) {
     const tituloAnterior = document.title;
     document.title = nombreArchivoPdf(data).replace(/\.pdf$/i, "");
+    if (evidencePhotos.length) { alert('No se pudo cargar el generador de PDF. Revisa la conexión y vuelve a intentar para incluir las fotos.'); return; }
     window.print();
     setTimeout(() => {
       document.title = tituloAnterior;
@@ -849,6 +914,21 @@ function crearPdfEditable(data) {
   text("Tel: 999 120 8854 | SINTOX 24 HRS 800 009 2800 | Intoxicacion - Gratuito", page.m, y + 18, { size: 5.8, color: [75, 75, 75] });
   text(`Generado: ${new Date().toLocaleString("es-MX")}`, page.m, y + 26, { size: 5.8, color: [75, 75, 75] });
 
+  for (let start = 0; start < evidencePhotos.length; start += 4) {
+    doc.addPage();
+    text('EVIDENCIA FOTOGRAFICA DEL SERVICIO', 28, 35, { size: 14, bold: true, color: navy });
+    text('Folio: ' + clean(data.folio) + ' | Fecha: ' + clean(data.fecha), 28, 55, { size: 9 });
+    text(split('Cliente: ' + clean(data.cliente), 550, 9).slice(0, 2), 28, 71, { size: 9 });
+    evidencePhotos.slice(start, start + 4).forEach((photo, index) => {
+      const x = 28 + (index % 2) * 284;
+      const top = 105 + Math.floor(index / 2) * 320;
+      const scale = Math.min(264 / photo.width, 250 / photo.height);
+      const w = photo.width * scale, h = photo.height * scale;
+      doc.addImage(photo.src, 'JPEG', x + (264 - w) / 2, top + (250 - h) / 2, w, h);
+      text(split((start + index + 1) + '. ' + (photo.caption || 'Evidencia del servicio'), 260, 9).slice(0, 5), x, top + 266, { size: 9 });
+    });
+    text('Anexo fotográfico | Folio: ' + clean(data.folio) + ' | Hoja ' + (Math.floor(start / 4) + 1), 28, 765, { size: 8 });
+  }
   doc.save(nombreArchivoPdf(data));
 }
 
@@ -1069,6 +1149,7 @@ document.querySelector("#saveDraft").addEventListener("click", () => {
 
 document.querySelector("#resetForm").addEventListener("click", () => {
   if (confirm("Limpiar todo el formulario?")) {
+    evidenceVersion += 1; evidencePhotos = []; showEvidence(); evidenceStatus.textContent = '';
     form.reset();
     technicianImageRequest += 1;
     technicianImageStatus.textContent = "";
@@ -1086,6 +1167,7 @@ document.querySelector("#resetForm").addEventListener("click", () => {
 });
 
 document.querySelector("#downloadPdf").addEventListener("click", () => {
+  if (evidenceLoading) { alert('Espera a que terminen de cargar las fotografías.'); return; }
   const data = dataFromForm();
   renderCertificate(data, {
     responsable: FIRMA_RESPONSABLE_DEFAULT,
@@ -1103,6 +1185,7 @@ document.querySelector("#sharePdf").addEventListener("click", () => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (evidenceLoading) { alert('Espera a que terminen de cargar las fotografías.'); return; }
   if (!form.reportValidity() || reporteEnProceso) return;
 
   reporteEnProceso = true;
