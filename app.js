@@ -2854,6 +2854,7 @@ function renderCroquis() {
     )}
     <div class="certificate-notice">
       Agrega áreas, estaciones, lámparas y trampas; después mueve y ajusta cada elemento para formar el croquis del cliente.
+      <p><a class="secondary certificate-external-link" href="${administrationUrl("netlify-sites/anexo-estaciones/index.html")}" target="_blank" rel="noopener noreferrer">Abrir anexo de estaciones y lámparas / Descargar PDF</a></p>
     </div>
     <section class="certificate-frame-card">
       <iframe
