@@ -23,7 +23,7 @@
     : Promise.resolve({ activa: false });
   window.fetch = async (input, options = {}) => {
     const url = new URL(typeof input === "string" ? input : input.url, location.href);
-    if (url.origin !== location.origin || !url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/administraciones")) return nativeFetch(input, options);
+    if (url.origin !== location.origin || !url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/administraciones") || url.pathname.startsWith("/api/auth/")) return nativeFetch(input, options);
     await context.ready;
     const documentRequest=url.pathname.startsWith('/api/formats');
     // A failed write must block further writes, but never prevent a fresh read.

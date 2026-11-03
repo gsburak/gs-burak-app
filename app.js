@@ -3,9 +3,9 @@ let BACKUP_KEY = "gs_burak_app_backups_v1";
 const SERVER_MODE = location.protocol.startsWith("http");
 
 const users = [
-  { id: "admin", name: "VICTOR", role: "admin", password: "G5687" },
-  { id: "tecnico", name: "PROGRAMACION", role: "operativo", password: "vicbus" },
-  { id: "consulta", name: "CONSULTA", role: "consulta", password: "12345" },
+  { id: "admin", name: "VICTOR", role: "admin" },
+  { id: "tecnico", name: "PROGRAMACION", role: "operativo" },
+  { id: "consulta", name: "CONSULTA", role: "consulta" },
 ];
 
 const modules = [
@@ -2664,18 +2664,15 @@ function renderLogin() {
 }
 
 function bindLogin() {
-  document.querySelector("#loginForm").addEventListener("submit", (event) => {
+  document.querySelector("#loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
-    const user = users.find((u) => u.id === data.user && u.password === data.password);
-    if (!user) {
-      alert("Usuario o contraseña incorrectos.");
-      return;
-    }
-    currentUser = user;
-    sessionStorage.setItem("burak-session-user-v1", user.id);
-    activeModule = modules.find((module) => module.roles.includes(user.role))?.id || "programacion";
-    render();
+    try {
+      const response = await fetch("/api/auth/login", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username:data.user,password:data.password})});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No se pudo iniciar sesión.");
+      await initializeApplication();
+    } catch(error) { alert(error.message); }
   });
 }
 
@@ -5248,10 +5245,14 @@ function bindApp() {
     });
   });
   document.querySelectorAll("[data-action='logout']").forEach((button) => {
-    button.addEventListener("click", () => {
-      currentUser = null;
-      sessionStorage.removeItem("burak-session-user-v1");
-      render();
+    button.addEventListener("click", async () => {
+      try {
+        await fetch("/api/auth/logout", {method:"POST"});
+        currentUser = null;
+        sessionStorage.removeItem("burak-session-user-v1");
+        state = structuredClone(seed);
+        render();
+      } catch(error) { alert(error.message); }
     });
   });
   document.querySelectorAll("[data-action='repairData']").forEach((button) => {
@@ -5872,11 +5873,13 @@ async function initializeApplication() {
   }
   window.addEventListener("message", provideCebaderasClients);
   window.addEventListener("message", provideDiagnosticoClients);
+  const sessionResponse = await fetch("/api/auth/session", {cache:"no-store"});
+  if (!sessionResponse.ok) throw new Error("No se pudo verificar la sesión.");
+  const session = await sessionResponse.json();
+  currentUser = session.user || null;
+  if (!currentUser) { state = structuredClone(seed); render(); return; }
   state = await loadInitialState();
-  if (window.BurakAdmin) {
-    const savedUser = sessionStorage.getItem("burak-session-user-v1");
-    currentUser = users.find(user => user.id === savedUser) || null;
-  }
+  activeModule = modules.find(module => module.roles.includes(currentUser.role))?.id || "programacion";
   render();
 }
 

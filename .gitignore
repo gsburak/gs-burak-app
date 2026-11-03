@@ -4,3 +4,6 @@ GS_BURAK_RESPALDOS/
 /tmp/
 __pycache__/
 *.pyc
+.env
+.env.*
+GS_BURAK_ACCESOS_PRIVADOS.txt

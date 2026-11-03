@@ -8,6 +8,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from datetime import datetime
 from administration_api import AdministrationAPI, LOCK as ADMINISTRATION_LOCK
+from burak_auth import Auth
 
 
 ROOT = Path(__file__).resolve().parent
@@ -25,7 +26,7 @@ COLLECTION_TABLES = {
     "equipos": "app_equipos",
 }
 SUPABASE_URL = "https://xuswzuxtccpwlyizbrcj.supabase.co"
-SUPABASE_KEY = "sb_publishable_dBXdapkvlNFK2byoRHCLgw_mBAAF87-"
+SUPABASE_KEY = os.environ.get("GS_SUPABASE_SECRET_KEY", "")
 SUPABASE_STATE_ID = "main"
 CALENDAR_BRIDGE_URL = "https://script.google.com/macros/s/AKfycbyERZACWl4G7T_Xvxl5tsKV9bZi0jn53Q1LqHkWPXQ6YClVFfAAGlVuXhJIsGXyPQiw/exec"
 CALENDAR_BRIDGE_SECRET = "p5X8ZCgabVdkJRDGPItQunM4iY7NyjfS"
@@ -61,10 +62,11 @@ def merge_without_losing_existing(existing, incoming):
 
 
 def supabase_request(method, path, payload=None, prefer=None):
+    if not SUPABASE_KEY.startswith("sb_secret_"):
+        raise RuntimeError("Configura GS_SUPABASE_SECRET_KEY en el alojamiento.")
     url = f"{SUPABASE_URL}/rest/v1/{path}"
     headers = {
         "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -172,6 +174,88 @@ def load_local_state():
 
 
 class Handler(SimpleHTTPRequestHandler):
+    def auth(self):
+        return Auth(supabase_request)
+
+    def auth_json(self, data, status=200, cookie=None):
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        if cookie:
+            self.send_header('Set-Cookie', cookie)
+        self.end_headers()
+        self.wfile.write(json.dumps(data, ensure_ascii=False).encode())
+
+    def guard(self, method):
+        path = urllib.parse.urlsplit(self.path).path
+        if not path.startswith('/api/'):
+            return False
+        try:
+            auth = self.auth()
+            if method not in ('GET', 'HEAD') and not auth.same_origin(self.headers):
+                self.auth_json({'error': 'Origen no autorizado.'}, 403)
+                return True
+            if path == '/api/auth/session' and method == 'GET':
+                self.auth_json({'configured': bool(auth.users), 'user': auth.user(self.headers)})
+                return True
+            if path == '/api/auth/login' and method == 'POST':
+                if not auth.users:
+                    self.auth_json({'error': 'El acceso seguro debe configurarse en el alojamiento.'}, 503)
+                    return True
+                size = int(self.headers.get('Content-Length', '0'))
+                if not 0 < size <= 4096:
+                    self.auth_json({'error': 'Solicitud inválida.'}, 400)
+                    return True
+                data = json.loads(self.rfile.read(size))
+                token, status = auth.login(data.get('username'), data.get('password'))
+                if token:
+                    self.auth_json({'ok': True}, cookie=auth.cookie(token))
+                else:
+                    self.auth_json({'error': 'Espera cinco minutos.' if status == 429 else 'Usuario o contraseña incorrectos.'}, status)
+                return True
+            if path == '/api/auth/logout' and method == 'POST':
+                auth.logout(self.headers)
+                self.auth_json({'ok': True}, cookie=auth.cookie('', clear=True))
+                return True
+            # Non-sensitive context metadata lets the login screen choose a stage.
+            if path == '/api/administraciones' and method == 'GET':
+                return False
+            user = auth.user(self.headers)
+            if not user:
+                self.auth_json({'error': 'Inicia sesión para consultar o guardar información.'}, 401)
+                return True
+            admin_only = path in ('/api/backup', '/api/restore', '/api/formats/import') or path.startswith('/api/administraciones/')
+            readonly_write = user['role'] == 'consulta' and method != 'GET' and not path.startswith('/api/formats')
+            if (admin_only and user['role'] != 'admin') or readonly_write:
+                self.auth_json({'error': 'Tu usuario no tiene permiso para esta operación.'}, 403)
+                return True
+            return False
+        except Exception:
+            self.auth_json({'error': 'No se pudo verificar el acceso. Intenta nuevamente.'}, 503)
+            return True
+
+    def static_allowed(self):
+        path = Path(self.translate_path(self.path)).resolve()
+        try:
+            relative = path.relative_to(ROOT.resolve())
+        except ValueError:
+            return False
+        if path.is_dir():
+            path = path / 'index.html'
+            if not path.is_file():
+                return False
+        if any(part.startswith('.') for part in relative.parts):
+            return False
+        if relative.parts and relative.parts[0] in ('backups', 'tmp', 'output', 'docs', 'scripts', 'supabase'):
+            return False
+        return path.suffix.lower() in ('.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.webp', '.woff', '.woff2', '.ttf')
+
+    def do_HEAD(self):
+        # Never serve filesystem files through HEAD outside the public allowlist.
+        if self.path.startswith('/api/') or not self.static_allowed():
+            self.send_error(404)
+            return
+        super().do_HEAD()
+
     def administration_api(self, method):
         return AdministrationAPI(self, lambda: load_table_state() or load_cloud_state(), supabase_request).handle(method)
 
@@ -182,6 +266,8 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
+        if self.guard('GET'):
+            return
         if self.administration_api("GET"):
             return
         if self.path == "/api/state":
@@ -201,9 +287,14 @@ class Handler(SimpleHTTPRequestHandler):
                 else:
                     self.wfile.write(b"{}")
             return
+        if not self.static_allowed():
+            self.send_error(404)
+            return
         return super().do_GET()
 
     def do_POST(self):
+        if self.guard('POST'):
+            return
         with ADMINISTRATION_LOCK:
             if self.administration_api("POST"):
                 return
@@ -328,6 +419,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_error(404)
 
     def do_DELETE(self):
+        if self.guard('DELETE'):
+            return
         with ADMINISTRATION_LOCK:
             if self.administration_api("DELETE"):
                 return
