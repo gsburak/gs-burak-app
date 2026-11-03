@@ -1,7 +1,7 @@
 (async () => {
 await window.BurakAdmin.ready;
 const administrationStorage = { getItem: key => localStorage.getItem(window.BurakAdmin.storageKey(key)), setItem: (key, value) => localStorage.setItem(window.BurakAdmin.storageKey(key), value) };
-/* Standalone editable report. No writes to the application's operational database. */
+/* Document library is separate from operational sales records. */
 'use strict';
 const $ = (selector) => document.querySelector(selector);
 const STORAGE = 'burak-diagnostico-reports-v1';
@@ -124,14 +124,24 @@ $('#save').addEventListener('click',save);$('#export').addEventListener('click',
 $('#new').addEventListener('click',()=>{if(!canReplace())return;report=newReport();dirty=false;draft();showReport();status('Nuevo diagnóstico. Selecciona un cliente o captura sus datos.');});
 $('#load').addEventListener('click',()=>{try{const found=library().find(r=>r.id===$('#saved').value);if(!found){status('Selecciona primero un reporte guardado.',true);return;}const next=validate(found);if(!canReplace())return;report=next;dirty=false;draft();showReport();status('Diagnóstico recuperado.');}catch(e){status(e.message,true);}});
 $('#import').addEventListener('click',()=>$('#import-file').click());
-$('#import-file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>3000000)throw new Error('El archivo supera 3 MB.');const next=validate(JSON.parse(await file.text()));if(!canReplace())return;report=next;dirty=true;draft();showReport();status('Editable abierto. Guarda el reporte para incorporarlo a este navegador.');}catch(error){status('No se pudo abrir: '+error.message,true);}finally{e.target.value='';}});
+$('#import-file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>3000000)throw new Error('El archivo supera 3 MB.');const next=validate(JSON.parse(await file.text()));if(!canReplace())return;report=next;dirty=true;draft();showReport();document.dispatchEvent(new Event('burak-document-new'));status('Editable abierto. Guarda el reporte para incorporarlo a este navegador.');}catch(error){status('No se pudo abrir: '+error.message,true);}finally{e.target.value='';}});
 $('#catalog').addEventListener('change',()=>{const c=clients.find(c=>String(c.id)===$('#catalog').value);if(!c){report.clienteId='';changed();return;}if((dirty||report.cliente)&&!confirm('Cambiar de cliente inicia un diagnóstico vacío. Guarda el actual para conservarlo. ¿Continuar?')){$('#catalog').value=report.clienteId;return;}report=newReport();report.clienteId=String(c.id);report.cliente=c.nombre||'';report.domicilio=c.direccion||'';report.telefono=c.telefono||'';report.correo=c.correo||'';showReport();changed();status('Cliente seleccionado. Completa la inspección.');});
 $('#print').addEventListener('click',()=>{renderPreview();if($('#print').disabled)return;if(!report.cliente.trim()||!report.fecha||!report.diagnostico.trim()){status('Completa cliente, fecha y conclusión del diagnóstico antes de generar la copia para el cliente.',true);return;}window.print();});
 window.addEventListener('beforeprint',renderPreview);
 window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===parent&&e.data?.type==='burak-diagnostico-clientes')setClients(e.data.clientes);});
-try{const raw=administrationStorage.getItem(DRAFT);if(raw){report=validate(JSON.parse(raw));dirty=true;status('Se recuperó el último borrador de este navegador.');}}catch(_){status('No se pudo recuperar el borrador. Puedes abrir un archivo editable.',true);}
 updateLibrary();showReport();
 if(parent!==window)parent.postMessage({type:'burak-diagnostico-ready'},location.origin);
 else if(location.protocol.startsWith('http'))fetch('/api/state',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>setClients(data.clientes||data.data?.clientes||[])).catch(()=>status('Captura los datos manualmente o abre el diagnóstico desde la app para elegir un cliente.'));
+
+await window.BurakDocuments.mount({
+ kind: 'diagnostico', identity:()=>report.id, saved:()=>{dirty=false}, read: () => structuredClone(report),
+ write: data => { report=validate(data);dirty=false;showReport(); },
+ new: () => {report=newReport();dirty=false;showReport();},
+ folio: value => {report.folio=value;const field=$('#editor').elements.namedItem('folio');field.value=value;field.readOnly=true;field.placeholder='Se asigna al guardar';renderPreview();},
+ title: () => report.cliente || 'Sin cliente',
+ hide: ['#save','#new','#load','#saved'], exports:['#print','#export'],
+ legacy: () => {try{return [...library(),...(administrationStorage.getItem(DRAFT)?[JSON.parse(administrationStorage.getItem(DRAFT))]:[])].map(payload=>({title:(payload.cliente||'Sin cliente')+' · '+(payload.folio||'Borrador anterior'),payload}));}catch{return []}}
+});
+
 
 })().catch(error => { document.body.insertAdjacentText("afterbegin", "No se pudo abrir esta administración. Recarga la página: " + error.message); });

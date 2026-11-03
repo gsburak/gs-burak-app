@@ -1,5 +1,7 @@
-# Anexo de monitoreo
+# Anexo de monitoreo GS BURAK
 
-Fuente de referencia: https://glittery-marigold-bb0dbd.netlify.app/
+Referencia visual: https://glittery-marigold-bb0dbd.netlify.app/
 
-Copia local integrada con catálogo de clientes y almacenamiento propio por aplicación y administración. Permite cebaderas, lámparas, trampas, croquis y firmas, además de PDF y copia editable. Guardar conserva el borrador solo en este navegador; no sincroniza reportes con la base de datos. Los reportes del formato anterior se conservan en netlify-sites/cebaderas sin modificaciones.
+La biblioteca guarda documentos, croquis y firmas en Supabase por administración. El folio se asigna en el primer guardado y se conserva al editar. La descarga PDF conserva marcos completos y divide las filas adicionales en grupos completos. Quitar croquis elimina la imagen sin borrar el resto del documento.
+
+Las capturas locales anteriores se recuperan explícitamente desde su navegador de origen. Se conserva el acceso al formato anterior.

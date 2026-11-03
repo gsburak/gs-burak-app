@@ -25,8 +25,9 @@
     const url = new URL(typeof input === "string" ? input : input.url, location.href);
     if (url.origin !== location.origin || !url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/administraciones")) return nativeFetch(input, options);
     await context.ready;
+    const documentRequest=url.pathname.startsWith('/api/formats');
     // A failed write must block further writes, but never prevent a fresh read.
-    if (context.failed && (options.method || "GET").toUpperCase() !== "GET") throw new Error("Recarga la página para recuperar la última información antes de guardar.");
+    if (!documentRequest && context.failed && (options.method || "GET").toUpperCase() !== "GET") throw new Error("Recarga la página para recuperar la última información antes de guardar.");
     const headers = new Headers(options.headers || (typeof input !== "string" ? input.headers : undefined));
     if (context.stage) headers.set("X-Burak-Administracion", context.stage);
     if (context.stage && context.revision !== null) headers.set("X-Burak-Revision", String(context.revision));
@@ -38,12 +39,12 @@
       body = JSON.stringify(data);
     }
     const response = await nativeFetch(input, { ...options, headers, body }).catch(error => {
-      if ((options.method || "GET") !== "GET") context.failed = true;
+      if (!documentRequest && (options.method || "GET") !== "GET") context.failed = true;
       throw error;
     });
     if (!response.ok) {
       const error = await response.clone().json().catch(() => ({}));
-      if (response.status === 409 || (options.method || "GET") !== "GET") context.failed = true;
+      if (!documentRequest && (response.status === 409 || (options.method || "GET") !== "GET")) context.failed = true;
       throw new Error(error.error || "No se pudo completar la operación. No se cambiará de administración.");
     }
     if (!options.burakBackgroundRead && context.stage && ["/api/state", "/api/record", "/api/restore", "/api/pendientes"].includes(url.pathname)) {

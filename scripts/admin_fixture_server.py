@@ -2,6 +2,8 @@
 from copy import deepcopy
 from pathlib import Path
 import sys
+from urllib.parse import parse_qs
+from threading import RLock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_administrations import fixture
 from administrations import prepare, BUNDLE_ID
@@ -11,13 +13,19 @@ source = fixture()
 storage = {BUNDLE_ID: prepare(source)}
 
 
-def cloud(method, path, payload=None):
-    if method == "GET":
-        identifier = path.split("id=eq.")[1].split("&")[0] if "id=eq." in path else ""
-        return [{"data": deepcopy(storage[identifier])}] if identifier in storage else []
-    for row in payload or []:
-        storage[row["id"]] = deepcopy(row["data"])
-    return []
+cloud_lock=RLock()
+def cloud(method, path, payload=None, prefer=None):
+    with cloud_lock:
+        query=parse_qs(path.partition('?')[2]);identifier=query.get('id',[''])[0].removeprefix('eq.')
+        if method=='GET':return [{'data':deepcopy(storage[identifier])}] if identifier in storage else []
+        if method=='PATCH':
+            expected=query.get('data->>revision',[''])[0].removeprefix('eq.')
+            if identifier not in storage or str(storage[identifier].get('revision'))!=expected:return []
+            storage[identifier]=deepcopy(payload['data']);return [{'data':deepcopy(storage[identifier])}]
+        for row in payload or []:
+            if prefer and 'ignore-duplicates' in prefer and row['id'] in storage:continue
+            storage[row['id']]=deepcopy(row['data'])
+        return []
 
 
 if __name__ == "__main__":

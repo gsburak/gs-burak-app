@@ -1,4 +1,6 @@
 """Isolated persistence. The original tables are never deleted or overwritten."""
+from format_api import FormatAPI
+from format_documents import DocumentConflict
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
@@ -83,6 +85,20 @@ class AdministrationAPI:
                 if management:
                     self.respond({"error": "Ruta no disponible"}, 404)
                     return True
+                if parsed.path in ('/api/formats','/api/formats/import','/api/backup'):
+                    if bundle and stage not in LABELS:
+                        self.respond({'error':'Selecciona una administración antes de abrir los formatos.'},409)
+                        return True
+                    if not bundle and stage:
+                        self.respond({'error':'Las administraciones no están activadas.'},409)
+                        return True
+                    selected=stage if bundle else 'actual'
+                    source=bundle['etapas'][stage] if bundle else self.load_source()
+                    formats=FormatAPI(self.request,self.cloud,selected,source.get('servicios',[]))
+                    if parsed.path=='/api/backup' and method=='GET':
+                        self.respond({'app':'GS BURAK Control Operativo','data':source,'formatDocuments':formats.backup(formats.load() or {})})
+                        return True
+                    return formats.handle(method)
                 if not bundle:
                     if stage:
                         self.respond({"error": "Las administraciones todavía no están activadas"}, 409)
@@ -105,6 +121,7 @@ class AdministrationAPI:
                         self.respond({"error": "Otra ventana actualizó los datos. Recarga antes de guardar."}, 409)
                         return True
                 if parsed.path in ("/api/state", "/api/restore") and method == "POST":
+                    format_backup=payload.pop('formatDocuments',None)
                     validate_stage(payload, stage)
                     if payload.get("revisionAdministracion") != data.get("revisionAdministracion"):
                         self.respond({"error": "Otra ventana actualizó los datos. Recarga antes de guardar o restaurar."}, 409)
@@ -112,6 +129,8 @@ class AdministrationAPI:
                     if parsed.path == "/api/restore":
                         stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
                         self.write(f"respaldo_restauracion_{stage}_{stamp}", data)
+                    if parsed.path=='/api/restore' and format_backup is not None:
+                        FormatAPI(self.request,self.cloud,stage,data.get('servicios',[])).commit(format_backup,True)
                     data = deepcopy(payload)
                 elif parsed.path == "/api/pendientes" and method == "POST":
                     if not isinstance(payload.get("pendientes"), list):
@@ -146,6 +165,9 @@ class AdministrationAPI:
                 self.write(BUNDLE_ID, bundle)
                 self.respond({"ok": True, "revisionAdministracion": data["revisionAdministracion"]})
                 return True
+        except DocumentConflict as error:
+            self.respond({'error':str(error)},409)
+            return True
         except (ValueError, KeyError, TypeError) as error:
             self.respond({"error": str(error)}, 400)
             return True

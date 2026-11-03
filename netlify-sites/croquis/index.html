@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <script src="../../administration-context.js?v=20261017a"></script>
-  <meta charset="utf-8">
+  <script data-document-client src="../../format-documents.js?v=20261103"></script>
+<meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Creador de croquis GS Burak</title>
   <style>
@@ -746,10 +747,8 @@
     }
 
     function updateStationList() {
-      const rows = Array.from(canvas.querySelectorAll(".station")).map((item) => {
-        return `<tr><td>${item.textContent}</td><td>${typeName(item.dataset.type)}</td><td>${item.dataset.note || ""}</td></tr>`;
-      });
-      document.getElementById("stationList").innerHTML = rows.join("");
+      const tbody=document.getElementById('stationList');tbody.replaceChildren();
+      canvas.querySelectorAll('.station').forEach(item=>{const row=document.createElement('tr');[item.textContent,typeName(item.dataset.type),item.dataset.note||''].forEach(value=>{const cell=document.createElement('td');cell.textContent=value;row.append(cell);});tbody.append(row);});
     }
 
     function downloadImage() {
@@ -835,5 +834,29 @@
       lines.forEach((row, index) => context.fillText(row, x, startY + index * lineHeight));
     }
   </script>
+
+<script data-document-adapter>
+(async()=>{
+ await window.BurakAdmin.ready;const D=window.BurakDocuments;
+ const read=()=>({cliente:document.getElementById('cliente').value,domicilio:document.getElementById('domicilio').value,fecha:document.getElementById('fechaOut').textContent,counters:{...counters},nodes:[...canvas.children].map(el=>({type:el.dataset.type,label:getElementLabel(el),note:el.dataset.note||'',left:parseFloat(el.style.left)||0,top:parseFloat(el.style.top)||0,width:parseFloat(el.style.width)||180,height:parseFloat(el.style.height)||110}))});
+ const write=data=>{
+   if(!Array.isArray(data.nodes)||data.nodes.length>1000)throw new Error('Croquis inválido.');
+   canvas.replaceChildren();selected=null;drag=null;
+   document.getElementById('cliente').value=data.cliente||'';document.getElementById('domicilio').value=data.domicilio||'';document.getElementById('fechaOut').textContent=data.fecha||new Date().toLocaleDateString('es-MX');
+   for(const type of ['bait','lamp','trap'])counters[type]=Math.max(0,Number(data.counters?.[type])||0);
+   for(const node of data.nodes){
+     if(!['area','bait','lamp','trap'].includes(node.type))throw new Error('Tipo de elemento inválido.');
+     const el=document.createElement('div');el.dataset.type=node.type;el.dataset.note=String(node.note||'');el.className=node.type==='area'?'area':'station '+node.type;
+     el.style.left=Math.max(0,Number(node.left)||0)+'px';el.style.top=Math.max(0,Number(node.top)||0)+'px';
+     if(node.type==='area'){el.style.width=Math.max(90,Number(node.width)||180)+'px';el.style.height=Math.max(60,Number(node.height)||110)+'px';const label=document.createElement('span');label.className='area-label';label.textContent=node.label;const handle=document.createElement('span');handle.className='resize-handle';el.append(label,handle);}else el.textContent=node.label;
+     makeInteractive(el);canvas.append(el);
+   }
+   clearSelection();updateMeta();updateStationList();
+ };
+ await D.mount({kind:'croquis',read,write,new:()=>write({nodes:[],counters:{},cliente:'',domicilio:''}),title:()=>document.getElementById('cliente').value,
+ folio:value=>{const el=document.getElementById('folio');el.value=value;el.readOnly=true;el.placeholder='Se asigna al guardar';updateMeta();},exports:['button[onclick="downloadImage()"]','button[onclick="window.print()"]']});
+})().catch(error=>alert(error.message));
+</script>
+
 </body>
 </html>

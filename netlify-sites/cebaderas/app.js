@@ -1,7 +1,7 @@
 (async () => {
 await window.BurakAdmin.ready;
 const administrationStorage = { getItem: key => localStorage.getItem(window.BurakAdmin.storageKey(key)), setItem: (key, value) => localStorage.setItem(window.BurakAdmin.storageKey(key), value) };
-/* Standalone editable report. No writes to the application's operational database. */
+/* Document library is separate from operational sales records. */
 'use strict';
 const $ = (selector) => document.querySelector(selector);
 const STORAGE = 'burak-cebaderas-reports-v1';
@@ -132,7 +132,7 @@ $('#load').addEventListener('click',()=>{
 $('#import').addEventListener('click',()=>$('#import-file').click());
 $('#import-file').addEventListener('change',async event=>{
   const file=event.target.files[0];if(!file)return;
-  try{if(file.size>2500000)throw new Error('El archivo es demasiado grande.');const next=validate(JSON.parse(await file.text()));if(!canReplace())return;report=next;dirty=true;draft();showReport();status('Editable abierto. Guarda el reporte para añadirlo a este navegador.');}
+  try{if(file.size>2500000)throw new Error('El archivo es demasiado grande.');const next=validate(JSON.parse(await file.text()));if(!canReplace())return;report=next;dirty=true;draft();showReport();document.dispatchEvent(new Event('burak-document-new'));status('Editable abierto. Guarda el reporte para añadirlo a este navegador.');}
   catch(e){status('No se pudo abrir el editable: '+e.message,true);}finally{event.target.value='';}
 });
 $('#catalog').addEventListener('change',()=>{
@@ -143,9 +143,19 @@ $('#catalog').addEventListener('change',()=>{
 $('#print').addEventListener('click',()=>{renderPreview();window.print();});
 window.addEventListener('beforeprint',renderPreview);
 window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='burak-cebaderas-clientes')setClients(event.data.clientes);});
-try{const raw=administrationStorage.getItem(DRAFT);if(raw){report=validate(JSON.parse(raw));dirty=true;status('Se recuperó el último borrador de este navegador.');}}catch(_){status('No se pudo recuperar el borrador anterior. Puedes abrir un archivo editable.',true);}
 updateLibrary();showReport();
 if(parent!==window)parent.postMessage({type:'burak-cebaderas-ready'},location.origin);
 else if(location.protocol.startsWith('http'))fetch('/api/state',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>setClients(data.clientes||data.data?.clientes||[])).catch(()=>status('Captura el cliente manualmente o abre este formato desde la app para elegir uno registrado.'));
+
+await window.BurakDocuments.mount({
+ kind: 'cebaderas', identity:()=>report.id, saved:()=>{dirty=false}, read: () => structuredClone(report),
+ write: data => { report=validate(data);dirty=false;showReport(); },
+ new: () => {report=newReport();dirty=false;showReport();},
+ folio: value => {report.folio=value;const field=$('#editor').elements.namedItem('folio');field.value=value;field.readOnly=true;field.placeholder='Se asigna al guardar';renderPreview();},
+ title: () => report.cliente || 'Sin cliente',
+ hide: ['#save','#new','#load','#saved'], exports:['#print','#export'],
+ legacy: () => {try{return [...library(),...(administrationStorage.getItem(DRAFT)?[JSON.parse(administrationStorage.getItem(DRAFT))]:[])].map(payload=>({title:(payload.cliente||'Sin cliente')+' · '+(payload.folio||'Borrador anterior'),payload}));}catch{return []}}
+});
+
 
 })().catch(error => { document.body.insertAdjacentText("afterbegin", "No se pudo abrir esta administración. Recarga la página: " + error.message); });

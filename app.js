@@ -672,21 +672,13 @@ function downloadCsv(fileName, headers, rows) {
   URL.revokeObjectURL(url);
 }
 
-function exportBackup() {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    app: "GS Burak Control Operativo",
-    data: state,
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = backupFileName();
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+async function exportBackup() {
+  try {
+    const response=await fetch('/api/backup',{cache:'no-store'});
+    if(!response.ok)throw new Error('No se pudo descargar el respaldo completo. Intenta de nuevo.');
+    const payload=await response.json();payload.exportedAt=new Date().toISOString();
+    downloadBlob(backupFileName(),new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  }catch(error){alert(error.message);}
 }
 
 function exportBackupExcel() {
@@ -1773,7 +1765,7 @@ async function importBackupFile(file) {
     if (!ok) return;
     state = migrateState(nextState);
     saveLocalBackup();
-    if (SERVER_MODE) await restoreRemoteState(state);
+    if (SERVER_MODE) await restoreRemoteState(payload.formatDocuments ? {...state,formatDocuments:payload.formatDocuments} : state);
     else localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     alert("Respaldo restaurado. La informacion se cargo en la app.");
     render();

@@ -60,7 +60,7 @@ def merge_without_losing_existing(existing, incoming):
     return merged
 
 
-def supabase_request(method, path, payload=None):
+def supabase_request(method, path, payload=None, prefer=None):
     url = f"{SUPABASE_URL}/rest/v1/{path}"
     headers = {
         "apikey": SUPABASE_KEY,
@@ -71,7 +71,7 @@ def supabase_request(method, path, payload=None):
     data = None
     if payload is not None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers["Prefer"] = "resolution=merge-duplicates,return=representation"
+        headers["Prefer"] = prefer or "resolution=merge-duplicates,return=representation"
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
     with urllib.request.urlopen(request, timeout=20) as response:
         body = response.read().decode("utf-8")
@@ -275,6 +275,14 @@ class Handler(SimpleHTTPRequestHandler):
             except json.JSONDecodeError:
                 self.send_error(400, "Invalid JSON")
                 return
+            format_backup=data.pop('formatDocuments',None)
+            if format_backup is not None:
+                try:
+                    from format_api import FormatAPI
+                    FormatAPI(self,supabase_request,'actual',data.get('servicios',[])).commit(format_backup,True)
+                except Exception:
+                    self.send_error(409,'No se recuperaron los formatos. Conserva el respaldo e intenta nuevamente.')
+                    return
             backup_current_state()
             DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
             try:

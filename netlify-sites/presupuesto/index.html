@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <script src="../../administration-context.js?v=20261017a"></script>
-  <meta charset="utf-8">
+  <script data-document-client src="../../format-documents.js?v=20261103"></script>
+<meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Formato de Presupuesto GS BURAK</title>
   <style>
@@ -998,6 +999,7 @@
       reader.onload = () => {
         try {
           state = { ...structuredClone(defaults), ...JSON.parse(reader.result) };
+          document.dispatchEvent(new Event('burak-document-new'));
           writeForm();
           update();
         } catch (err) {
@@ -1024,6 +1026,16 @@
     state.fecha = state.fecha || todayISO();
     writeForm();
     renderPreview();
+
+
+    await window.BurakDocuments.mount({kind:'presupuesto',
+      read:()=>{readForm();return structuredClone(state)},
+      write:data=>{if(!Array.isArray(data.services))throw new Error('Presupuesto inválido.');state={...structuredClone(defaults),...data};writeForm();renderPreview();},
+      new:()=>{state=structuredClone(defaults);state.fecha=todayISO();writeForm();renderPreview();},
+      folio:value=>{state.folio=value;$('#folio').value=value;$('#folio').readOnly=true;$('#folio').placeholder='Se asigna al guardar';renderPreview();},
+      title:()=>state.cliente,hide:['#resetBtn'],exports:['#printBtn','#saveBtn'],
+      legacy:()=>{try{const raw=localStorage.getItem(STORE_KEY);return raw?[{title:'Último presupuesto de este navegador',payload:JSON.parse(raw)}]:[]}catch{return []}}
+    });
 
 })().catch(error => alert(error.message));
 </script>

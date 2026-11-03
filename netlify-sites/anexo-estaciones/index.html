@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="es">
 <head>
+<script data-context src="../../administration-context.js?v=20261103"></script>
+<script data-document-client src="../../format-documents.js?v=20261103"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Anexo de estaciones y lámparas | GS BURAK</title>
@@ -417,6 +419,7 @@
     <div class="bar">Croquis del cliente</div>
     <div class="croquis-actions">
       <label class="upload-button" for="croquisInput">Subir croquis</label>
+      <button class="upload-button" id="removeCroquis" type="button">Quitar croquis</button>
       <input id="croquisInput" type="file" accept="image/*">
       <span class="upload-help">Usa imagen JPG o PNG. Si es PDF, primero guardalo como imagen.</span>
     </div>
@@ -653,14 +656,26 @@
       });
     }
 
+    let croquisUploadVersion = 0;
+    document.addEventListener('burak-croquis-reset', () => { croquisUploadVersion++; });
+    document.getElementById('removeCroquis').addEventListener('click', () => {
+      croquisUploadVersion++;
+      document.getElementById('croquisImage').removeAttribute('src');
+      document.getElementById('croquisInput').value = '';
+      document.getElementById('croquisBox').classList.remove('has-image');
+      document.dispatchEvent(new Event('burak-form-change'));
+    });
     document.getElementById("croquisInput").addEventListener("change", function () {
       const file = this.files && this.files[0];
       if (!file) return;
+      const uploadVersion = ++croquisUploadVersion;
       const reader = new FileReader();
       reader.onload = function (event) {
+        if (uploadVersion !== croquisUploadVersion) return;
         const image = document.getElementById("croquisImage");
         image.src = event.target.result;
         document.getElementById("croquisBox").classList.add("has-image");
+        document.dispatchEvent(new Event("burak-form-change"));
       };
       reader.readAsDataURL(file);
     });
@@ -696,8 +711,12 @@ function editableReportClone() {
   });
   const pads = document.querySelectorAll('.signature-pad');
   copy.querySelectorAll('.signature-pad').forEach((pad, i) => { pad.dataset.savedSignature = pads[i].toDataURL(); });
+  copy.dataset.editableExport='true';
+  copy.querySelectorAll('[data-document-client],[data-document-adapter],#burak-document-bar,script[data-context]').forEach(el=>el.remove());
   copy.querySelector('#exportStatus').textContent = '';
   copy.querySelector('#downloadReportPdf').disabled = false;
+  copy.querySelectorAll('script[src*="administration-context"]').forEach(el=>el.remove());
+  const croquis=document.querySelector('#croquisImage');if(croquis.getAttribute('src'))copy.querySelector('#croquisImage').src=croquis.src;
   return copy;
 }
 document.querySelectorAll('.signature-pad[data-saved-signature]').forEach(pad => {
@@ -717,29 +736,36 @@ document.getElementById('downloadReportPdf').addEventListener('click', async fun
     if (!window.html2canvas || !window.jspdf) throw new Error('No se cargó el generador. Revisa tu conexión e intenta de nuevo. Puedes guardar una copia editable para conservar lo llenado.');
     await document.fonts.ready;
     let pdf;
-    for (const page of document.querySelectorAll('.page')) {
-      const landscape = page.classList.contains('detail-page');
-      const orientation = landscape ? 'landscape' : 'portrait';
-      const width = landscape ? 792 : 612, height = landscape ? 612 : 792;
-      const image = await html2canvas(page, {scale:2, backgroundColor:'#ffffff', windowWidth:1200,
-        onclone: doc => {
-          doc.querySelectorAll('button,input[type=file],.export-toolbar,.upload-row').forEach(el => el.style.display = 'none');
-          doc.querySelectorAll('input:not([type=file]),textarea,select').forEach(field => {
-            const text = doc.createElement('div');
-            text.textContent = field.tagName === 'SELECT' ? (field.selectedOptions[0]?.textContent || '') : field.value;
-            text.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;min-height:1em;padding:4px;';
-            field.replaceWith(text);
-          });
-        }
-      });
-      const ratio = (width - 32) / image.width;
-      const sliceHeight = Math.floor((height - 32) / ratio);
-      for (let top = 0; top < image.height; top += sliceHeight) {
-        if (!pdf) pdf = new window.jspdf.jsPDF({unit:'pt',format:'letter',orientation});
-        else pdf.addPage('letter', orientation);
-        const slice = document.createElement('canvas'); slice.width = image.width; slice.height = Math.min(sliceHeight,image.height-top);
-        slice.getContext('2d').drawImage(image,0,top,image.width,slice.height,0,0,image.width,slice.height);
-        pdf.addImage(slice.toDataURL('image/jpeg',.95),'JPEG',16,16,width-32,slice.height*ratio);
+    const pages=[...document.querySelectorAll('.page')];
+    for (const [pageIndex,page] of pages.entries()) {
+      const landscape=page.classList.contains('detail-page');
+      const orientation=landscape?'landscape':'portrait';
+      const width=landscape?792:612, height=landscape?612:792;
+      // Paginate complete table rows, never raster slices of the page border.
+      const rowCount=page.querySelectorAll('#stationRows tr').length;
+      const groups=landscape?Math.max(1,Math.ceil(rowCount/8)):1;
+      for(let group=0;group<groups;group++){
+        const image=await html2canvas(page,{scale:2,backgroundColor:'#ffffff',windowWidth:1200,
+          onclone:doc=>{
+            const sheet=doc.querySelectorAll('.page')[pageIndex];
+            sheet.style.margin='0';sheet.style.boxShadow='none';
+            if(landscape){
+              sheet.querySelectorAll('#stationRows tr').forEach((row,index)=>{if(index<group*8||index>=(group+1)*8)row.remove();});
+              if(group<groups-1){const notes=sheet.querySelector('.notes');notes?.previousElementSibling?.remove();notes?.remove();sheet.querySelector('.signatures')?.remove();}
+            }
+            doc.querySelectorAll('button,input[type=file],.export-toolbar,.upload-row,.croquis-actions,.form-actions,#burak-document-bar').forEach(el=>el.style.display='none');
+            sheet.querySelectorAll('input:not([type=file]),textarea,select').forEach(field=>{
+              const text=doc.createElement('div');
+              text.textContent=field.tagName==='SELECT'?(field.selectedOptions[0]?.textContent||''):field.value;
+              text.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;min-height:1em;padding:4px;';field.replaceWith(text);
+            });
+          }
+        });
+        const ratio=Math.min((width-32)/image.width,(height-32)/image.height);
+        const drawnWidth=image.width*ratio, drawnHeight=image.height*ratio;
+        if(!pdf)pdf=new window.jspdf.jsPDF({unit:'pt',format:'letter',orientation});
+        else pdf.addPage('letter',orientation);
+        pdf.addImage(image.toDataURL('image/jpeg',.95),'JPEG',(width-drawnWidth)/2,16,drawnWidth,drawnHeight);
       }
     }
     if (!pdf) throw new Error('No se encontraron las páginas del reporte.');
@@ -748,5 +774,35 @@ document.getElementById('downloadReportPdf').addEventListener('click', async fun
   } catch (error) { status.textContent = 'No se pudo generar el PDF: ' + error.message; }
   finally { this.disabled = false; }
 });
-</script></body>
+</script>
+<script data-document-adapter>
+(async()=>{
+ if(document.documentElement.dataset.editableExport||location.protocol==='file:')return;
+ await window.BurakAdmin.ready;
+ const D=window.BurakDocuments;
+ const fieldScope=document.querySelector('body');
+ const initialRows=document.querySelectorAll('#stationRows tr').length;
+ const initial=D.capture(fieldScope);
+ const read=()=>({fields:D.capture(fieldScope),rows:document.querySelectorAll('#stationRows tr').length,croquis:document.querySelector('#croquisImage').getAttribute('src')||'',signatures:[...document.querySelectorAll('.signature-pad')].map(c=>c.toDataURL())});
+ const write=async data=>{
+   if(!Array.isArray(data.fields)||!Number.isInteger(data.rows)||data.rows<1||data.rows>500)throw new Error('Contenido del anexo inválido.');
+   while(document.querySelectorAll('#stationRows tr').length<data.rows)window.addStationRow();
+   while(document.querySelectorAll('#stationRows tr').length>data.rows)document.querySelector('#stationRows tr:last-child').remove();
+   D.restore(fieldScope,data.fields);
+   document.dispatchEvent(new Event('burak-croquis-reset'));
+   document.getElementById('croquisInput').value='';
+   const img=document.querySelector('#croquisImage');img.removeAttribute('src');
+   if(data.croquis&&/^data:image\/(png|jpeg);base64,/.test(data.croquis))img.src=data.croquis;
+   document.querySelector('#croquisBox').classList.toggle('has-image',!!img.getAttribute('src'));
+   await Promise.all([...document.querySelectorAll('.signature-pad')].map((c,i)=>D.paint(c,data.signatures?.[i]||'')));
+ };
+ const legacy=()=>{try{const raw=localStorage.getItem(window.BurakAdmin.storageKey('burak-anexo-monitoreo-v1'));if(!raw)return [];const old=JSON.parse(raw);return [{title:'Anexo anterior de este navegador',payload:{rows:old.stationRows,fields:old.values.map(value=>({value})),croquis:old.croquis,signatures:old.signatures}}]}catch{return []}};
+ await D.mount({kind:'anexo-estaciones',read,write,new:()=>write({fields:initial,rows:initialRows,croquis:'',signatures:[]}),
+  folio:value=>document.querySelectorAll('.folio input').forEach(el=>{el.value=value;el.readOnly=true;el.placeholder='Se asigna al guardar';}),
+  title:()=>document.querySelector('#clienteNombre')?.value||document.querySelector('.info-grid input')?.value||'Sin cliente',
+  hide:['#saveForm','#clearForm'],exports:['#downloadReportPdf','#saveEditableReport'],legacy:'anexo-estaciones'==='anexo-monitoreo'?legacy:()=>[]});
+})().catch(error=>{const p=document.createElement('p');p.textContent='No se pudo abrir la biblioteca: '+error.message;document.body.prepend(p);});
+</script>
+
+</body>
 </html>

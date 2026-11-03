@@ -423,27 +423,13 @@ function setupNextService() {
   sync();
 }
 
-function setupFolio() {
-  const folio = document.querySelector("#folio");
-  if (folio.value) return;
-  const year = new Date().getFullYear();
-  const key = `certificado_folio_${year}`;
-  const next = Number(administrationStorage.getItem(key) || "0");
-  folio.value = `GS-${String(next).padStart(5, "0")}-${year}`;
-}
+function setupFolio(){const el=document.querySelector('#folio');el.value='';el.readOnly=true;el.required=false;el.placeholder='Se asigna al guardar';}
 
 function setupResponsableSanitario() {
   const responsable = form.elements.responsableSanitario;
   if (responsable && !responsable.value) {
     responsable.value = RESPONSABLE_SANITARIO_DEFAULT;
   }
-}
-
-function commitFolio() {
-  const year = new Date().getFullYear();
-  const key = `certificado_folio_${year}`;
-  const current = Number(administrationStorage.getItem(key) || "0");
-  administrationStorage.setItem(key, String(current + 1));
 }
 
 function setupSignature(canvas) {
@@ -571,6 +557,7 @@ async function addEvidence(event) {
     document.querySelectorAll('#evidenceFiles, #evidenceCamera').forEach(input => { input.disabled = false; input.value = ''; });
     showEvidence();
     evidenceStatus.textContent = evidencePhotos.length + ' fotografías listas. ' + errors.join(' ');
+    document.dispatchEvent(new Event('burak-form-change'));
   }
 }
 document.querySelector('#evidenceFiles').addEventListener('change', addEvidence);
@@ -1079,14 +1066,15 @@ async function init() {
   buildChecks();
   await setupClientesCatalog();
   await setupProgramacionesCatalog();
-  setupProductosCatalog();
+  await setupProductosCatalog();
   setupNextService();
   setupFolio();
   setupResponsableSanitario();
   for (let i = 0; i < 4; i += 1) addProduct();
 }
 
-init();
+const initReady=init();
+let documentLibrary;
 
 const signaturePads = {
   firmaTecnico: setupSignature(document.querySelector("#firmaTecnico")),
@@ -1143,8 +1131,7 @@ document.querySelectorAll("[data-clear]").forEach((button) => {
 });
 
 document.querySelector("#saveDraft").addEventListener("click", () => {
-  administrationStorage.setItem("certificadoBorrador", JSON.stringify(dataFromForm()));
-  alert("Borrador guardado en esta tableta.");
+  documentLibrary?.save().catch(error=>alert(error.message));
 });
 
 document.querySelector("#resetForm").addEventListener("click", () => {
@@ -1196,6 +1183,8 @@ form.addEventListener("submit", async (event) => {
   boton.textContent = "Guardando y creando PDF...";
   resultado.classList.add("hidden");
 
+  try { await documentLibrary.save(); }
+  catch(error) { reporteEnProceso=false;boton.disabled=false;boton.textContent='Guardar servicio y generar PDF';estado.textContent='No se guardó: '+error.message;resultado.classList.remove('hidden');return; }
   const data = dataFromForm();
   renderCertificate(data, {
     responsable: FIRMA_RESPONSABLE_DEFAULT,
@@ -1208,12 +1197,6 @@ form.addEventListener("submit", async (event) => {
     ultimoPdfNombre = nombreArchivoPdf(data);
     ultimoPdf = null;
     crearPdfEditable(data);
-
-    const folioConfirmado = `certificado_folio_confirmado_${data.folio}`;
-    if (!administrationStorage.getItem(folioConfirmado)) {
-      commitFolio();
-      administrationStorage.setItem(folioConfirmado, "1");
-    }
 
     estado.textContent = `${guardado.mensaje} Se abrio la ventana para guardar el PDF.`;
     resultado.classList.remove("hidden");
@@ -1228,5 +1211,42 @@ form.addEventListener("submit", async (event) => {
     boton.textContent = "Guardar servicio y generar PDF";
   }
 });
+
+await initReady;
+const D=window.BurakDocuments;
+const initialFields=D.capture(form);
+async function restoreDocument(data){
+  if(data.legacy){
+    const old=data.legacy;form.reset();products.replaceChildren();
+    const count=Math.max(4,...Object.keys(old).map(key=>Number(/^producto_(\d+)_/.exec(key)?.[1]||0)));
+    if(count>100)throw new Error('Demasiados productos en el borrador anterior.');
+    for(let i=0;i<count;i++)addProduct();
+    for(const el of D.fields(form)){
+      if(el.type==='checkbox')el.checked=old[el.name]!==undefined;
+      else if(el.type==='radio')el.checked=old[el.name]===el.value;
+      else if(old[el.name]!==undefined&&typeof old[el.name]!=='object')el.value=old[el.name];
+    }
+    evidencePhotos=[];showEvidence();Object.values(signaturePads).forEach(pad=>pad.clear());return;
+  }
+  if(!Array.isArray(data.fields)||!Number.isInteger(data.productRows)||data.productRows<0||data.productRows>100)throw new Error('Certificado inválido.');
+  products.replaceChildren();for(let i=0;i<data.productRows;i++)addProduct();
+  D.restore(form,data.fields);
+  document.querySelector('#proximoServicioFechaWrap').classList.toggle('hidden-field',form.elements.proximoServicioTipo.value!=='Fecha programada');
+  evidenceVersion++;evidencePhotos=structuredClone(data.photos||[]);showEvidence();
+  await Promise.all(Object.entries(signaturePads).map(async([key,pad])=>{
+    pad.clear();const source=data.signatures?.[key];if(source&&/^data:image\/(png|jpeg);base64,/.test(source))await D.paint(document.getElementById(key),source);
+  }));
+  preview.classList.add('hidden');document.querySelector('#reportResult').classList.add('hidden');ultimoPdf=null;
+}
+documentLibrary=await D.mount({kind:'certificado',identity:()=>form.elements.programacionId?.value||'',
+ read:()=>({fields:D.capture(form),productRows:products.children.length,photos:structuredClone(evidencePhotos),signatures:Object.fromEntries(Object.entries(signaturePads).map(([key,pad])=>[key,pad.data()]))}),
+ write:restoreDocument,
+ new:()=>restoreDocument({fields:initialFields,productRows:4,photos:[],signatures:{}}),
+ ready:()=>!evidenceLoading,
+ folio:value=>{const el=document.getElementById('folio');el.value=value;el.readOnly=true;el.required=false;el.placeholder='Se asigna al guardar';},
+ title:()=>dataFromForm().cliente||'Certificado de servicio',hide:['#saveDraft','#resetForm'],exports:['#downloadPdf','#sharePdf'],
+ legacy:()=>{try{const raw=administrationStorage.getItem('certificadoBorrador');return raw?[{title:'Borrador anterior del certificado (sin firmas ni fotos)',payload:{legacy:JSON.parse(raw)}}]:[]}catch{return []}}
+});
+
 
 })().catch(error => { document.body.insertAdjacentText("afterbegin", "No se pudo abrir esta administración. Recarga la página: " + error.message); });
