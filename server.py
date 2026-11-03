@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from administration_api import AdministrationAPI, LOCK as ADMINISTRATION_LOCK
 from burak_auth import Auth
+from cloud_connection import CloudConnectionError
 
 
 ROOT = Path(__file__).resolve().parent
@@ -26,7 +27,7 @@ COLLECTION_TABLES = {
     "equipos": "app_equipos",
 }
 SUPABASE_URL = "https://xuswzuxtccpwlyizbrcj.supabase.co"
-SUPABASE_KEY = os.environ.get("GS_SUPABASE_SECRET_KEY", "")
+SUPABASE_KEY = os.environ.get("GS_SUPABASE_SECRET_KEY", "").strip()
 SUPABASE_STATE_ID = "main"
 CALENDAR_BRIDGE_URL = "https://script.google.com/macros/s/AKfycbyERZACWl4G7T_Xvxl5tsKV9bZi0jn53Q1LqHkWPXQ6YClVFfAAGlVuXhJIsGXyPQiw/exec"
 CALENDAR_BRIDGE_SECRET = "p5X8ZCgabVdkJRDGPItQunM4iY7NyjfS"
@@ -63,7 +64,7 @@ def merge_without_losing_existing(existing, incoming):
 
 def supabase_request(method, path, payload=None, prefer=None):
     if not SUPABASE_KEY.startswith("sb_secret_"):
-        raise RuntimeError("Configura GS_SUPABASE_SECRET_KEY en el alojamiento.")
+        raise CloudConnectionError('CLAVE_AUSENTE_O_FORMATO_INVALIDO')
     url = f"{SUPABASE_URL}/rest/v1/{path}"
     headers = {
         "apikey": SUPABASE_KEY,
@@ -75,9 +76,16 @@ def supabase_request(method, path, payload=None, prefer=None):
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         headers["Prefer"] = prefer or "resolution=merge-duplicates,return=representation"
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=20) as response:
-        body = response.read().decode("utf-8")
-        return json.loads(body) if body else None
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            body = response.read().decode("utf-8")
+            return json.loads(body) if body else None
+    except urllib.error.HTTPError as error:
+        raise CloudConnectionError('HTTP_' + str(error.code)) from None
+    except (urllib.error.URLError, TimeoutError):
+        raise CloudConnectionError('RED_O_TIEMPO_DE_ESPERA') from None
+    except ValueError:
+        raise CloudConnectionError('RESPUESTA_INVALIDA') from None
 
 
 def load_cloud_state():

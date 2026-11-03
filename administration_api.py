@@ -1,6 +1,7 @@
 """Isolated persistence. The original tables are never deleted or overwritten."""
 from format_api import FormatAPI
 from format_documents import DocumentConflict
+from cloud_connection import CloudConnectionError
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
@@ -170,6 +171,9 @@ class AdministrationAPI:
             return True
         except (ValueError, KeyError, TypeError) as error:
             self.respond({"error": str(error)}, 400)
+            return True
+        except CloudConnectionError as error:
+            self.respond({"error": "No se pudo conectar con Supabase. Código: " + error.code}, 503)
             return True
         except Exception:
             # Never fall back to the legacy data or local seed on a cloud failure.
