@@ -15,7 +15,7 @@ const modules = [
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
   { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
   { id: "diagnostico", label: "Reporte de diagnóstico", icon: "Diagnóstico", roles: ["admin", "operativo", "consulta"] },
-  { id: "cebaderas", label: "Estaciones cebaderas", icon: "Cebaderas", roles: ["admin", "operativo", "consulta"] },
+  { id: "cebaderas", label: "Anexo de monitoreo", icon: "Cebaderas", roles: ["admin", "operativo", "consulta"] },
   { id: "croquis", label: "Creador de croquis", icon: "Croquis", roles: ["admin", "operativo", "consulta"] },
   { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
   { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
@@ -2838,10 +2838,12 @@ function provideDiagnosticoClients(event) {
 }
 
 function renderCebaderas() {
-  const url = administrationUrl("netlify-sites/cebaderas/index.html");
-  return `${topbar("Estaciones cebaderas", "Captura las estaciones de cada cliente y genera su reporte de inspección.",
+  const url = administrationUrl("netlify-sites/anexo-monitoreo/index.html");
+  const previous = administrationUrl("netlify-sites/cebaderas/index.html");
+  return `${topbar("Anexo de monitoreo", "Registra cebaderas, lámparas y trampas, con croquis, resultados y firmas.",
     `<a class="secondary certificate-external-link" href="${url}" target="_blank" rel="noopener noreferrer">Abrir en pantalla completa</a>`)}
-    <section class="certificate-frame-card"><iframe id="cebaderas-frame" class="certificate-frame" src="${url}" title="Reporte de estaciones cebaderas GS BURAK"></iframe></section>`;
+    <p><a href="${previous}" target="_blank" rel="noopener noreferrer">Abrir reportes del formato anterior</a></p>
+    <section class="certificate-frame-card"><iframe id="cebaderas-frame" class="certificate-frame" src="${url}" title="Anexo de monitoreo GS BURAK"></iframe></section>`;
 }
 
 function renderCroquis() {
@@ -2872,7 +2874,7 @@ function renderCroquis() {
 function provideCebaderasClients(event) {
   const frame = document.getElementById("cebaderas-frame");
   if (!currentUser || !frame || event.origin !== location.origin || event.source !== frame.contentWindow || event.data?.type !== "burak-cebaderas-ready") return;
-  frame.contentWindow.postMessage({ type: "burak-cebaderas-clientes", clientes: state.clientes.map(({ id, nombre, direccion, telefono, correo }) => ({ id, nombre, direccion, telefono, correo })) }, location.origin);
+  frame.contentWindow.postMessage({ type: "burak-cebaderas-clientes", clientes: state.clientes.map(({ id, nombre, direccion, telefono, correo, ciudad }) => ({ id, nombre, direccion, telefono, correo, ciudad })) }, location.origin);
 }
 
 function renderPresupuestos() {
