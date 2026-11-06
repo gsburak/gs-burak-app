@@ -190,11 +190,24 @@ function buildChecks() {
   }).join("");
 }
 
+let catalogFailure = false;
+let catalogStateRequest;
+let documentInitError = '';
+const generateButton = document.querySelector('#generateReport');
+generateButton.disabled = true;
+generateButton.textContent = 'Cargando formulario…';
+function catalogError(error) {
+  catalogFailure = true;
+  document.querySelector('#catalogStatus').textContent = 'No se pudieron cargar los clientes o la agenda: ' + error.message + ' Si abriste el enlace en otro navegador o teléfono, inicia sesión allí y después pulsa Actualizar clientes y agenda.';
+  document.querySelector('#catalogLogin').hidden = false;
+}
 async function fetchCatalog(table) {
   if (location.protocol.startsWith("http")) {
-    const response = await fetch("/api/state", { cache: "no-store" });
-    if (!response.ok) throw new Error("No se pudo cargar el catálogo de esta administración");
-    return (await response.json())[table.replace(/^app_/, "")] || [];
+    if (!catalogStateRequest) catalogStateRequest = fetch('/api/state', { cache: 'no-store' }).then(async response => {
+      if (!response.ok) throw new Error('No se pudo cargar el catálogo de esta administración');
+      return response.json();
+    }).catch(error => { catalogStateRequest = null; throw error; });
+    return (await catalogStateRequest)[table.replace(/^app_/, '')] || [];
   }
   throw new Error("Abre el certificado desde la aplicación GS Burak para elegir la administración.");
 
@@ -288,12 +301,13 @@ async function setupProgramacionesCatalog() {
     ].join("");
   } catch (error) {
     select.innerHTML = `<option value="">Capturar manualmente</option>`;
+    catalogError(error);
     console.warn(error);
   }
-  select.addEventListener("change", () => {
+  select.onchange = () => {
     const programacion = programacionesCatalogo.find((item) => String(item.id) === String(select.value));
     fillProgramacion(programacion);
-  });
+  };
 }
 
 async function setupClientesCatalog() {
@@ -321,16 +335,36 @@ async function setupClientesCatalog() {
       .join("");
   } catch (error) {
     options.innerHTML = "";
+    catalogError(error);
     console.warn(error);
   }
-  search.addEventListener("input", () => {
+  const mobile = document.querySelector('#clientCatalog');
+  mobile.replaceChildren(new Option('Elegir cliente de la lista', ''));
+  clientesCatalogo.forEach(cliente => mobile.add(new Option(cliente.nombre || 'Sin nombre', String(cliente.id))));
+  mobile.onchange = () => {
+    const cliente = clientesCatalogo.find(item => String(item.id) === mobile.value);
+    hidden.value = cliente?.id || ''; search.value = cliente?.nombre || ''; fillCliente(cliente);
+  };
+  search.oninput = () => {
     hidden.value = "";
     syncClient();
-  });
-  search.addEventListener("change", syncClient);
-  search.addEventListener("blur", syncClient);
+  };
+  search.onchange = syncClient;
+  search.onblur = syncClient;
 }
 
+document.querySelector('#retryCatalogs').addEventListener('click', async function () {
+  this.disabled = true; catalogFailure = false; catalogStateRequest = null;
+  document.querySelector('#catalogStatus').textContent = 'Cargando clientes y agenda…';
+  try {
+    await setupClientesCatalog(); await setupProgramacionesCatalog(); await setupProductosCatalog();
+    if (!documentLibrary) await initializeDocumentLibrary();
+    if (!catalogFailure) {
+      document.querySelector('#catalogStatus').textContent = 'Clientes y agenda actualizados.';
+      document.querySelector('#catalogLogin').hidden = true;
+    }
+  } finally { this.disabled = false; }
+});
 function productOptionsHtml(selected = "") {
   return [
     `<option value="">Capturar manualmente</option>`,
@@ -352,6 +386,7 @@ async function setupProductosCatalog() {
     refreshProductSelects();
   } catch (error) {
     productosCatalogo = [];
+    catalogError(error);
     console.warn(error);
   }
 }
@@ -930,7 +965,16 @@ function crearPdfEditable(data) {
     });
     text('Anexo fotográfico | Folio: ' + clean(data.folio) + ' | Hoja ' + (Math.floor(start / photosPerPage) + 1), 28, 765, { size: 8 });
   }
-  doc.save(nombreArchivoPdf(data));
+  ultimoPdfNombre = nombreArchivoPdf(data);
+  ultimoPdf = doc.output('blob');
+  const pdfLink = document.querySelector('#openGeneratedPdf');
+  if (pdfLink.dataset.objectUrl) URL.revokeObjectURL(pdfLink.dataset.objectUrl);
+  pdfLink.href = URL.createObjectURL(ultimoPdf);
+  pdfLink.dataset.objectUrl = pdfLink.href;
+  pdfLink.download = ultimoPdfNombre;
+  pdfLink.classList.remove('hidden');
+  document.querySelector('#sharePdf').classList.remove('hidden');
+  doc.save(ultimoPdfNombre);
 }
 
 function descargarPdf(blob, nombre) {
@@ -1197,7 +1241,7 @@ form.addEventListener("submit", async (event) => {
   boton.textContent = "Guardando y creando PDF...";
   resultado.classList.add("hidden");
 
-  try { await documentLibrary.save(); }
+  try { if (!documentLibrary) throw new Error(documentInitError || 'El formulario aún no está listo. Pulsa Actualizar clientes y agenda.'); await documentLibrary.save(); }
   catch(error) { reporteEnProceso=false;boton.disabled=false;boton.textContent='Guardar servicio y generar PDF';estado.textContent='No se guardó: '+error.message;resultado.classList.remove('hidden');return; }
   const data = dataFromForm();
   renderCertificate(data, {
@@ -1212,7 +1256,7 @@ form.addEventListener("submit", async (event) => {
     ultimoPdf = null;
     crearPdfEditable(data);
 
-    estado.textContent = `${guardado.mensaje} Se abrio la ventana para guardar el PDF.`;
+    estado.textContent = `${guardado.mensaje} PDF listo. Si no se descargó automáticamente, pulsa Abrir / descargar PDF generado.`;
     resultado.classList.remove("hidden");
     resultado.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch (error) {
@@ -1252,6 +1296,8 @@ async function restoreDocument(data){
   }));
   preview.classList.add('hidden');document.querySelector('#reportResult').classList.add('hidden');ultimoPdf=null;
 }
+async function initializeDocumentLibrary() {
+try {
 documentLibrary=await D.mount({kind:'certificado',identity:()=>form.elements.programacionId?.value||'',
  read:()=>({fields:D.capture(form),productRows:products.children.length,photos:structuredClone(evidencePhotos),signatures:Object.fromEntries(Object.entries(signaturePads).map(([key,pad])=>[key,pad.data()]))}),
  write:restoreDocument,
@@ -1261,6 +1307,17 @@ documentLibrary=await D.mount({kind:'certificado',identity:()=>form.elements.pro
  title:()=>dataFromForm().cliente||'Certificado de servicio',hide:['#saveDraft','#resetForm'],exports:['#downloadPdf','#sharePdf'],
  legacy:()=>{try{const raw=administrationStorage.getItem('certificadoBorrador');return raw?[{title:'Borrador anterior del certificado (sin firmas ni fotos)',payload:{legacy:JSON.parse(raw)}}]:[]}catch{return []}}
 });
-
+if (!documentLibrary) throw new Error('Abre el formato desde la aplicación GS Burak.');
+documentInitError = '';
+generateButton.disabled = false;
+generateButton.textContent = 'Guardar servicio y generar PDF';
+} catch (error) {
+  documentInitError = error.message || 'No se pudo preparar el guardado.';
+  catalogError(error);
+  generateButton.disabled = true;
+  generateButton.textContent = 'Actualiza clientes y agenda para habilitar el guardado';
+}
+}
+await initializeDocumentLibrary();
 
 })().catch(error => { document.body.insertAdjacentText("afterbegin", "No se pudo abrir esta administración. Recarga la página: " + error.message); });

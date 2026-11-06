@@ -21,6 +21,8 @@
       <form id="serviceForm" class="form-grid">
         <section class="panel wide-panel">
           <h2>Servicio programado</h2>
+          <p id="catalogStatus" role="status" aria-live="polite"></p>
+          <div><a id="catalogLogin" href="../../index.html" target="_blank" rel="noopener" hidden>Iniciar sesión en GS Burak</a> <button id="retryCatalogs" type="button" class="ghost-button">Actualizar clientes, productos y agenda</button></div>
           <div class="grid two">
             <label class="wide">Elegir de agenda
               <select name="programacionId" id="programacionSelect">
@@ -70,6 +72,7 @@
               <input id="clienteSearchInput" list="clienteOptions" type="text" placeholder="Escribe las primeras letras">
               <input name="clienteId" id="clienteSelect" type="hidden">
               <datalist id="clienteOptions"></datalist>
+              <select id="clientCatalog" aria-label="Elegir cliente registrado"><option value="">Elegir cliente de la lista</option></select>
             </label>
             <label>Cliente / Razon social
               <input name="cliente" id="clienteNombre" type="text" required>
@@ -222,6 +225,7 @@
         <section class="report-result hidden" id="reportResult" aria-live="polite">
           <strong id="reportStatus">Reporte listo.</strong>
           <div class="report-result-actions">
+            <a id="openGeneratedPdf" class="primary-button hidden" target="_blank" rel="noopener">Abrir / descargar PDF generado</a>
             <button type="button" class="secondary-button" id="downloadPdf">Generar PDF otra vez</button>
             <button type="button" class="primary-button hidden" id="sharePdf">Compartir PDF</button>
           </div>
@@ -232,6 +236,6 @@
     <section id="certificatePreview" class="certificate hidden"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js?v=20261105photos"></script>
+    <script src="app.js?v=20261106mobileb"></script>
   </body>
 </html>
