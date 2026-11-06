@@ -38,6 +38,11 @@
       document.head.append(style);
       const bar = document.createElement('section'); bar.id = 'burak-document-bar';
       bar.innerHTML = '<strong>Documentos guardados</strong><button type="button" data-new>Nuevo</button><button type="button" data-save>Guardar documento</button><select data-list aria-label="Documentos guardados"><option value="">Selecciona un documento</option></select><button type="button" data-open>Abrir</button><button type="button" data-refresh>Actualizar lista</button><button type="button" data-copy>Descargar copia de seguridad</button><button type="button" data-import>Abrir copia de seguridad</button><input data-import-file type="file" accept=".json,application/json" hidden><span data-status role="status" aria-live="polite"></span>';
+      if (adapter.kind === 'certificado') {
+        bar.classList.add('compact-document-bar');
+        bar.innerHTML = '<button type="button" data-new>Nuevo</button><button type="button" data-save>Guardar</button><details data-open-menu><summary>Abrir guardado</summary><div class="document-menu"><select data-list aria-label="Documentos guardados"><option value="">Selecciona un documento</option></select><button type="button" data-open>Abrir</button><button type="button" data-refresh>Actualizar lista</button></div></details><details data-more-menu><summary>Más opciones</summary><div class="document-menu"><button type="button" data-copy>Descargar copia de seguridad</button><button type="button" data-import>Abrir copia de seguridad</button><input data-import-file type="file" accept=".json,application/json" hidden><div data-legacy></div></div></details><span data-status role="status" aria-live="polite"></span>';
+        style.textContent += '#burak-document-bar.compact-document-bar{position:relative;z-index:20;max-width:1200px;margin:12px auto;padding:8px 12px;box-sizing:border-box;border-radius:8px;font-size:13px}#burak-document-bar.compact-document-bar button{padding:7px 10px}#burak-document-bar.compact-document-bar [data-status]{font-size:12px;line-height:1.3}#burak-document-bar details{position:relative}#burak-document-bar summary{cursor:pointer;padding:7px 10px;border-radius:5px;border:1px solid #b9cbd5}#burak-document-bar .document-menu{position:absolute;top:100%;left:0;z-index:30;background:white;border:1px solid #b9cbd5;box-shadow:0 6px 18px #142d4522;border-radius:6px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;width:320px;max-width:80vw}#burak-document-bar .document-menu select{width:100%;min-width:0}#burak-document-bar [data-more-menu] .document-menu{left:auto;right:0}#burak-document-bar [data-legacy]:empty{display:none}@media(max-width:500px){#burak-document-bar.compact-document-bar{margin:8px}#burak-document-bar .document-menu{position:static;width:auto;max-width:100%}}';
+      }
       document.body.prepend(bar);
       const $ = selector => bar.querySelector(selector);
       const message = (text, error=false) => { $('[data-status]').textContent=text; $('[data-status]').dataset.error=String(error); };
@@ -88,7 +93,7 @@
         if(dirty && !confirm('Hay cambios sin guardar. Descarga una copia si quieres conservarlos. ¿Abrir otro documento?'))return;
         const saved=await api('/api/formats?kind='+adapter.kind+'&id='+encodeURIComponent(identifier));
         loading=true;
-        try { await adapter.write(clone(saved.payload)); current={id:saved.id,revision:saved.revision,folio:saved.folio};adapter.folio(saved.folio);identity=adapter.identity?.();baseline=JSON.stringify(adapter.read());dirty=false;serial++;clearTimeout(timer);localStorage.removeItem(key);message('Documento recuperado · '+saved.folio); }
+        try { await adapter.write(clone(saved.payload)); current={id:saved.id,revision:saved.revision,folio:saved.folio};adapter.folio(saved.folio);identity=adapter.identity?.();baseline=JSON.stringify(adapter.read());dirty=false;serial++;clearTimeout(timer);localStorage.removeItem(key);message('Documento recuperado · '+saved.folio);bar.querySelector('[data-open-menu]')?.removeAttribute('open'); }
         finally{loading=false;}
       };
       const fresh = async () => {
@@ -156,7 +161,7 @@
         const select=document.createElement('select');select.setAttribute('aria-label','Capturas anteriores de este navegador');select.add(new Option('Recuperar captura anterior de este navegador',''));
         legacy.forEach((d,i)=>select.add(new Option(d.title||'Captura anterior '+(i+1),String(i))));
         select.onchange=async()=>{if(select.value==='')return;if(dirty&&!confirm('¿Reemplazar los cambios sin guardar por esta captura anterior?'))return;loading=true;try{await adapter.write(clone(legacy[Number(select.value)].payload));current={id:crypto.randomUUID(),revision:0,folio:''};adapter.folio('');identity=adapter.identity?.();dirty=true;serial++;clearTimeout(timer);pending();message('Captura anterior recuperada. Pulsa Guardar documento para incorporarla.');}catch(e){message(e.message,true);}finally{loading=false;}};
-        bar.append(select);
+        (bar.querySelector('[data-legacy]') || bar).append(select);
       }
       return {save,open,new:fresh,changed};
     }
