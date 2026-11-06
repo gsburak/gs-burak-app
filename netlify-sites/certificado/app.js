@@ -901,20 +901,34 @@ function crearPdfEditable(data) {
   text("Tel: 999 120 8854 | SINTOX 24 HRS 800 009 2800 | Intoxicacion - Gratuito", page.m, y + 18, { size: 5.8, color: [75, 75, 75] });
   text(`Generado: ${new Date().toLocaleString("es-MX")}`, page.m, y + 26, { size: 5.8, color: [75, 75, 75] });
 
-  for (let start = 0; start < evidencePhotos.length; start += 4) {
+  const requestedPerPage = Number(document.querySelector('#evidencePerPage').value);
+  const photosPerPage = [4, 6, 8].includes(requestedPerPage) ? requestedPerPage : 8;
+  const rowHeight = 640 / (photosPerPage / 2);
+  const imageHeight = rowHeight - 60;
+  for (let start = 0; start < evidencePhotos.length; start += photosPerPage) {
     doc.addPage();
     text('EVIDENCIA FOTOGRAFICA DEL SERVICIO', 28, 35, { size: 14, bold: true, color: navy });
     text('Folio: ' + clean(data.folio) + ' | Fecha: ' + clean(data.fecha), 28, 55, { size: 9 });
     text(split('Cliente: ' + clean(data.cliente), 550, 9).slice(0, 2), 28, 71, { size: 9 });
-    evidencePhotos.slice(start, start + 4).forEach((photo, index) => {
+    evidencePhotos.slice(start, start + photosPerPage).forEach((photo, index) => {
       const x = 28 + (index % 2) * 284;
-      const top = 105 + Math.floor(index / 2) * 320;
-      const scale = Math.min(264 / photo.width, 250 / photo.height);
+      const top = 105 + Math.floor(index / 2) * rowHeight;
+      const scale = Math.min(264 / photo.width, imageHeight / photo.height);
       const w = photo.width * scale, h = photo.height * scale;
-      doc.addImage(photo.src, 'JPEG', x + (264 - w) / 2, top + (250 - h) / 2, w, h);
-      text(split((start + index + 1) + '. ' + (photo.caption || 'Evidencia del servicio'), 260, 9).slice(0, 5), x, top + 266, { size: 9 });
+      // Rasterize at about 150 dpi for the actual printed size.
+      const raster = document.createElement('canvas');
+      raster.width = Math.max(1, Math.min(photo.width, Math.round(w * 150 / 72)));
+      raster.height = Math.max(1, Math.round(raster.width * photo.height / photo.width));
+      const original = evidenceList.querySelectorAll('img')[start + index];
+      let source = photo.src;
+      if (original?.complete && original.naturalWidth) {
+        raster.getContext('2d').drawImage(original, 0, 0, raster.width, raster.height);
+        source = raster.toDataURL('image/jpeg', 0.78);
+      }
+      doc.addImage(source, 'JPEG', x + (264 - w) / 2, top + (imageHeight - h) / 2, w, h);
+      text(split((start + index + 1) + '. ' + (photo.caption || 'Evidencia del servicio'), 260, 9).slice(0, 5), x, top + imageHeight + 12, { size: 9 });
     });
-    text('Anexo fotográfico | Folio: ' + clean(data.folio) + ' | Hoja ' + (Math.floor(start / 4) + 1), 28, 765, { size: 8 });
+    text('Anexo fotográfico | Folio: ' + clean(data.folio) + ' | Hoja ' + (Math.floor(start / photosPerPage) + 1), 28, 765, { size: 8 });
   }
   doc.save(nombreArchivoPdf(data));
 }

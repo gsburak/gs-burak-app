@@ -202,7 +202,14 @@
 
         <section class="panel wide-panel">
           <h2>Evidencia fotográfica del servicio</h2>
-          <p>Agrega hasta 12 fotos JPG, PNG o WebP (máximo 15 MB cada una). Se incluirán al final del PDF, cuatro por página. Conserva el PDF: las fotos permanecen en esta página hasta que la cierres o limpies.</p>
+          <p>Agrega hasta 12 fotos JPG, PNG o WebP (máximo 15 MB cada una). Se incluirán al final del PDF, con la cantidad de fotos por página que elijas. Conserva el PDF: las fotos permanecen en esta página hasta que la cierres o limpies.</p>
+          <label>Fotografías por página del PDF
+            <select id="evidencePerPage" name="evidencePerPage">
+              <option value="4">4 fotos (más grandes)</option>
+              <option value="6">6 fotos</option>
+              <option value="8" selected>8 fotos (menos páginas)</option>
+            </select>
+          </label>
           <label>Agregar fotografías de la galería<input id="evidenceFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
           <label>Tomar una fotografía<input id="evidenceCamera" type="file" accept="image/*" capture="environment"></label>
           <p id="evidenceStatus" role="status" aria-live="polite"></p>
@@ -225,6 +232,6 @@
     <section id="certificatePreview" class="certificate hidden"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js?v=20261103docs"></script>
+    <script src="app.js?v=20261105photos"></script>
   </body>
 </html>
