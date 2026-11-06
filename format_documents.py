@@ -37,6 +37,8 @@ def read_documents(bundle, kind, identifier=None, backup=False):
 
 def save_document(bundle, request, services=(), prefix='GS-'):
     kind = valid_kind(request.get('kind'))
+    if kind == 'certificado' and prefix in ('GS-N-', 'GS-A-'):
+        prefix = 'GS-'
     identifier = request.get('id')
     if not isinstance(identifier, str) or not re.fullmatch(r'[a-zA-Z0-9_-]{1,80}', identifier):
         raise ValueError('Identificador de documento inválido.')
@@ -62,7 +64,7 @@ def save_document(bundle, request, services=(), prefix='GS-'):
         highest = counters.get(kind, 0)
         for doc in documents.values():
             if doc['kind'] == kind:
-                match = re.fullmatch(re.escape(prefix) + KINDS[kind] + r'-(\d+)', doc['folio'])
+                match = re.fullmatch(r'GS-(?:[NA]-)?CER-(\d+)' if kind == 'certificado' else re.escape(prefix) + KINDS[kind] + r'-(\d+)', doc['folio'])
                 if match:
                     highest = max(highest, int(match[1]))
         # Respect certificate numbers already used before central document storage.
