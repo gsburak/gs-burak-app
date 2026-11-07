@@ -76,7 +76,10 @@ class Auth:
             if not valid:
                 self.write(key, {'attempts': attempts + [now]})
                 return None, 401
-            self.write(key, {'attempts': []})
+            # Avoid an unnecessary cloud round trip on a normal successful login.
+            # Existing failures still need to be cleared after authentication.
+            if attempts:
+                self.write(key, {'attempts': []})
             token = secrets.token_urlsafe(32)
             self.write(self.key(token), {'user': username, 'credential': user['hash'], 'expires': now+SESSION_SECONDS})
             return token, 200
