@@ -202,6 +202,25 @@ class Handler(SimpleHTTPRequestHandler):
             if method not in ('GET', 'HEAD') and not auth.same_origin(self.headers):
                 self.auth_json({'error': 'Origen no autorizado.'}, 403)
                 return True
+            from certificate_access import permitted, link_token
+            if path == '/api/certificate-link' and method == 'GET':
+                user = auth.user(self.headers)
+                if not user or user['role'] != 'admin':
+                    self.auth_json({'error': 'Solo el administrador puede obtener el enlace.'}, 403)
+                else:
+                    stage = self.headers.get('X-Burak-Administracion', 'nueva')
+                    token = link_token(auth, stage)
+                    if not token:
+                        self.auth_json({'error': 'Administración inválida.'}, 400)
+                    else:
+                        self.auth_json({'url': auth.origin.rstrip('/') + '/netlify-sites/certificado/index.html?administracion=' + stage + '#acceso=' + token})
+                return True
+            self.certificate_access = permitted(auth, self.headers)
+            if self.certificate_access:
+                if (path == '/api/state' and method == 'GET') or (path == '/api/formats' and method in ('GET', 'POST')) or (path == '/api/record' and method == 'POST'):
+                    return False
+                self.auth_json({'error': 'Este enlace solo permite trabajar con certificados.'}, 403)
+                return True
             if path == '/api/auth/session' and method == 'GET':
                 self.auth_json({'configured': bool(auth.users), 'user': auth.user(self.headers)})
                 return True

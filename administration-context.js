@@ -1,6 +1,8 @@
 /* One immutable context per browser tab. No shared "selected stage" storage. */
 (() => {
   const nativeFetch = window.fetch.bind(window);
+  const certificatePage = location.pathname === '/netlify-sites/certificado/index.html';
+  const certificateAccess = certificatePage ? new URLSearchParams(location.hash.slice(1)).get('acceso') : null;
   const requested = new URLSearchParams(location.search).get("administracion") || "nueva";
   if (!["nueva", "anterior"].includes(requested)) throw new Error("Administración inválida");
   const context = window.BurakAdmin = {
@@ -30,6 +32,7 @@
     if (!documentRequest && context.failed && (options.method || "GET").toUpperCase() !== "GET") throw new Error("Recarga la página para recuperar la última información antes de guardar.");
     const headers = new Headers(options.headers || (typeof input !== "string" ? input.headers : undefined));
     if (context.stage) headers.set("X-Burak-Administracion", context.stage);
+    if (certificateAccess) headers.set('X-Certificate-Access', certificateAccess);
     if (context.stage && context.revision !== null) headers.set("X-Burak-Revision", String(context.revision));
     let body = options.body;
     if (context.stage && body && ["/api/state", "/api/restore"].includes(url.pathname)) {

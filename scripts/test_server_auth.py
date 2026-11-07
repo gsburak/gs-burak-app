@@ -41,8 +41,9 @@ class AuthTests(unittest.TestCase):
         self.http.shutdown(); self.http.server_close(); self.thread.join()
         self.cloudpatch.stop(); self.env.stop()
 
-    def call(self, method, path, body=None, cookie=None, origin='https://test.example'):
+    def call(self, method, path, body=None, cookie=None, origin='https://test.example', extra=None):
         headers = {'Host': 'test.example', 'X-Burak-Administracion': 'nueva'}
+        headers.update(extra or {})
         if cookie: headers['Cookie'] = cookie
         if origin: headers['Origin'] = origin
         if body is not None: headers['Content-Type'] = 'application/json'
@@ -50,6 +51,40 @@ class AuthTests(unittest.TestCase):
         conn.request(method, path, json.dumps(body) if body is not None else None, headers)
         res = conn.getresponse(); result = (res.status, dict(res.getheaders()), res.read())
         conn.close(); return result
+
+    def test_certificate_capability(self):
+        from certificate_access import link_token
+        token = link_token(Auth(cloud, json.dumps(self.config)), 'nueva')
+        extra = {'X-Certificate-Access': token}
+        status, _, raw = self.call('GET', '/api/state', extra=extra)
+        self.assertEqual(status, 200)
+        data = json.loads(raw)
+        self.assertNotIn('gastos', data)
+        self.assertNotIn('compras', data)
+        revision = data['revisionAdministracion']
+        service = {'collection':'servicios', 'record':{'id':'field-service', 'fecha':'2026-11-07', 'reporte':{'folio':'test'}, 'subtotal':9999}}
+        self.assertEqual(self.call('POST', '/api/record', service, extra={**extra,'X-Burak-Revision':str(revision)})[0], 200)
+        saved = next(r for r in storage[BUNDLE_ID]['etapas']['nueva']['servicios'] if r['id']=='field-service')
+        self.assertEqual(saved['subtotal'], 0)
+        saved['subtotal'] = 1234
+        service['record']['reporte'] = {'folio':'updated'}
+        self.assertEqual(self.call('POST', '/api/record', service, extra={**extra,'X-Burak-Revision':str(revision+1)})[0], 200)
+        saved = next(r for r in storage[BUNDLE_ID]['etapas']['nueva']['servicios'] if r['id']=='field-service')
+        self.assertEqual(saved['subtotal'], 1234)
+        for row in data.get('servicios', []):
+            self.assertNotIn('subtotal', row)
+            self.assertNotIn('pagos', row)
+        for path in ('/api/backup', '/api/formats?kind=presupuesto', '/api/formats?backup=1'):
+            self.assertEqual(self.call('GET', path, extra=extra)[0], 403)
+        payload = {'kind':'certificado', 'id':'test-field', 'revision':0, 'title':'Prueba', 'payload':{}}
+        self.assertEqual(self.call('POST', '/api/formats', payload, extra=extra)[0], 200)
+        self.assertEqual(self.call('GET', '/api/formats?kind=certificado', extra=extra)[0], 200)
+        payload['kind'] = 'presupuesto'
+        self.assertEqual(self.call('POST', '/api/formats', payload, extra=extra)[0], 403)
+        self.assertEqual(self.call('POST', '/api/record', {'collection':'clientes','record':{'id':'bad'}}, extra=extra)[0], 403)
+        self.assertEqual(self.call('GET', '/api/state', extra={**extra, 'X-Burak-Administracion':'anterior'})[0], 401)
+        self.assertEqual(self.call('GET', '/api/certificate-link')[0], 403)
+        self.assertEqual(self.call('GET', '/api/certificate-link', cookie=self.login())[0], 200)
 
     def login(self, username='admin'):
         status, headers, _ = self.call('POST', '/api/auth/login', {'username': username, 'password': self.password})

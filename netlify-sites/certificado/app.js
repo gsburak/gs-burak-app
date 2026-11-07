@@ -191,6 +191,23 @@ function buildChecks() {
 }
 
 let catalogFailure = false;
+(() => {
+  if (new URLSearchParams(location.hash.slice(1)).has('acceso')) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = 'Obtener enlace para técnicos (sin contraseña)';
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/certificate-link', {cache:'no-store'});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'No se pudo obtener el enlace.');
+      window.prompt('Copia este enlace privado y compártelo únicamente con tus técnicos. Quien lo tenga podrá consultar clientes, agenda y certificados de esta administración.', result.url);
+    } catch (error) { alert(error.message); }
+    finally { button.disabled = false; }
+  });
+  document.body.prepend(button);
+})();
 let catalogStateRequest;
 let documentInitError = '';
 const generateButton = document.querySelector('#generateReport');

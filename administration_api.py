@@ -87,6 +87,11 @@ class AdministrationAPI:
                     self.respond({"error": "Ruta no disponible"}, 404)
                     return True
                 if parsed.path in ('/api/formats','/api/formats/import','/api/backup'):
+                    if getattr(self.request, 'certificate_access', False):
+                        args = parse_qs(parsed.query)
+                        if method == 'GET' and (args.get('kind') != ['certificado'] or 'backup' in args):
+                            self.respond({'error': 'Solo certificados.'}, 403)
+                            return True
                     if bundle and stage not in LABELS:
                         self.respond({'error':'Selecciona una administración antes de abrir los formatos.'},409)
                         return True
@@ -101,6 +106,9 @@ class AdministrationAPI:
                         return True
                     return formats.handle(method)
                 if not bundle:
+                    if getattr(self.request, 'certificate_access', False):
+                        self.respond({'error': 'El enlace requiere una administración activa.'}, 409)
+                        return True
                     if stage:
                         self.respond({"error": "Las administraciones todavía no están activadas"}, 409)
                         return True
@@ -113,9 +121,26 @@ class AdministrationAPI:
                     return False
                 data = deepcopy(bundle["etapas"][stage])
                 if parsed.path == "/api/state" and method == "GET":
+                    if getattr(self.request, 'certificate_access', False):
+                        from certificate_access import catalog
+                        data = catalog(data)
                     self.respond(data)
                     return True
                 payload = self.body() if method == "POST" else {}
+                if getattr(self.request, 'certificate_access', False):
+                    record = payload.get('record') or {}
+                    if parsed.path != '/api/record' or payload.get('collection') != 'servicios' or not isinstance(record.get('reporte'), dict) or not record.get('reporte'):
+                        self.respond({'error': 'Solo se permite guardar un reporte de servicio.'}, 403)
+                        return True
+                    old = next((r for r in data.get('servicios', []) if str(r.get('id')) == str(record.get('id'))), None)
+                    allowed = 'id fecha clienteId cliente clienteNombre nombreCliente razonSocial clienteManual contacto telefono email domicilio ciudad tipo tecnico zona programacionId productos reporte folio observaciones'.split()
+                    if old:
+                        # Updating a certificate must never erase an existing sale/payment.
+                        record = {**old, 'reporte': record['reporte']}
+                    else:
+                        record = {key: record[key] for key in allowed if key in record}
+                        record.update(pagos=[], subtotal=0, cobrado=0, descuento=0, iva=0, formaPago='Por cobrar')
+                    payload['record'] = record
                 expected_revision = self.request.headers.get("X-Burak-Revision")
                 if parsed.path in ("/api/record", "/api/pendientes") and method != "GET":
                     if expected_revision is None or str(data["revisionAdministracion"]) != expected_revision:

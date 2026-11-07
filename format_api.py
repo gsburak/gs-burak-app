@@ -71,6 +71,8 @@ class FormatAPI:
             if not 0<size<=20*1024*1024:raise ValueError('Tamaño de captura inválido (máximo 20 MB).')
             payload=json.loads(self.request.rfile.read(size).decode('utf-8'))
             if not isinstance(payload,dict):raise ValueError('Captura inválida.')
+            if getattr(self.request, 'certificate_access', False) and payload.get('kind') != 'certificado':
+                self.respond({'error':'Solo certificados.'},403);return True
             self.respond(self.commit(payload,path.path=='/api/formats/import'))
         except DocumentConflict as error:self.respond({'error':str(error)},409)
         except (ValueError,KeyError,TypeError) as error:self.respond({'error':str(error)},400)
