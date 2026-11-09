@@ -11,20 +11,20 @@ const users = [
 const modules = [
   { id: "dashboard", label: "Dashboard", icon: "Inicio", roles: ["admin", "operativo"] },
   { id: "clientes", label: "Clientes", icon: "Clientes", roles: ["admin", "operativo"] },
-  { id: "presupuestos", label: "Presupuestos", icon: "Presupuestos", roles: ["admin", "operativo"] },
   { id: "programacion", label: "Programacion", icon: "Agenda", roles: ["admin", "operativo", "consulta"] },
+  { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
+  { id: "compras", label: "Compras", icon: "Compras", roles: ["admin"] },
+  { id: "gastos", label: "Gastos", icon: "Gastos", roles: ["admin"] },
+  { id: "productos", label: "Productos", icon: "Stock", roles: ["admin"] },
+  { id: "equipos", label: "Equipos", icon: "Equipos", roles: ["admin"] },
+  { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
+  { id: "presupuestos", label: "Presupuestos", icon: "Presupuestos", roles: ["admin", "operativo"] },
   { id: "certificados", label: "Certificado de servicio", icon: "Certificado", roles: ["admin", "operativo", "consulta"] },
   { id: "diagnostico", label: "Reporte de diagnóstico", icon: "Diagnóstico", roles: ["admin", "operativo", "consulta"] },
   { id: "cebaderas", label: "Anexo de monitoreo", icon: "Cebaderas", roles: ["admin", "operativo", "consulta"] },
   { id: "croquis", label: "Creador de croquis", icon: "Croquis", roles: ["admin", "operativo", "consulta"] },
-  { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
-  { id: "servicios", label: "Servicios / Ventas", icon: "Ventas", roles: ["admin", "operativo"] },
-  { id: "tiposServicio", label: "Tipos servicio", icon: "Servicios", roles: ["admin"] },
-  { id: "productos", label: "Productos", icon: "Stock", roles: ["admin"] },
-  { id: "compras", label: "Compras", icon: "Compras", roles: ["admin"] },
-  { id: "gastos", label: "Gastos", icon: "Gastos", roles: ["admin"] },
-  { id: "equipos", label: "Equipos", icon: "Equipos", roles: ["admin"] },
   { id: "reportesRapidos", label: "Reportes rapidos", icon: "Reportes", roles: ["admin"] },
+  { id: "pendientes", label: "Pendientes", icon: "Recordatorios", roles: ["admin", "operativo"] },
 ];
 
 const seed = {
