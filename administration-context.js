@@ -48,7 +48,9 @@
     if (!response.ok) {
       const error = await response.clone().json().catch(() => ({}));
       if (!documentRequest && (response.status === 409 || (options.method || "GET") !== "GET")) context.failed = true;
-      throw new Error(error.error || "No se pudo completar la operación. No se cambiará de administración.");
+      const failure = new Error(error.error || "No se pudo completar la operación. No se cambiará de administración.");
+      failure.status = response.status;
+      throw failure;
     }
     if (!options.burakBackgroundRead && context.stage && ["/api/state", "/api/record", "/api/restore", "/api/pendientes"].includes(url.pathname)) {
       const data = await response.clone().json();

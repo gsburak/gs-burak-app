@@ -9,7 +9,7 @@
   const api = async (url, options) => {
     const response = await fetch(url, options);
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'No se pudo guardar.');
+    if (!response.ok) { const error = new Error(data.error || 'No se pudo guardar.'); error.status = response.status; throw error; }
     return data;
   };
   const download = (data, name) => {
@@ -45,6 +45,10 @@
       }
       document.body.prepend(bar);
       const $ = selector => bar.querySelector(selector);
+      const recovery = document.createElement('button');
+      recovery.type = 'button'; recovery.hidden = true;
+      recovery.textContent = 'Guardar mi captura como copia';
+      bar.append(recovery);
       const message = (text, error=false) => { $('[data-status]').textContent=text; $('[data-status]').dataset.error=String(error); };
       const key = window.BurakAdmin.storageKey('document-pending-'+adapter.kind);
       let current = {id:crypto.randomUUID(), revision:0, folio:''}, dirty=false, loading=false, saving=null, timer;
@@ -74,16 +78,27 @@
         message('Guardando documento…'); $('[data-save]').disabled=true;
         saving=(async () => {
           try {
-            const saved=await api('/api/formats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...current,kind:adapter.kind,title:String(adapter.title?.()||'').slice(0,300),payload:data})});
+            let saved;
+            try {
+              saved=await api('/api/formats',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...current,kind:adapter.kind,title:String(adapter.title?.()||'').slice(0,300),payload:data})});
+            } catch (error) {
+              if (error.status !== 409) throw error;
+              // A mobile connection can lose the response after a successful save.
+              // Only accept the remote version when its entire payload is identical.
+              const remote = await api('/api/formats?kind='+adapter.kind+'&id='+encodeURIComponent(savingId));
+              if (JSON.stringify(remote.payload) !== JSON.stringify(data)) throw error;
+              saved = remote;
+            }
             if(current.id!==savingId){await refresh().catch(()=>{});message('Documento anterior guardado. La captura actual sigue pendiente.');return current;}
             current={id:saved.id,revision:saved.revision,folio:saved.folio};
+            recovery.hidden=true;
             adapter.folio(saved.folio);
             if (serial===started) { dirty=false; baseline=JSON.stringify(adapter.read()); adapter.saved?.(); try{localStorage.removeItem(key);}catch{} }
             else { pending(); dirty=true; }
             message('Guardado · '+saved.folio+'. '+('Disponible en esta administración desde otro equipo.'));
             await refresh().catch(()=>{});
             return current;
-          } catch(error) { dirty=true; pending(); message('NO SE GUARDÓ: '+error.message+' Puedes descargar una copia de seguridad.',true); throw error; }
+          } catch(error) { dirty=true; pending(); recovery.hidden=error.status!==409; message('NO SE GUARDÓ: '+error.message+(error.status===409?' Tu captura sigue aquí. Puedes guardarla como copia con un folio nuevo, sin reemplazar el documento existente.':' Puedes descargar una copia de seguridad.'),true); throw error; }
           finally { saving=null; $('[data-save]').disabled=false; }
         })();
         return saving;
@@ -102,6 +117,17 @@
         loading=true;
         try {await adapter.new();current={id:crypto.randomUUID(),revision:0,folio:''};adapter.folio('');identity=adapter.identity?.();dirty=false;serial++;baseline=JSON.stringify(adapter.read());clearTimeout(timer);localStorage.removeItem(key);$('[data-list]').value='';message('Documento nuevo. El folio se asigna al guardar.');}
         finally{loading=false;}
+      };
+      recovery.onclick=async()=>{
+        if (!confirm('Se conservarán tus datos, firmas y fotografías en un documento con folio nuevo. El documento anterior no se modificará. Revisa cuál usar para no registrar el mismo servicio dos veces. ¿Guardar como copia?')) return;
+        try {
+          if (saving) await saving.catch(()=>{});
+          clearTimeout(timer);
+          current={id:crypto.randomUUID(),revision:0,folio:''};
+          adapter.folio(''); dirty=true; serial++; pending();
+          await save();
+          message('Copia guardada · '+current.folio+'. Ya puedes pulsar Guardar servicio y generar PDF.');
+        } catch(error) { message('No se pudo guardar la copia: '+error.message+'. Tu captura se conserva en esta pantalla.',true); }
       };
       $('[data-save]').onclick=()=>save().catch(()=>{});
       $('[data-new]').onclick=()=>fresh().catch(e=>message(e.message,true));
