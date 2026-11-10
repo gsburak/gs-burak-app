@@ -71,7 +71,7 @@ def save_document(bundle, request, services=(), prefix='GS-'):
         if kind == 'certificado':
             for service in services:
                 old_folio = service.get('folio') or (service.get('reporte') or {}).get('folio', '')
-                match = re.fullmatch(r'GS-(\d+)-\d{4}', str(old_folio))
+                match = re.fullmatch(r'GS-(?:(?:[NA]-)?CER-|SRV-)?(\d+)(?:-\d{4})?', str(old_folio))
                 if match:
                     highest = max(highest, int(match[1]))
         counters[kind] = highest + 1

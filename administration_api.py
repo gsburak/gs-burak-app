@@ -180,16 +180,23 @@ class AdministrationAPI:
                             previous_service = next((r for r in bundle['etapas'][stage].get('servicios', []) if str(r.get('id')) == str(identifier)), {})
                             previous_folio = previous_service.get('folio') or previous_service.get('reporte', {}).get('folio', '')
                             folio = record.get('folio') or record['reporte'].get('folio', '')
-                            if previous_folio.startswith('GS-SRV-'):
+                            if previous_folio.startswith(('GS-CER-', 'GS-N-CER-', 'GS-A-CER-', 'GS-SRV-')):
                                 folio = previous_folio
                             if not folio or folio.startswith('GS-CAMPO-'):
                                 highest = int(bundle.get('contadorFoliosServicio', 0))
+                                # Read counters only, not the archive containing photos.
+                                # Never restart the certificate series when saving directly.
+                                for namespace in ('nueva', 'anterior', 'actual'):
+                                    rows = self.cloud('GET', 'app_state?id=eq.formatos_gs_burak_' + namespace + '_v1&select=counters:data->counters')
+                                    for row in rows or []:
+                                        counters = row.get('counters') or row.get('data', {}).get('counters', {})
+                                        highest = max(highest, int(counters.get('certificado', 0)))
                                 for history in bundle['etapas'].values():
                                     for service in history.get('servicios', []):
-                                        match = re.fullmatch(r'GS-SRV-(\d+)', str(service.get('folio') or service.get('reporte', {}).get('folio', '')))
+                                        match = re.fullmatch(r'GS-(?:(?:[NA]-)?CER-|SRV-)?(\d+)(?:-\d{4})?', str(service.get('folio') or service.get('reporte', {}).get('folio', '')))
                                         if match: highest = max(highest, int(match[1]))
                                 bundle['contadorFoliosServicio'] = highest + 1
-                                folio = f'GS-SRV-{highest + 1:05d}'
+                                folio = f'GS-CER-{highest + 1:05d}'
                             record['folio'] = folio
                             record['reporte']['folio'] = folio
                         data[collection].append(record)
