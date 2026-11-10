@@ -1239,6 +1239,21 @@ document.querySelector("#downloadPdf").addEventListener("click", () => {
   crearPdfEditable(data);
 });
 
+// PDF delivery must remain available when the cloud cannot accept a write.
+document.querySelector('#generatePdfOnly').addEventListener('click', () => {
+  if (evidenceLoading) { alert('Espera a que terminen de cargar las fotografías.'); return; }
+  if (!form.reportValidity()) return;
+  const estado = document.querySelector('#reportStatus');
+  const resultado = document.querySelector('#reportResult');
+  try {
+    document.querySelector('#downloadPdf').click();
+    estado.textContent = 'PDF generado sin guardar en la nube. Este paso no registra ni confirma el servicio en Servicios / Ventas. Conserva una copia de seguridad y vuelve a intentar Guardar servicio cuando haya conexión.';
+  } catch (error) {
+    estado.textContent = 'No se pudo generar el PDF: '+error.message+'. Tu captura sigue en esta pantalla.';
+  }
+  resultado.classList.remove('hidden');
+});
+
 document.querySelector("#sharePdf").addEventListener("click", () => {
   compartirPdf().catch((error) => {
     if (error?.name !== "AbortError") alert(`No se pudo compartir: ${error.message}`);
@@ -1321,7 +1336,7 @@ documentLibrary=await D.mount({kind:'certificado',identity:()=>form.elements.pro
  new:()=>restoreDocument({fields:initialFields,productRows:4,photos:[],signatures:{}}),
  ready:()=>!evidenceLoading,
  folio:value=>{const el=document.getElementById('folio');el.value=value;el.readOnly=true;el.required=false;el.placeholder='Se asigna al guardar';},
- title:()=>dataFromForm().cliente||'Certificado de servicio',hide:['#saveDraft','#resetForm'],exports:['#downloadPdf','#sharePdf'],
+ title:()=>dataFromForm().cliente||'Certificado de servicio',hide:['#saveDraft','#resetForm'],exports:[],
  legacy:()=>{try{const raw=administrationStorage.getItem('certificadoBorrador');return raw?[{title:'Borrador anterior del certificado (sin firmas ni fotos)',payload:{legacy:JSON.parse(raw)}}]:[]}catch{return []}}
 });
 if (!documentLibrary) throw new Error('Abre el formato desde la aplicación GS Burak.');
@@ -1332,7 +1347,7 @@ generateButton.textContent = 'Guardar servicio y generar PDF';
   documentInitError = error.message || 'No se pudo preparar el guardado.';
   catalogError(error);
   generateButton.disabled = true;
-  generateButton.textContent = 'Actualiza clientes y agenda para habilitar el guardado';
+  generateButton.textContent = 'Guardado no disponible; puedes generar PDF sin guardar';
 }
 }
 await initializeDocumentLibrary();

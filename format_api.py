@@ -4,6 +4,7 @@ import re
 from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlencode, urlparse
 from format_documents import read_documents, save_document, merge_document_backup, DocumentConflict
+from cloud_connection import CloudConnectionError
 
 
 class FormatAPI:
@@ -46,7 +47,9 @@ class FormatAPI:
                 bundle,added=self.merge(bundle,payload);result={'added':added}
             else:result=save_document(bundle,payload,self.services,self.prefix)
             bundle['revision']=previous+1
-            query=urlencode({'id':'eq.'+self.identifier,'data->>revision':'eq.'+str(previous)})
+            # Return only the row identifier: echoing all saved photos/documents can
+            # time out after the database has already committed the write.
+            query=urlencode({'id':'eq.'+self.identifier,'data->>revision':'eq.'+str(previous),'select':'id'})
             rows=self.cloud('PATCH','app_state?'+query,{'data':bundle,'updated_at':datetime.now(timezone.utc).isoformat()})
             if rows:return result
         raise DocumentConflict('Otra ventana está guardando. Conserva la captura e intenta nuevamente.')
@@ -76,5 +79,10 @@ class FormatAPI:
             self.respond(self.commit(payload,path.path=='/api/formats/import'))
         except DocumentConflict as error:self.respond({'error':str(error)},409)
         except (ValueError,KeyError,TypeError) as error:self.respond({'error':str(error)},400)
-        except Exception:self.respond({'error':'No se pudo guardar o recuperar el documento en esta administración. Conserva una copia e intenta nuevamente.'},503)
+        except CloudConnectionError as error:
+            print('Format storage unavailable: '+error.code, flush=True)
+            self.respond({'error':'No se pudo guardar en la nube. Puedes generar el PDF sin guardar y conservar una copia. Código: '+error.code},503)
+        except Exception as error:
+            print('Format storage failure: '+type(error).__name__, flush=True)
+            self.respond({'error':'No se pudo guardar o recuperar el documento. Puedes generar el PDF sin guardar y conservar una copia. Código: FORMATO_INTERNO'},503)
         return True
