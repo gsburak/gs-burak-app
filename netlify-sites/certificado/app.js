@@ -107,6 +107,7 @@ function uid() {
 }
 
 function idServicioReporte(data) {
+  if (!data.programacionId && data.servicioReporteId) return data.servicioReporteId;
   const referencia = data.programacionId || data.folio || `${data.fecha}_${data.hora}_${data.clienteId || data.cliente}`;
   return `reporte_${slug(String(referencia))}`;
 }
@@ -698,7 +699,11 @@ async function saveReporteComoServicio(data) {
     if (!response.ok) throw new Error("No se pudo actualizar esta administración antes de guardar.");
     await response.json();
   }
-  await saveSupabaseRecord("app_servicios", servicio);
+  const saved = await saveSupabaseRecord("app_servicios", servicio);
+  if (saved?.folio) {
+    data.folio = saved.folio;
+    if (typeof document !== 'undefined') document.querySelector('#folio').value = saved.folio;
+  }
   if (data.programacionId && !window.BurakAdmin.stage) {
     const programacion = programacionesCatalogo.find((item) => String(item.id) === String(data.programacionId));
     if (programacion) {
@@ -752,7 +757,7 @@ function crearPdfEditable(data) {
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setFontSize(opts.size || 8);
     doc.setTextColor(...(opts.color || [0, 0, 0]));
-    doc.text(clean(value), x, yy, opts.align ? { align: opts.align } : undefined);
+    doc.text(Array.isArray(value) ? value.map(line => clean(line)) : clean(value), x, yy, opts.align ? { align: opts.align } : undefined);
   };
   const rect = (x, yy, w, h, color) => {
     if (color) {
@@ -1261,14 +1266,17 @@ form.addEventListener("submit", async (event) => {
   const folio = form.elements.folio;
   if (!folio.value) folio.value = 'GS-CAMPO-' + crypto.randomUUID();
   const data = dataFromForm();
-  renderCertificate(data, {
-    responsable: FIRMA_RESPONSABLE_DEFAULT,
-    tecnico: signaturePads.firmaTecnico.data(),
-    cliente: signaturePads.firmaCliente.data()
-  });
-
+  if (!data.servicioReporteId) {
+    data.servicioReporteId = idServicioReporte(data);
+    form.elements.servicioReporteId.value = data.servicioReporteId;
+  }
   try {
     const guardado = await saveReporteComoServicio(data);
+    renderCertificate(data, {
+      responsable: FIRMA_RESPONSABLE_DEFAULT,
+      tecnico: signaturePads.firmaTecnico.data(),
+      cliente: signaturePads.firmaCliente.data()
+    });
     ultimoPdfNombre = nombreArchivoPdf(data);
     ultimoPdf = null;
     crearPdfEditable(data);

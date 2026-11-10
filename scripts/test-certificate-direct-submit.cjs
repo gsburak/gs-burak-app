@@ -10,7 +10,8 @@ const end=source.indexOf('await initReady;',start);
  const nodes={}; const get=id=>nodes[id]||={disabled:false,textContent:'',classList:{add(){},remove(){}},scrollIntoView(){}};
  const context=vm.createContext({
    console:{error(){}},crypto:{randomUUID:()=> 'unique-id'},evidenceLoading:false,reporteEnProceso:false,
-   form:{elements:{folio},reportValidity:()=>true,addEventListener(event,fn){handler=fn;}},
+   form:{elements:{folio,servicioReporteId:{value:''}},reportValidity:()=>true,addEventListener(event,fn){handler=fn;}},
+   idServicioReporte:()=> 'stable-service-id',
    document:{querySelector:get},alert(){},
    documentLibrary:{save(){archiveCalls++;throw new Error('Archivo no disponible');}},
    dataFromForm:()=>({folio:folio.value,productos:[{productoId:'p',cantidad:20}]}),

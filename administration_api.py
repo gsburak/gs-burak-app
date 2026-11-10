@@ -5,6 +5,7 @@ from cloud_connection import CloudConnectionError
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+import re
 import threading
 from urllib.parse import parse_qs, urlparse
 from administrations import BACKUP_ID, BUNDLE_ID, CUTOFF, LABELS, prepare, validate_stage
@@ -173,6 +174,24 @@ class AdministrationAPI:
                         raise ValueError("Registro sin identificador")
                     data[collection] = [r for r in data[collection] if str(r["id"]) != str(identifier)]
                     if method == "POST":
+                        if collection == 'servicios' and record.get('reporte'):
+                            # The field UUID identifies retries internally; it is not a
+                            # printable folio. Allocate a compact folio with the service.
+                            previous_service = next((r for r in bundle['etapas'][stage].get('servicios', []) if str(r.get('id')) == str(identifier)), {})
+                            previous_folio = previous_service.get('folio') or previous_service.get('reporte', {}).get('folio', '')
+                            folio = record.get('folio') or record['reporte'].get('folio', '')
+                            if previous_folio.startswith('GS-SRV-'):
+                                folio = previous_folio
+                            if not folio or folio.startswith('GS-CAMPO-'):
+                                highest = int(bundle.get('contadorFoliosServicio', 0))
+                                for history in bundle['etapas'].values():
+                                    for service in history.get('servicios', []):
+                                        match = re.fullmatch(r'GS-SRV-(\d+)', str(service.get('folio') or service.get('reporte', {}).get('folio', '')))
+                                        if match: highest = max(highest, int(match[1]))
+                                bundle['contadorFoliosServicio'] = highest + 1
+                                folio = f'GS-SRV-{highest + 1:05d}'
+                            record['folio'] = folio
+                            record['reporte']['folio'] = folio
                         data[collection].append(record)
                         # Field reports and their scheduled job must commit together.
                         if collection == "servicios" and record.get("reporte") and record.get("programacionId"):
@@ -189,7 +208,10 @@ class AdministrationAPI:
                 data["revisionAdministracion"] = int(data.get("revisionAdministracion", 0)) + 1
                 bundle["etapas"][stage] = data
                 self.write(BUNDLE_ID, bundle)
-                self.respond({"ok": True, "revisionAdministracion": data["revisionAdministracion"]})
+                result = {"ok": True, "revisionAdministracion": data["revisionAdministracion"]}
+                if parsed.path == '/api/record' and method == 'POST' and payload.get('collection') == 'servicios':
+                    result['folio'] = record.get('folio') or (record.get('reporte') or {}).get('folio', '')
+                self.respond(result)
                 return True
         except DocumentConflict as error:
             self.respond({'error':str(error)},409)
