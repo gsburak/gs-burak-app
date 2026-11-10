@@ -132,6 +132,10 @@
       line-height: 1.35;
     }
 
+    #tecnica {
+      min-height: 220px;
+    }
+
     .checkline {
       display: flex;
       align-items: center;
@@ -295,6 +299,7 @@
       line-height: 1.42;
       font-size: 11.5px;
       text-align: justify;
+      overflow-wrap: anywhere;
     }
 
     .letter p {
@@ -426,6 +431,15 @@
       .section-title {
         break-after: avoid;
         page-break-after: avoid;
+      }
+      .letter {
+        overflow: visible;
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+      .letter p {
+        orphans: 2;
+        widows: 2;
       }
       table, tr {
         break-inside: avoid;
@@ -636,6 +650,7 @@
               <th>Descripci&#243;n del servicio</th>
               <th style="width: 64px;">Cantidad</th>
               <th style="width: 82px;">Importe</th>
+              <th style="width: 82px;">SUB TOTAL</th>
               <th style="width: 72px;">IVA</th>
               <th style="width: 82px;">Total</th>
             </tr>
@@ -643,7 +658,7 @@
           <tbody id="costRows"></tbody>
           <tfoot>
             <tr>
-              <td colspan="6" class="num">TOTAL:</td>
+              <td colspan="7" class="num">TOTAL:</td>
               <td class="num" id="grandTotal">$0.00</td>
             </tr>
           </tfoot>
@@ -794,7 +809,14 @@
         cantidad: parseFloat($('[data-service="cantidad"]', card).value || '1'),
         importe: parseFloat($('[data-service="importe"]', card).value || '0')
       }));
-      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn('No se pudo guardar el presupuesto en este navegador.', err);
+      }
     }
 
     function writeForm() {
@@ -868,6 +890,7 @@
             <td>${escapeText(svc.descripcion)}</td>
             <td class="qty">${cantidad.toLocaleString('es-MX')}</td>
             <td class="num">${money(importe)}</td>
+            <td class="num">${money(subtotal)}</td>
             <td class="num">${money(iva)}</td>
             <td class="num">${money(lineTotal)}</td>
           </tr>
@@ -880,6 +903,7 @@
     function update() {
       readForm();
       renderPreview();
+      saveState();
     }
 
     function mergeTemplate(name) {
@@ -982,8 +1006,8 @@
       const reader = new FileReader();
       reader.onload = () => {
         state.logoData = reader.result;
-        localStorage.setItem(STORE_KEY, JSON.stringify(state));
         renderPreview();
+        saveState();
       };
       reader.readAsDataURL(file);
     });
