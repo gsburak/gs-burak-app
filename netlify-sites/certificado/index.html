@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
 <script src="../../administration-context.js?v=20261109recovery"></script>
-    <script data-document-client src="../../format-documents.js?v=20261109recovery"></script>
+    <script data-document-client src="../../format-documents.js?v=20261110direct"></script>
 <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Certificado / Reporte de servicio</title>
@@ -221,7 +221,7 @@
         <footer class="action-bar">
           <button type="button" class="secondary-button" id="saveDraft">Guardar borrador</button>
           <button type="submit" class="primary-button" id="generateReport">Guardar servicio y generar PDF</button>
-          <button type="button" class="secondary-button" id="generatePdfOnly">Generar PDF sin guardar</button>
+          <button type="button" class="secondary-button" id="generatePdfOnly" hidden>Generar PDF sin guardar</button>
         </footer>
         <section class="report-result hidden" id="reportResult" aria-live="polite">
           <strong id="reportStatus">Reporte listo.</strong>
@@ -237,6 +237,6 @@
     <section id="certificatePreview" class="certificate hidden"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js?v=20261110pdf"></script>
+    <script src="app.js?v=20261110fixedlink"></script>
   </body>
 </html>
