@@ -1273,8 +1273,10 @@ form.addEventListener("submit", async (event) => {
   boton.textContent = "Guardando y creando PDF...";
   resultado.classList.add("hidden");
 
-  try { if (!documentLibrary) throw new Error(documentInitError || 'El formulario aún no está listo. Pulsa Actualizar clientes y agenda.'); await documentLibrary.save(); }
-  catch(error) { reporteEnProceso=false;boton.disabled=false;boton.textContent='Guardar servicio y generar PDF';estado.textContent='No se guardó: '+error.message;resultado.classList.remove('hidden');return; }
+  // Saving the operational service must not depend on the separate document archive.
+  // Keep this identifier on retries, even if the mobile connection loses a response.
+  const folio = form.elements.folio;
+  if (!folio.value) folio.value = 'GS-CAMPO-' + crypto.randomUUID();
   const data = dataFromForm();
   renderCertificate(data, {
     responsable: FIRMA_RESPONSABLE_DEFAULT,
@@ -1329,8 +1331,11 @@ async function restoreDocument(data){
   preview.classList.add('hidden');document.querySelector('#reportResult').classList.add('hidden');ultimoPdf=null;
 }
 async function initializeDocumentLibrary() {
+// Catalog access and service persistence are independent of document-library access.
+generateButton.disabled = false;
+generateButton.textContent = 'Guardar servicio y generar PDF';
 try {
-documentLibrary=await D.mount({kind:'certificado',identity:()=>form.elements.programacionId?.value||'',
+documentLibrary=await D.mount({kind:'certificado',autosave:false,identity:()=>form.elements.programacionId?.value||'',
  read:()=>({fields:D.capture(form),productRows:products.children.length,photos:structuredClone(evidencePhotos),signatures:Object.fromEntries(Object.entries(signaturePads).map(([key,pad])=>[key,pad.data()]))}),
  write:restoreDocument,
  new:()=>restoreDocument({fields:initialFields,productRows:4,photos:[],signatures:{}}),
@@ -1346,8 +1351,8 @@ generateButton.textContent = 'Guardar servicio y generar PDF';
 } catch (error) {
   documentInitError = error.message || 'No se pudo preparar el guardado.';
   catalogError(error);
-  generateButton.disabled = true;
-  generateButton.textContent = 'Guardado no disponible; puedes generar PDF sin guardar';
+  generateButton.disabled = false;
+  generateButton.textContent = 'Guardar servicio y generar PDF';
 }
 }
 await initializeDocumentLibrary();

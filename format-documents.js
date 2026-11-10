@@ -67,8 +67,8 @@
         if (loading || JSON.stringify(adapter.read()) === baseline) return;
         if(adapter.identity && adapter.identity()!==identity){current={id:crypto.randomUUID(),revision:0,folio:''};identity=adapter.identity();adapter.folio('');}
         dirty=true; serial++; pending(); clearTimeout(timer);
-        message('Cambios sin guardar. Guardando automáticamente…');
-        timer=setTimeout(() => save().catch(()=>{}),1800);
+        message(adapter.autosave === false ? 'Captura en este equipo. Usa Guardar servicio y generar PDF al terminar.' : 'Cambios sin guardar. Guardando automáticamente…');
+        if (adapter.autosave !== false) timer=setTimeout(() => save().catch(()=>{}),1800);
       };
       const save = async () => {
         clearTimeout(timer);
