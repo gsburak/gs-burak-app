@@ -48,10 +48,13 @@ class AdministrationAPI:
         # The legacy application remains active until an explicit, validated activation.
         try:
             with LOCK:
-                bundle = self.load()
                 if parsed.path == "/api/administraciones" and method == "GET":
-                    self.respond({"activa": bool(bundle), "corte": CUTOFF, "etapas": LABELS})
+                    # Checking activation needs only the row's existence, not
+                    # the complete historical and current operating records.
+                    rows = self.cloud("GET", f"app_state?id=eq.{BUNDLE_ID}&select=id")
+                    self.respond({"activa": bool(rows), "corte": CUTOFF, "etapas": LABELS})
                     return True
+                bundle = self.load()
                 if parsed.path == "/api/administraciones/preparar" and method == "GET":
                     if bundle:
                         self.respond({"activa": True, "corte": CUTOFF})

@@ -43,6 +43,22 @@ class Request:
 
 
 class Tests(unittest.TestCase):
+    def test_activation_check_does_not_download_operating_records(self):
+        for active in (False, True):
+            calls = []
+            def cloud(method, path):
+                calls.append((method, path))
+                self.assertEqual(method, 'GET')
+                self.assertEqual(path, f'app_state?id=eq.{BUNDLE_ID}&select=id')
+                return [{'id': BUNDLE_ID}] if active else []
+            request = Request('/api/administraciones')
+            def unexpected_source_read():
+                self.fail('Activation check read operating records')
+            self.assertTrue(AdministrationAPI(request, unexpected_source_read, cloud).handle('GET'))
+            self.assertEqual(request.status, 200)
+            self.assertEqual(request.json()['activa'], active)
+            self.assertEqual(len(calls), 1)
+
     def test_cutover_and_fifo(self):
         source = fixture(); original = deepcopy(source)
         draft = prepare(source); old, new = draft["etapas"].values()
