@@ -673,12 +673,23 @@ function downloadCsv(fileName, headers, rows) {
 }
 
 async function exportBackup() {
+  const buttons = [...document.querySelectorAll("[data-action='exportBackup']")];
+  if (buttons.some(button => button.disabled)) return;
+  const labels = buttons.map(button => button.textContent);
+  buttons.forEach(button => { button.disabled = true; button.textContent = "Preparando respaldo…"; });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120000);
   try {
-    const response=await fetch('/api/backup',{cache:'no-store'});
+    const response=await fetch('/api/backup',{cache:'no-store', signal:controller.signal});
     if(!response.ok)throw new Error('No se pudo descargar el respaldo completo. Intenta de nuevo.');
     const payload=await response.json();payload.exportedAt=new Date().toISOString();
+    if (!payload.data || !payload.formatDocuments) throw new Error('El servidor no entregó un respaldo completo. No se descargó un archivo incompleto.');
     downloadBlob(backupFileName(),new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
-  }catch(error){alert(error.message);}
+  }catch(error){alert(error.name === 'AbortError' ? 'El servidor tardó demasiado en preparar el respaldo. No se modificaron tus datos. Intenta descargarlo nuevamente.' : error.message);}
+  finally {
+    clearTimeout(timeout);
+    buttons.forEach((button, index) => { button.disabled = false; button.textContent = labels[index]; });
+  }
 }
 
 function exportBackupExcel() {
@@ -1059,7 +1070,8 @@ function downloadBlob(fileName, blob) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  // Give the browser time to start reading the download before releasing it.
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function excelWorksheet(name, rows) {
