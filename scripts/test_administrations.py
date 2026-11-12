@@ -88,7 +88,7 @@ class Tests(unittest.TestCase):
 
     def test_api_activation_is_explicit_and_idempotent(self):
         source = fixture(); storage = {}
-        def cloud(method, path, payload=None):
+        def cloud(method, path, payload=None, prefer=None):
             if method == "GET":
                 return [{"data": deepcopy(storage[BUNDLE_ID])}] if BUNDLE_ID in storage else []
             for row in payload: storage[row["id"]] = deepcopy(row["data"])
@@ -129,7 +129,7 @@ class Tests(unittest.TestCase):
     def test_field_report_completes_schedule_atomically(self):
         storage = {BUNDLE_ID: prepare(fixture())}
         original_old = deepcopy(storage[BUNDLE_ID]["etapas"]["anterior"])
-        def cloud(method, path, payload=None):
+        def cloud(method, path, payload=None, prefer=None):
             if method == "GET": return [{"data": deepcopy(storage[BUNDLE_ID])}]
             for row in payload: storage[row["id"]] = deepcopy(row["data"])
         def save(record, revision):
@@ -157,3 +157,4 @@ class Tests(unittest.TestCase):
 
 
 if __name__ == "__main__": unittest.main()
+

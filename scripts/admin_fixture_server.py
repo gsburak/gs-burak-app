@@ -21,6 +21,8 @@ def cloud(method, path, payload=None, prefer=None):
             if identifier not in storage:return []
             data=deepcopy(storage[identifier])
             selection=query.get('select',['data'])[0]
+            if selection.startswith('stage:data->etapas->'):
+                return [{'stage':data.get('etapas',{}).get(selection.split('->')[-1])}]
             if selection=='index:data->documentIndex':return [{'index':data.get('documentIndex')}]
             if selection.startswith('document:data->documents->'):
                 return [{'document':data.get('documents',{}).get(selection.split('->')[-1])}]

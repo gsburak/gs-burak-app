@@ -19,12 +19,15 @@ class AdministrationAPI:
         self.load_source = load_source
         self.cloud = cloud_request
 
-    def load(self):
+    def load(self, stage=None):
+        if stage in LABELS:
+            rows = self.cloud("GET", f"app_state?id=eq.{BUNDLE_ID}&select=stage:data->etapas->{stage}")
+            return {'etapas': {stage: rows[0]['stage']}} if rows and rows[0].get('stage') is not None else None
         rows = self.cloud("GET", f"app_state?id=eq.{BUNDLE_ID}&select=data")
         return rows[0].get("data") if rows else None
 
     def write(self, identifier, data):
-        self.cloud("POST", "app_state?on_conflict=id", [{"id": identifier, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}])
+        self.cloud("POST", "app_state?on_conflict=id", [{"id": identifier, "data": data, "updated_at": datetime.now(timezone.utc).isoformat()}], prefer='resolution=merge-duplicates,return=minimal')
 
     def respond(self, data, status=200):
         r = self.request
@@ -54,7 +57,10 @@ class AdministrationAPI:
                     rows = self.cloud("GET", f"app_state?id=eq.{BUNDLE_ID}&select=id")
                     self.respond({"activa": bool(rows), "corte": CUTOFF, "etapas": LABELS})
                     return True
-                bundle = self.load()
+                # Writes still read both stages to preserve concurrent records.
+                # Read-only requests need only the selected stage.
+                scoped = method == 'GET' and not management and stage in LABELS
+                bundle = self.load(stage if scoped else None)
                 if parsed.path == "/api/administraciones/preparar" and method == "GET":
                     if bundle:
                         self.respond({"activa": True, "corte": CUTOFF})

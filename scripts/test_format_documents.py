@@ -14,6 +14,20 @@ from urllib.parse import parse_qs
 
 
 class DocumentTests(unittest.TestCase):
+    def test_reads_transfer_only_selected_stage_and_writes_do_not_echo_state(self):
+        calls=[]
+        def tracked(method,path,payload=None,prefer=None):
+            calls.append((method,path,prefer))
+            return cloud(method,path,payload,prefer)
+        request=Request('/api/state',stage='nueva')
+        AdministrationAPI(request,lambda:deepcopy(source),tracked).handle('GET')
+        self.assertEqual(request.status,200)
+        self.assertEqual(request.json(),storage[BUNDLE_ID]['etapas']['nueva'])
+        self.assertEqual(calls[0][1],f'app_state?id=eq.{BUNDLE_ID}&select=stage:data->etapas->nueva')
+        api=AdministrationAPI(request,lambda:deepcopy(source),tracked)
+        api.write('test',{'large':'photos'})
+        self.assertEqual(calls[-1][2],'resolution=merge-duplicates,return=minimal')
+
     def test_lists_and_single_documents_use_small_database_projections(self):
         self.call('POST','/api/formats',self.document('first'))
         self.call('POST','/api/formats',self.document('second'))
