@@ -17,7 +17,14 @@ cloud_lock=RLock()
 def cloud(method, path, payload=None, prefer=None):
     with cloud_lock:
         query=parse_qs(path.partition('?')[2]);identifier=query.get('id',[''])[0].removeprefix('eq.')
-        if method=='GET':return [{'data':deepcopy(storage[identifier])}] if identifier in storage else []
+        if method=='GET':
+            if identifier not in storage:return []
+            data=deepcopy(storage[identifier])
+            selection=query.get('select',['data'])[0]
+            if selection=='index:data->documentIndex':return [{'index':data.get('documentIndex')}]
+            if selection.startswith('document:data->documents->'):
+                return [{'document':data.get('documents',{}).get(selection.split('->')[-1])}]
+            return [{'data':data}]
         if method=='PATCH':
             expected=query.get('data->>revision',[''])[0].removeprefix('eq.')
             if identifier not in storage or str(storage[identifier].get('revision'))!=expected:return []

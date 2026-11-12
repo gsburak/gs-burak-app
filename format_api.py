@@ -3,7 +3,7 @@ import json
 import re
 from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlencode, urlparse
-from format_documents import read_documents, save_document, merge_document_backup, DocumentConflict
+from format_documents import read_documents, save_document, merge_document_backup, DocumentConflict, valid_kind
 from cloud_connection import CloudConnectionError
 
 
@@ -28,6 +28,25 @@ class FormatAPI:
         result['administracion']=self.stage
         return result
 
+    def read(self, kind, identifier=None):
+        valid_kind(kind)
+        if identifier:
+            if not re.fullmatch(r'[a-zA-Z0-9_-]{1,80}', identifier):
+                raise ValueError('Identificador de documento inválido.')
+            fields = 'document:data->documents->' + identifier
+            rows = self.cloud('GET', 'app_state?' + urlencode({'id':'eq.'+self.identifier,'select':fields}))
+            document = rows[0].get('document') if rows else None
+            if not document or document.get('kind') != kind:
+                raise ValueError('No se encontró el documento.')
+            return document
+        rows = self.cloud('GET', 'app_state?' + urlencode({'id':'eq.'+self.identifier,'select':'index:data->documentIndex'}))
+        index = rows[0].get('index') if rows else []
+        if index is None:
+            # Older archives have no index. Preserve access until their next
+            # normal save creates it, without changing data during a read.
+            return read_documents(self.load() or {}, kind)
+        return {'documents': sorted([d for d in index if d['kind'] == kind], key=lambda d:d['updatedAt'], reverse=True)}
+
     def merge(self, bundle, incoming):
         if incoming.get('administracion') != self.stage:
             raise ValueError('La copia pertenece a otra administración.')
@@ -47,6 +66,10 @@ class FormatAPI:
                 bundle,added=self.merge(bundle,payload);result={'added':added}
             else:result=save_document(bundle,payload,self.services,self.prefix)
             bundle['revision']=previous+1
+            bundle['documentIndex'] = [
+                {key: doc[key] for key in ('id','kind','folio','title','revision','updatedAt')}
+                for doc in bundle.get('documents', {}).values()
+            ]
             # Return only the row identifier: echoing all saved photos/documents can
             # time out after the database has already committed the write.
             query=urlencode({'id':'eq.'+self.identifier,'data->>revision':'eq.'+str(previous),'select':'id'})
@@ -66,8 +89,7 @@ class FormatAPI:
                 self.respond({'error':'Origen no autorizado.'},403);return True
             args=parse_qs(path.query)
             if method=='GET':
-                bundle=self.load() or {}
-                result=self.backup(bundle) if args.get('backup')==['1'] else read_documents(bundle,args.get('kind',[None])[0],args.get('id',[None])[0])
+                result=self.backup(self.load() or {}) if args.get('backup')==['1'] else self.read(args.get('kind',[None])[0],args.get('id',[None])[0])
                 self.respond(result);return True
             if method!='POST':self.respond({'error':'Método no disponible.'},405);return True
             size=int(self.request.headers.get('Content-Length','0'))
