@@ -9,9 +9,39 @@ from admin_fixture_server import cloud,storage,source
 from test_administrations import Request
 from administration_api import AdministrationAPI
 from administrations import prepare,BUNDLE_ID
+from format_api import FormatAPI
+from urllib.parse import parse_qs
 
 
 class DocumentTests(unittest.TestCase):
+    def test_lists_and_single_documents_use_small_database_projections(self):
+        self.call('POST','/api/formats',self.document('first'))
+        self.call('POST','/api/formats',self.document('second'))
+        calls=[]
+        def tracked(method,path,payload=None,prefer=None):
+            calls.append(parse_qs(path.partition('?')[2]).get('select',[''])[0])
+            return cloud(method,path,payload,prefer)
+        api=FormatAPI(Request('/api/formats'),tracked,'nueva',[])
+        listing=api.read('anexo-monitoreo')
+        self.assertEqual(len(listing['documents']),2)
+        self.assertTrue(all('payload' not in doc for doc in listing['documents']))
+        self.assertEqual(calls,['index:data->documentIndex'])
+        calls.clear()
+        opened=api.read('anexo-monitoreo','first')
+        self.assertEqual(opened['payload'],self.document()['payload'])
+        self.assertEqual(calls,['document:data->documents->first'])
+        with self.assertRaises(ValueError):api.read('certificado','first')
+        with self.assertRaises(ValueError):api.read('certificado','bad->id')
+
+    def test_legacy_archive_remains_readable_without_index(self):
+        self.call('POST','/api/formats',self.document())
+        storage['formatos_gs_burak_nueva_v1'].pop('documentIndex')
+        before=deepcopy(storage)
+        status,listing=self.call('GET','/api/formats?kind=anexo-monitoreo')
+        self.assertEqual(status,200)
+        self.assertEqual(listing['documents'][0]['id'],'first')
+        self.assertEqual(storage,before)
+
     def setUp(self):
         storage.clear();storage[BUNDLE_ID]=prepare(deepcopy(source))
         self.original=deepcopy(storage[BUNDLE_ID])
