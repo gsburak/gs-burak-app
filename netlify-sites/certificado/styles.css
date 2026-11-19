@@ -619,7 +619,11 @@ textarea {
   }
 
   .cert-border {
-    min-height: auto;
+    min-height: 10.35in;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     padding: 0.11in;
     border: 2px solid #12335f !important;
     page-break-inside: avoid;
@@ -648,18 +652,18 @@ textarea {
   }
 
   .cert-table {
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .cert-table th,
   .cert-table td {
-    padding: 2px 4px;
+    padding: 4px;
   }
 
   .notes-box {
     min-height: 0.34in;
     padding: 4px;
-    font-size: 8px;
+    font-size: 10px;
     line-height: 1.15;
   }
 

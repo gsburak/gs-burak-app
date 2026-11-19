@@ -62,6 +62,10 @@
   document.addEventListener("DOMContentLoaded", () => {
     if (location.pathname.includes("/netlify-sites/")) context.ready.then(() => {
       const banner = document.createElement("div");
+      banner.className = 'administration-screen-banner';
+      const style = document.createElement('style');
+      style.textContent = '@media print {.administration-screen-banner {display:none!important}}';
+      document.head.appendChild(style);
       banner.textContent = context.label();
       banner.style.cssText = "padding:10px;background:#e5f5f0;color:#143f35;font:700 13px Arial;border:1px solid #86b3a6;";
       if (context.stage === "anterior") banner.style.background = "#fff0ce";
@@ -72,7 +76,7 @@
       const popup = nativeOpen(...args);
       if (popup && (!args[0] || args[0] === "about:blank")) {
         const write = popup.document.write.bind(popup.document);
-        popup.document.write = html => write(String(html).replace(/<body([^>]*)>/i, `<body$1><p style="font:700 12px Arial;padding:8px;border:1px solid #aaa">${context.label()}</p>`));
+        if (!certificatePage) popup.document.write = html => write(String(html).replace(/<body([^>]*)>/i, `<body$1><p style="font:700 12px Arial;padding:8px;border:1px solid #aaa">${context.label()}</p>`));
       }
       return popup;
     };
